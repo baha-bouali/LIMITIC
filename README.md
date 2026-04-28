@@ -1,2 +1,2 @@
-# LIMITIC
+# LIMTIC
 project
