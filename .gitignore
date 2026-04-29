@@ -23,6 +23,5 @@ frontend/.vite/
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
 .trunk/
