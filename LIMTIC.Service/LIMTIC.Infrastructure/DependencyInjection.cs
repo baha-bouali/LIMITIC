@@ -1,4 +1,6 @@
-﻿using LIMTIC.Infrastructure.Data;
+﻿using LIMTIC.Application.Abstractions.Repositories;
+using LIMTIC.Infrastructure.Data;
+using LIMTIC.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +18,7 @@ namespace LIMTIC.Infrastructure
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
             // Register infrastructure services here
-
+            services.AddScoped<IUserRepository, UserRepository>();
 
             return services;
         }
