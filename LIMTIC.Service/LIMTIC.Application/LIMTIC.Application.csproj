@@ -15,10 +15,4 @@
     <ProjectReference Include="..\LIMTIC.Domain\LIMTIC.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="DTOs\" />
-    <Folder Include="Validations\" />
-    <Folder Include="Services\" />
-  </ItemGroup>
-
 </Project>

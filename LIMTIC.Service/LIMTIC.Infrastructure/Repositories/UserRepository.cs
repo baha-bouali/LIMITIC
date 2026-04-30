@@ -14,6 +14,13 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
+        public async Task<User?> GetUserByEmail(string email)
+        {
+            return await _dbContext
+                .Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+        }
+
         public async Task<User?> GetUserById(Guid userId)
         {
             return await _dbContext

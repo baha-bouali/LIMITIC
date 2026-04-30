@@ -5,5 +5,6 @@ namespace LIMTIC.Application.Abstractions.Repositories
     public interface IUserRepository
     {
         Task<User?> GetUserById(Guid userId);
+        Task<User?> GetUserByEmail(string email);
     }
 }
