@@ -5,9 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LIMTIC.Infrastructure
+namespace LIMTIC.Infrastructure.IOC
 {
-    public static class DependencyInjection
+    public static class RegisterInfrastructureModule
     {
         public static IServiceCollection AddInfrastructure(
             this IServiceCollection services,

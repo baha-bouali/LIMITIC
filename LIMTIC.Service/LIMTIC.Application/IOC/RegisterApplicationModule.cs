@@ -2,9 +2,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
-namespace LIMTIC.Application
+namespace LIMTIC.Application.IOC
 {
-    public static class DependencyInjection
+    public static class RegisterApplicationModule
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {

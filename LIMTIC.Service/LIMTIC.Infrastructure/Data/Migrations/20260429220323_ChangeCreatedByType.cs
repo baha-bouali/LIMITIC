@@ -22,13 +22,6 @@ namespace LIMTIC.Infrastructure.Migrations
             migrationBuilder.Sql(
                 @"ALTER TABLE ""Users"" ALTER COLUMN ""CreatedBy"" TYPE integer USING (""CreatedBy""::text::integer);"
             );
-            migrationBuilder.AlterColumn<int>(
-                name: "CreatedBy",
-                table: "Users",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(Guid),
-                oldType: "uuid");
         }
     }
 }
