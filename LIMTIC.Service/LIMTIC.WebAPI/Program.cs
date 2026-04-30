@@ -1,5 +1,5 @@
-using LIMTIC.Application;
-using LIMTIC.Infrastructure;
+using LIMTIC.Application.IOC;
+using LIMTIC.Infrastructure.IOC;
 
 var builder = WebApplication.CreateBuilder(args);
 
