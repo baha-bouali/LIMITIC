@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Application.Abstractions.Repositories;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.DTOs.Auth;
 using LIMTIC.Domain.Entities;
@@ -26,7 +25,7 @@ namespace LIMTIC.Application.Services.Auth
             _refreshTokenRepository = refreshTokenRepository;
         }
 
-        public async Task<ResultT<LoginResponse>> Login(LoginRequest loginRequest, Guid currentUserId, int refreshTokenExpirationDays)
+        public async Task<ResultT<LoginResponse>> Login(LoginRequest loginRequest, int refreshTokenExpirationDays)
         {
             var user = await _userRepository.GetUserByEmail(loginRequest.Username);
             if (user == null)
@@ -43,8 +42,7 @@ namespace LIMTIC.Application.Services.Auth
                 Id = Guid.NewGuid(),
                 Token = refreshToken,
                 UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
-                CreatedBy = currentUserId
+                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays)
             });
 
             return ResultT<LoginResponse>.Success(new LoginResponse(accessToken, refreshToken));

@@ -35,7 +35,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
 
             int refreshTokenExpirationDays = _configuration.GetValue<int>("RefreshToken:ExpireInDays");
 
-            var result = await _authService.Login(loginRequest, CurrentUserId, refreshTokenExpirationDays);
+            var result = await _authService.Login(loginRequest, refreshTokenExpirationDays);
             if (result.IsFailure)
                 return BadRequest(new { error = result.ErrorMessage });
 

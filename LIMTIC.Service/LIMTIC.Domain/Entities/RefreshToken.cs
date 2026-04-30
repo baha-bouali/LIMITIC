@@ -1,9 +1,8 @@
-﻿using LIMTIC.Domain.Shared;
-
-namespace LIMTIC.Domain.Entities
+﻿namespace LIMTIC.Domain.Entities
 {
-    public class RefreshToken : BaseEntity
+    public class RefreshToken
     {
+        public Guid Id { get; set; }
         public string Token { get; set; } = string.Empty;
         public DateTime ExpiryDate { get; set; }
 
