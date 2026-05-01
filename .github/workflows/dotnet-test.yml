@@ -17,10 +17,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ../LIMTIC.WebAPI.sln
+        run: dotnet restore LIMTIC.WebAPI.sln
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release ../LIMTIC.WebAPI.sln
+        run: dotnet build --no-restore --configuration Release LIMTIC.WebAPI.sln
 
       - name: Test
         run: dotnet test --no-build --configuration Release --verbosity normal ../LIMTIC.UnitTests/LIMTIC.UnitTests.csproj
