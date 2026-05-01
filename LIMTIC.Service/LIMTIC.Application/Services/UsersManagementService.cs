@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
 
 namespace LIMTIC.Application.Services

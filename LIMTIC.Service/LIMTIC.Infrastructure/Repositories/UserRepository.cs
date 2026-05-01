@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
