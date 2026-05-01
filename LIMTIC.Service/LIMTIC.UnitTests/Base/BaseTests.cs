@@ -1,5 +1,6 @@
-﻿using LIMTIC.Application.IOC;
-using LIMTIC.Application.Services;
+﻿using LIMTIC.Application.Contracts.UserManagement;
+using LIMTIC.Application.IOC;
+using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
@@ -14,7 +15,7 @@ namespace LIMTIC.UnitTests.Base
         protected readonly ServiceProvider ServiceProvider;
         protected readonly AppDbContext DbContext;
         protected IUserRepository UserRepository => ServiceProvider.GetRequiredService<IUserRepository>();
-        protected UsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
+        protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
       
         protected BaseTests()
         {

@@ -4,8 +4,8 @@ namespace LIMTIC.Domain.Abstractions
 {
     public interface IUserRepository
     {
-        Task<User?> GetUserById(Guid userId);
-
-        Task<bool> AddUser(User user);
+        Task<User?> GetUserByIdAsync(Guid userId);
+        Task<User?> GetUserByEmailAsync(string email);
+        Task<bool> AddUserAsync(User user);
     }
 }
