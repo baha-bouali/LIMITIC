@@ -12,7 +12,6 @@ namespace LIMTIC.E2Es.Tests
         {
         }
 
-        // Add your test methods here
         [Fact]
         public async Task AddAndGetUserE2ETest()
         {
