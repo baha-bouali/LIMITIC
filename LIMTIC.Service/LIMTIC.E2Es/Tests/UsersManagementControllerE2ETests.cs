@@ -1,16 +1,14 @@
-﻿using LIMTIC.Domain.Entities;
-using LIMTIC.Domain.Enums;
+﻿using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using System.Net.Http.Json;
 
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
-    public class UsersCrudTests : BaseE2ETests
+    public class UsersManagementControllerE2ETests : BaseE2ETests
     {
-        public UsersCrudTests(PostgresFixture fixture) : base(fixture)
+        public UsersManagementControllerE2ETests(PostgresFixture fixture) : base(fixture)
         {
         }
 
