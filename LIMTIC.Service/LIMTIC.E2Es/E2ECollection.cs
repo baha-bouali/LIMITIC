@@ -1,5 +1,3 @@
-using Xunit;
-
 namespace LIMTIC.E2Es
 {
     [CollectionDefinition("E2E collection")]
