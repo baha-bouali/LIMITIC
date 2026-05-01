@@ -4,7 +4,6 @@ using LIMTIC.Application.Services.Auth;
 using LIMTIC.WebAPI.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace LIMTIC.WebAPI.Controllers.Auth
 {
@@ -46,7 +45,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 Expires = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
             });
 
-            return Ok(new { result.Value!.AccessToken });
+            return Ok(result.Value!.AccessToken);
         }
 
         [HttpPost]
@@ -63,7 +62,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 return Unauthorized(result.ErrorMessage);
             }
 
-            return Ok(new { result.Value!.AccessToken });
+            return Ok(result.Value!.AccessToken);
         }
 
         [HttpPost]
