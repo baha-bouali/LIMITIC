@@ -1,4 +1,5 @@
-﻿using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Repositories;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Repositories;
@@ -40,6 +41,8 @@ namespace LIMTIC.Infrastructure.IOC
                 });
 
             // Register infrastructure services
+            services.AddHttpContextAccessor();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();

@@ -1,4 +1,5 @@
-﻿using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Repositories;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.DTOs.Auth;
 using LIMTIC.Domain.Entities;
@@ -12,17 +13,20 @@ namespace LIMTIC.Application.Services.Auth
         private readonly ITokenService _tokenService;
         private readonly IUserRepository _userRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public AuthService(
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
             IUserRepository userRepository,
-            IRefreshTokenRepository refreshTokenRepository)
+            IRefreshTokenRepository refreshTokenRepository,
+            ICurrentUserService currentUserService)
         {
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<ResultT<LoginResponse>> Login(LoginRequest loginRequest, int refreshTokenExpirationDays)
@@ -65,8 +69,9 @@ namespace LIMTIC.Application.Services.Auth
             return ResultT<LoginResponse>.Success(new LoginResponse(accessToken, refreshToken));
         }
 
-        public async Task Logout(Guid currentUserId)
+        public async Task Logout()
         {
+            var currentUserId = _currentUserService.UserId;
             await _refreshTokenRepository.RevokeRefreshToken(currentUserId);
         }
     }

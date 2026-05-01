@@ -14,7 +14,6 @@ namespace LIMTIC.WebAPI.Controllers.Auth
     {
         private readonly AuthService _authService;
         private readonly IConfiguration _configuration;
-        private Guid CurrentUserId => Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
 
         public AuthController(AuthService authService, IConfiguration configuration)
         {
@@ -60,7 +59,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
             {
-                await _authService.Logout(CurrentUserId);
+                await _authService.Logout();
                 return Unauthorized(result.ErrorMessage);
             }
 
@@ -72,7 +71,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
         [Route("logout")]
         public async Task<IActionResult> Logout()
         {
-            await _authService.Logout(CurrentUserId);
+            await _authService.Logout();
 
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
