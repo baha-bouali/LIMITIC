@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using LIMTIC.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -10,6 +11,8 @@ namespace LIMTIC.Application.IOC
         {
             // Register application services here
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+            services.AddScoped<UsersManagementService>();
 
             return services;
         }
