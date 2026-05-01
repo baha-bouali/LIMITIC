@@ -1,4 +1,4 @@
-﻿namespace LIMTIC.Application.DTOs.Auth
+﻿namespace LIMTIC.WebAPI.Models.Auth.Login
 {
     public record LoginRequest(
         string Username,

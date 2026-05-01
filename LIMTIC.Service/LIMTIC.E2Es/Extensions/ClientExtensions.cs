@@ -1,5 +1,5 @@
-﻿using LIMTIC.Application.DTOs.Auth;
-using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities;
+using LIMTIC.WebAPI.Models.Auth.Login;
 using System.Net.Http.Json;
 
 namespace LIMTIC.E2Es.Extensions
@@ -22,12 +22,12 @@ namespace LIMTIC.E2Es.Extensions
             return null;
         }
 
-        public static async Task<string?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
+        public static async Task<LoginResponse?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
         {
             var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
             
             if (response.IsSuccessStatusCode)
-                return await response.Content.ReadAsStringAsync();
+                return await response.Content.ReadFromJsonAsync<LoginResponse>();
             return null;
         }
     }

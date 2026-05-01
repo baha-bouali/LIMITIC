@@ -1,7 +1,9 @@
 ﻿using FluentValidation;
-using LIMTIC.Application.DTOs.Auth;
+using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Services.Auth;
 using LIMTIC.WebAPI.Helpers;
+using LIMTIC.WebAPI.Models.Auth.Login;
+using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -25,15 +27,17 @@ namespace LIMTIC.WebAPI.Controllers.Auth
         [Route("login")]
         public async Task<IActionResult> Login(
             [FromBody] LoginRequest loginRequest,
-            [FromServices] IValidator<LoginRequest> validator)
+            [FromServices] IValidator<LoginCommand> validator)
         {
-            var validationResult = validator.Validate(loginRequest);
+            var loginCommand = new LoginCommand(loginRequest.Username, loginRequest.Password);
+
+            var validationResult = validator.Validate(loginCommand);
             if (!validationResult.IsValid)
                 return BadRequest(ValidationHelper.ParseValidationErrors(validationResult));
 
             int refreshTokenExpirationDays = _configuration.GetValue<int>("RefreshToken:ExpireInDays");
 
-            var result = await _authService.Login(loginRequest, refreshTokenExpirationDays);
+            var result = await _authService.Login(loginCommand, refreshTokenExpirationDays);
             if (result.IsFailure)
                 return BadRequest(new { error = result.ErrorMessage });
 
@@ -45,7 +49,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 Expires = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
             });
 
-            return Ok(result.Value!.AccessToken);
+            return Ok(new LoginResponse(result.Value!.AccessToken));
         }
 
         [HttpPost]
@@ -62,7 +66,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 return Unauthorized(result.ErrorMessage);
             }
 
-            return Ok(result.Value!.AccessToken);
+            return Ok(new LoginResponse(result.Value!.AccessToken));
         }
 
         [HttpPost]
@@ -79,7 +83,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 SameSite = SameSiteMode.Strict
             });
 
-            return NoContent();
+            return Ok(new LogoutResponse(true));
         }
     }
 }

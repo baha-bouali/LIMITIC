@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
-using LIMTIC.Application.DTOs.Auth;
+using LIMTIC.Application.Commands.Login;
 
 namespace LIMTIC.Application.Validations
 {
-    public class LoginRequestValidator : AbstractValidator<LoginRequest>
+    public class LoginRequestValidator : AbstractValidator<LoginCommand>
     {
         public LoginRequestValidator()
         {
