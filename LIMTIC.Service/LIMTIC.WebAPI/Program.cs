@@ -1,5 +1,6 @@
 using LIMTIC.Application.IOC;
 using LIMTIC.Infrastructure.IOC;
+using LIMTIC.WebAPI.IOC;
 
 namespace LIMTIC.WebAPI
 {
@@ -15,7 +16,8 @@ namespace LIMTIC.WebAPI
             // Add application & infrastructure services
             builder.Services
                 .AddApplication()
-                .AddInfrastructure(builder.Configuration);
+                .AddInfrastructure(builder.Configuration)
+                .AddMappers();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
