@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Abstractions.Repositories;
+﻿using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +26,12 @@ namespace LIMTIC.Infrastructure.Repositories
             return await _dbContext
                 .Users
                 .FirstOrDefaultAsync(u => u.Id == userId);
+        }
+
+        public async Task<bool> AddUser(User user)
+        {
+            await _dbContext.Users.AddAsync(user);
+            return await _dbContext.SaveChangesAsync() > 0;
         }
     }
 }

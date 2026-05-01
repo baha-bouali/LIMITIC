@@ -1,5 +1,5 @@
 ﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Application.Abstractions.Repositories;
+using LIMTIC.Domain.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.DTOs.Auth;
 using LIMTIC.Domain.Entities;

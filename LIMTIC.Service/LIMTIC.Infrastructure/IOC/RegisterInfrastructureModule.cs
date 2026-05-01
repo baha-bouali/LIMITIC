@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Application.Abstractions.Repositories;
 using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Repositories;
 using LIMTIC.Infrastructure.Services;

@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Domain.Entities;
 
-namespace LIMTIC.Application.Abstractions.Repositories
+namespace LIMTIC.Domain.Abstractions
 {
     public interface IRefreshTokenRepository
     {
