@@ -1,9 +1,9 @@
 ﻿using LIMTIC.Application.Commands.CreateUser;
 using LIMTIC.Application.Commands.GetUser;
 using LIMTIC.Application.Contracts.UserManagement;
-using LIMTIC.Domain;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Application.Services.UserManagement
 {

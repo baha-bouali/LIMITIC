@@ -9,14 +9,14 @@ namespace LIMTIC.WebAPI.Controllers
 {
     [ApiController]
     [Route("users/")]
-    public class UsersManagementController : Controller
+    public class UsersManagementController : ControllerBase
     {
-        private readonly IUsersManagementService UsersManagementService;
+        private readonly IUsersManagementService _usersManagementService;
         private readonly IUserMapper _userMapper;
 
         public UsersManagementController(IUsersManagementService usersManagementService, IUserMapper userMapper)    
         {
-            UsersManagementService = usersManagementService;
+            _usersManagementService = usersManagementService;
             _userMapper = userMapper;
         }
 
@@ -33,7 +33,7 @@ namespace LIMTIC.WebAPI.Controllers
                 IsActive = true,
             };
 
-            var result = await UsersManagementService.CreateUserAsync(command);
+            var result = await _usersManagementService.CreateUserAsync(command);
             if (result.Success)
             {
                 return Ok(new CreateUserResponse
@@ -53,8 +53,8 @@ namespace LIMTIC.WebAPI.Controllers
         [HttpGet("getUser")]
         public async Task<IActionResult> GetUser(Guid id)
         {
-            var result = await UsersManagementService.GetUserByIdAsync(id);
-            if (result != null)
+            var result = await _usersManagementService.GetUserByIdAsync(id);
+            if (result.Success)
             {
                 return Ok(new GetUserResponse
                 {
