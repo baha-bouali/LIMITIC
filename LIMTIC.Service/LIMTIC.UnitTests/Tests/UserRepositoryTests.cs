@@ -24,7 +24,7 @@ namespace LIMTIC.UnitTests.Tests
                 CreatedAt = DateTime.UtcNow,
             };
 
-            var result = await UserRepository.AddUser(user);
+            var result = await UserRepository.AddUserAsync(user);
             Assert.True(result);
         }
     }
