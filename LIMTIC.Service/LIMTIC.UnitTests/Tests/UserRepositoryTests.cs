@@ -21,7 +21,7 @@ namespace LIMTIC.UnitTests.Tests
                 AvatarBlobName = null,
                 IsActive = true,
                 CreatedBy = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAtUtc = DateTime.UtcNow,
             };
 
             var result = await UserRepository.AddUser(user);

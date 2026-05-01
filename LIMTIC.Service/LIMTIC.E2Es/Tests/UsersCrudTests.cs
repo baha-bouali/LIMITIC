@@ -34,7 +34,7 @@ namespace LIMTIC.E2Es.Tests
                 AvatarBlobName = null,
                 IsActive = true,
                 CreatedBy = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAtUtc = DateTime.UtcNow,
             };
 
             var response = await Client.AddUser(user);
