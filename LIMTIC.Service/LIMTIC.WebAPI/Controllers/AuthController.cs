@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using LIMTIC.Application.Commands.Login;
+using LIMTIC.Application.Contracts.Auth;
 using LIMTIC.Application.Services.Auth;
 using LIMTIC.WebAPI.Helpers;
 using LIMTIC.WebAPI.Models.Auth.Login;
@@ -13,10 +14,10 @@ namespace LIMTIC.WebAPI.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly AuthService _authService;
+        private readonly IAuthService _authService;
         private readonly IConfiguration _configuration;
 
-        public AuthController(AuthService authService, IConfiguration configuration)
+        public AuthController(IAuthService authService, IConfiguration configuration)
         {
             _authService = authService;
             _configuration = configuration;

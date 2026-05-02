@@ -4,10 +4,11 @@ using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Shared;
 using LIMTIC.Application.Commands.Login;
+using LIMTIC.Application.Contracts.Auth;
 
 namespace LIMTIC.Application.Services.Auth
 {
-    public class AuthService
+    public class AuthService : IAuthService
     {
         private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
