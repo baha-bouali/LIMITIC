@@ -1,6 +1,6 @@
 ﻿namespace LIMTIC.Application.Settings
 {
-    public interface RefreshTokenSettings
+    public class RefreshTokenSettings
     {
         public int ExpireInDays { get; set; }
     }

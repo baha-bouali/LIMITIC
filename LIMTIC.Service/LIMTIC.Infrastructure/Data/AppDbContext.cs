@@ -20,7 +20,7 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
-        public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var currentUserId = _currentUserService.UserId;
 
@@ -36,7 +36,7 @@ namespace LIMTIC.Infrastructure.Data
                 entry.Entity.CreatedAtUtc = DateTime.UtcNow;
             }
 
-            return base.SaveChangesAsync(cancellationToken);
+            return await base.SaveChangesAsync(cancellationToken);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

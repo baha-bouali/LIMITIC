@@ -1,6 +1,6 @@
 ﻿using FluentValidation.Results;
 
-namespace LIMTIC.WebAPI.Helpers
+namespace LIMTIC.Application.Helpers
 {
     public static class ValidationHelper
     {

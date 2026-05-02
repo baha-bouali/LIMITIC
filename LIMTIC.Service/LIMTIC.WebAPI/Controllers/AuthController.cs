@@ -2,7 +2,6 @@
 using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Contracts.Auth;
 using LIMTIC.Application.Settings;
-using LIMTIC.WebAPI.Helpers;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
@@ -27,25 +26,13 @@ namespace LIMTIC.WebAPI.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("login")]
-        public async Task<IActionResult> Login(
-            [FromBody] LoginRequest loginRequest,
-            [FromServices] IValidator<LoginCommand> validator)
+        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
             var loginCommand = new LoginCommand(loginRequest.Username.ToLower(), loginRequest.Password);
 
-            var validationResult = validator.Validate(loginCommand);
-            if (!validationResult.IsValid)
-            {
-                return BadRequest(new LoginResponse
-                {
-                    Message = "Validation failed",
-                    ValidationErrors = ValidationHelper.ParseValidationErrors(validationResult)
-                });
-            }
-
             var result = await _authService.Login(loginCommand);
             if (result.IsFailure)
-                return BadRequest(new LoginResponse { Message = result.Error });
+                return BadRequest(new LoginResponse { Message = result.Error, ValidationErrors = result.ValidationErrors });
 
             Response.Cookies.Append("refreshToken", result.Data!.RefreshToken, new CookieOptions
             {

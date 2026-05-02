@@ -1,13 +1,15 @@
-﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Domain.Abstractions;
+﻿using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Domain.Entities;
-using LIMTIC.Domain.Shared;
 using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Contracts.Auth;
+using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
-using FluentValidation;
+using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
+using System.ComponentModel.DataAnnotations;
 
 namespace LIMTIC.Application.Services.Auth
 {
@@ -19,6 +21,7 @@ namespace LIMTIC.Application.Services.Auth
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly RefreshTokenSettings _refreshTokenSettings;
+        private readonly IValidator<LoginCommand> _loginCommandValidator;
 
         public AuthService(
             IPasswordHasher passwordHasher,
@@ -26,7 +29,8 @@ namespace LIMTIC.Application.Services.Auth
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
             ICurrentUserService currentUserService,
-            IOptions<RefreshTokenSettings> refreshTokenSettings)
+            IOptions<RefreshTokenSettings> refreshTokenSettings,
+            IValidator<LoginCommand> loginCommandValidator)
         {
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
@@ -34,10 +38,15 @@ namespace LIMTIC.Application.Services.Auth
             _refreshTokenRepository = refreshTokenRepository;
             _currentUserService = currentUserService;
             _refreshTokenSettings = refreshTokenSettings.Value;
+            _loginCommandValidator = loginCommandValidator;
         }
 
         public async Task<Result<LoginCommandResponse>> Login(LoginCommand command)
         {
+            var validationResult = _loginCommandValidator.Validate(command);
+            if (!validationResult.IsValid)
+                return Result<LoginCommandResponse>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
+
             var user = await _userRepository.GetUserByEmailAsync(command.Username);
             if (user == null)
                 return Result<LoginCommandResponse>.FailureResult("Invalid username");
