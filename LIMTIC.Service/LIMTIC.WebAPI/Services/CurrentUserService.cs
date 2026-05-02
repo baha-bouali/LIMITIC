@@ -1,9 +1,8 @@
 ﻿using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Enums;
-using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 
-namespace LIMTIC.Infrastructure.Services
+namespace LIMTIC.WebAPI.Services
 {
     public class CurrentUserService : ICurrentUserService
     {

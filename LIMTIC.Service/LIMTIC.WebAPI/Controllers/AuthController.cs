@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using LIMTIC.Application.Commands.Login;
+﻿using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Contracts.Auth;
 using LIMTIC.Application.Settings;
 using LIMTIC.WebAPI.Models.Auth.Login;
@@ -10,7 +9,7 @@ using Microsoft.Extensions.Options;
 
 namespace LIMTIC.WebAPI.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth/")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -23,9 +22,8 @@ namespace LIMTIC.WebAPI.Controllers
             _refreshTokenSettings = refreshTokenSettings.Value;
         }
 
-        [HttpPost]
+        [HttpPost("login")]
         [AllowAnonymous]
-        [Route("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
         {
             var loginCommand = new LoginCommand(loginRequest.Username.ToLower(), loginRequest.Password);
@@ -45,9 +43,8 @@ namespace LIMTIC.WebAPI.Controllers
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
-        [HttpPost]
+        [HttpPost("refresh")]
         [Authorize]
-        [Route("refresh")]
         public async Task<IActionResult> Refresh()
         {
             Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
@@ -62,9 +59,8 @@ namespace LIMTIC.WebAPI.Controllers
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
-        [HttpPost]
+        [HttpPost("logout")]
         [Authorize]
-        [Route("logout")]
         public async Task<IActionResult> Logout()
         {
             await _authService.Logout();

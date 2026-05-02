@@ -1,15 +1,15 @@
-﻿using FluentValidation;
-using LIMTIC.Application.Commands.CreateUser;
+﻿using LIMTIC.Application.Commands.CreateUser;
 using LIMTIC.Application.Contracts.UserManagement;
 using LIMTIC.WebAPI.Mappers.UserMapper;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.WebAPI.Controllers
 {
     [ApiController]
-    [Route("users/")]
+    [Route("api/users/")]
     public class UsersManagementController : ControllerBase
     {
         private readonly IUsersManagementService _usersManagementService;
@@ -22,6 +22,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
+        [Authorize(Roles = "Super_Admin")]
         public async Task<IActionResult> AddUser(CreateUserRequest user)
         {
             var command = new CreateUserCommand
@@ -53,6 +54,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpGet("getUser")]
+        [Authorize]
         public async Task<IActionResult> GetUser(Guid id)
         {
             var result = await _usersManagementService.GetUserByIdAsync(id);
