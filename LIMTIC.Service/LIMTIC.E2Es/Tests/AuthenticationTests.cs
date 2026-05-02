@@ -1,11 +1,8 @@
-﻿using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Domain.Entities;
-using LIMTIC.Domain.Enums;
+﻿using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -27,6 +24,8 @@ namespace LIMTIC.E2Es.Tests
             // 5. Send a POST request to the API endpoint to authenticate the user
             // 6. Assert that the response isn't null and the access token is not empty
 
+            string superAdminAccessToken = await LoginAsSuperAdmin();
+
             var user = new CreateUserRequest
             {
                 FirstName = "John",
@@ -37,7 +36,7 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             };
 
-            var addResponse = await Client.AddUser(user);
+            var addResponse = await Client.AddUser(user, superAdminAccessToken);
             Assert.NotNull(addResponse);
 
             var loginRequest = new LoginRequest(user.Email, user.Password);
