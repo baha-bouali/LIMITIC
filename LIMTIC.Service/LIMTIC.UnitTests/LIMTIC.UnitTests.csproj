@@ -22,6 +22,7 @@
   <ItemGroup>
     <ProjectReference Include="..\LIMTIC.Application\LIMTIC.Application.csproj" />
     <ProjectReference Include="..\LIMTIC.Infrastructure\LIMTIC.Infrastructure.csproj" />
+    <ProjectReference Include="..\LIMTIC.WebAPI\LIMTIC.WebAPI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
