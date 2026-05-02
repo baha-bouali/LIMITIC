@@ -7,5 +7,6 @@ namespace LIMTIC.Domain.Abstractions
         Task<User?> GetUserByIdAsync(Guid userId);
         Task<User?> GetUserByEmailAsync(string email);
         Task<bool> AddUserAsync(User user);
+        Task<bool> UpdateUserPassword(User user, string password);
     }
 }

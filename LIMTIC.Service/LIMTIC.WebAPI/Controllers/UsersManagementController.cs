@@ -1,8 +1,11 @@
 ﻿using LIMTIC.Application.Commands.CreateUser;
+using LIMTIC.Application.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.UserManagement;
 using LIMTIC.WebAPI.Mappers.UserMapper;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
+
 using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.WebAPI.Controllers
@@ -14,7 +17,7 @@ namespace LIMTIC.WebAPI.Controllers
         private readonly IUsersManagementService _usersManagementService;
         private readonly IUserMapper _userMapper;
 
-        public UsersManagementController(IUsersManagementService usersManagementService, IUserMapper userMapper)    
+        public UsersManagementController(IUsersManagementService usersManagementService, IUserMapper userMapper)
         {
             _usersManagementService = usersManagementService;
             _userMapper = userMapper;
@@ -64,6 +67,31 @@ namespace LIMTIC.WebAPI.Controllers
             else
             {
                 return BadRequest(new GetUserResponse
+                {
+                    Message = result.Error
+                });
+            }
+        }
+        [HttpPost("changePassword")]
+        public async Task<IActionResult> ChangePassword(ChangeUserPasswordRequest request)
+        {
+            var command = new Application.Commands.ChangeUserPassword.ChangeUserPasswordCommand
+            {
+                Email = request.email,
+                OldPassword = request.OldPassword,
+                NewPassword = request.NewPassword
+            };
+            var result = await _usersManagementService.ChangeUserPasswordAsync(command);
+            if (result.Success)
+            {
+                return Ok(new ChangeUserPasswordResponse
+                {
+                    User = _userMapper.MapToUserDto(result.Data.User)
+                });
+            }
+            else
+            {
+                return BadRequest(new ChangeUserPasswordResponse
                 {
                     Message = result.Error
                 });
