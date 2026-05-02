@@ -21,23 +21,25 @@ namespace LIMTIC.E2Es.Tests
             // 3. Assert that the response indicates success and the user was added
             // 4. Send a GET request to the API endpoint to retrieve the user by ID
 
+            string superAdminAccessToken = await LoginAsSuperAdmin();
+
             var createUserRequest = new CreateUserRequest
             {
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john.doe@example.com",
-                PasswordHash = "hashedpassword",
+                Password = "password",
                 Role = UserRole.Admin,
-                IsActive = true,
+                IsActive = true
             };
 
-            var response = await Client.AddUser(createUserRequest);
+            var response = await Client.AddUser(createUserRequest, superAdminAccessToken);
             var createdUser = response.User;
             Assert.NotNull(createdUser);
             Assert.Null(response.Message);
 
             // 4. Send a GET request to the API endpoint to retrieve the user by ID
-            var retrievedUser = await Client.GetUserById(response.User.Id);
+            var retrievedUser = await Client.GetUserById(response.User.Id, superAdminAccessToken);
 
             Assert.NotNull(retrievedUser);
             Assert.Equal(createdUser.Id, retrievedUser.User.Id);

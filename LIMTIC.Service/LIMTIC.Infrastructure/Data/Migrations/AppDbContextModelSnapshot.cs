@@ -22,6 +22,32 @@ namespace LIMTIC.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex(new[] { "Token" }, "IX_RefreshToken")
+                        .IsUnique();
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -31,7 +57,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<string>("AvatarBlobName")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
@@ -76,6 +102,18 @@ namespace LIMTIC.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_User_LastName_NotEmpty", "LTRIM(RTRIM(\"LastName\")) <> ''");
                         });
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_RefreshToken_User");
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

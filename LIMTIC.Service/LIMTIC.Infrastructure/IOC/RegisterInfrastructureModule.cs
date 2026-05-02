@@ -1,9 +1,16 @@
-﻿using LIMTIC.Domain.Abstractions;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Settings;
+using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Repositories;
+using LIMTIC.Infrastructure.Services;
+using LIMTIC.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace LIMTIC.Infrastructure.IOC
 {
@@ -17,8 +24,38 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-            // Register infrastructure services here
+            // configure refresh token settings
+            services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
+
+            // configure jwt settings
+            services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+
+            var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()!;
+
+            // register authentication middleware
+            services.AddAuthentication(defaultScheme: "jwt")
+                .AddJwtBearer("jwt", options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience,
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(jwtSettings.Key)),
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
+
+            // Register infrastructure services
+            services.AddHttpContextAccessor();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddSingleton<IPasswordHasher, PasswordHasher>();
+            services.AddSingleton<ITokenService, TokenService>();
 
             return services;
         }

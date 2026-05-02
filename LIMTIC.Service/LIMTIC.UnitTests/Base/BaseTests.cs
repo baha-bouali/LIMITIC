@@ -4,6 +4,7 @@ using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
+using LIMTIC.WebAPI.IOC;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,7 @@ namespace LIMTIC.UnitTests.Base
             // Register infrastructure and application modules
             services.AddInfrastructure(configuration);
             services.AddApplication();
+            services.AddWebApi();
 
             // Remove previous AppDbContext registration if present
             var descriptor = services.FirstOrDefault(

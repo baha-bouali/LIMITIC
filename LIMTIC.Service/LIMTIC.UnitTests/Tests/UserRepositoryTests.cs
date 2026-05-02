@@ -27,7 +27,7 @@ namespace LIMTIC.UnitTests.Tests
                 AvatarBlobName = null,
                 IsActive = true,
                 CreatedBy = Guid.NewGuid(),
-                CreatedAt = DateTime.UtcNow,
+                CreatedAtUtc = DateTime.UtcNow,
             };
 
             // 2. Send the user object to the repository method responsible for adding users and assert success
