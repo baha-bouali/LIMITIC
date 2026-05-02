@@ -28,9 +28,7 @@ namespace LIMTIC.E2Es.Tests
                 Email = "john.doe@example.com",
                 PasswordHash = "hashedpassword",
                 Role = UserRole.Admin,
-                IsActive = true,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow,
+                IsActive = true
             };
 
             var response = await Client.AddUser(createUserRequest);

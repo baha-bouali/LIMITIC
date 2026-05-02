@@ -7,7 +7,7 @@ using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers.Auth
+namespace LIMTIC.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -33,15 +33,21 @@ namespace LIMTIC.WebAPI.Controllers.Auth
 
             var validationResult = validator.Validate(loginCommand);
             if (!validationResult.IsValid)
-                return BadRequest(ValidationHelper.ParseValidationErrors(validationResult));
+            {
+                return BadRequest(new LoginResponse
+                {
+                    Message = "Validation failed",
+                    ValidationErrors = ValidationHelper.ParseValidationErrors(validationResult)
+                });
+            }
 
             int refreshTokenExpirationDays = _configuration.GetValue<int>("RefreshToken:ExpireInDays");
 
             var result = await _authService.Login(loginCommand, refreshTokenExpirationDays);
             if (result.IsFailure)
-                return BadRequest(new { error = result.ErrorMessage });
+                return BadRequest(new LoginResponse { Message = result.Error });
 
-            Response.Cookies.Append("refreshToken", result.Value!.RefreshToken, new CookieOptions
+            Response.Cookies.Append("refreshToken", result.Data!.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -49,7 +55,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 Expires = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
             });
 
-            return Ok(new LoginResponse(result.Value!.AccessToken));
+            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
         [HttpPost]
@@ -63,10 +69,10 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             if (result.IsFailure)
             {
                 await _authService.Logout();
-                return Unauthorized(result.ErrorMessage);
+                return Unauthorized(new LoginResponse { Message = result.Error });
             }
 
-            return Ok(new LoginResponse(result.Value!.AccessToken));
+            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
         [HttpPost]
@@ -83,7 +89,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new LogoutResponse(true));
+            return Ok(new LogoutResponse { Success = true });
         }
     }
 }

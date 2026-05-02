@@ -29,7 +29,7 @@ namespace LIMTIC.Infrastructure.Repositories
                 .FirstOrDefaultAsync(e => e.Token == token);
         }
 
-        public async Task RevokeRefreshToken(Guid userId)
+        public async Task RevokeRefreshTokenAsync(Guid userId)
         {
             await _dbContext
                 .RefreshTokens

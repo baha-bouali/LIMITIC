@@ -1,6 +1,9 @@
-﻿namespace LIMTIC.WebAPI.Models.Auth.Login
+﻿using LIMTIC.WebAPI.Base;
+
+namespace LIMTIC.WebAPI.Models.Auth.Login
 {
-    public record LoginResponse(string AccessToken)
+    public class LoginResponse : BaseResponse
     {
+        public string? AccessToken { get; set; }
     }
 }

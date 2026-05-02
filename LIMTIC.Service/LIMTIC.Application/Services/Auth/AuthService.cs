@@ -29,14 +29,14 @@ namespace LIMTIC.Application.Services.Auth
             _currentUserService = currentUserService;
         }
 
-        public async Task<ResultT<LoginCommandResponse>> Login(LoginCommand loginRequest, int refreshTokenExpirationDays)
+        public async Task<Result<LoginCommandResponse>> Login(LoginCommand loginRequest, int refreshTokenExpirationDays)
         {
-            var user = await _userRepository.GetUserByEmail(loginRequest.Username);
+            var user = await _userRepository.GetUserByEmailAsync(loginRequest.Username);
             if (user == null)
-                return ResultT<LoginCommandResponse>.Failure("Invalid username");
+                return Result<LoginCommandResponse>.FailureResult("Invalid username");
 
             if (!_passwordHasher.VerifyPassword(user.PasswordHash, loginRequest.Password))
-                return ResultT<LoginCommandResponse>.Failure("Invalid password");
+                return Result<LoginCommandResponse>.FailureResult("Invalid password");
 
             string accessToken = _tokenService.GenerateAccessToken(user);
             string refreshToken = _tokenService.GenerateRefreshToken();
@@ -49,30 +49,30 @@ namespace LIMTIC.Application.Services.Auth
                 ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays)
             });
 
-            return ResultT<LoginCommandResponse>.Success(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
         }
 
-        public async Task<ResultT<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
+        public async Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
         {
             if (refreshToken == null)
-                return ResultT<LoginCommandResponse>.Failure("Refresh token not found in cookie");
+                return Result<LoginCommandResponse>.FailureResult("Refresh token not found in cookie");
 
             var token = await _refreshTokenRepository.GetRefreshTokenAsync(refreshToken);
             if (token == null)
-                return ResultT<LoginCommandResponse>.Failure("Refresh token not found");
+                return Result<LoginCommandResponse>.FailureResult("Refresh token not found");
 
             if (token.ExpiryDate > DateTime.UtcNow)
-                return ResultT<LoginCommandResponse>.Failure("Refresh token is expired");
+                return Result<LoginCommandResponse>.FailureResult("Refresh token is expired");
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
-            return ResultT<LoginCommandResponse>.Success(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
         }
 
         public async Task Logout()
         {
             var currentUserId = _currentUserService.UserId;
-            await _refreshTokenRepository.RevokeRefreshToken(currentUserId);
+            await _refreshTokenRepository.RevokeRefreshTokenAsync(currentUserId);
         }
     }
 }

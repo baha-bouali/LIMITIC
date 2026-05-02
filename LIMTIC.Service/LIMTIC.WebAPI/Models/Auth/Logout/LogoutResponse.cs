@@ -1,6 +1,9 @@
-﻿namespace LIMTIC.WebAPI.Models.Auth.Logout
+﻿using LIMTIC.WebAPI.Base;
+
+namespace LIMTIC.WebAPI.Models.Auth.Logout
 {
-    public record LogoutResponse(bool Success)
+    public class LogoutResponse : BaseResponse
     {
+        public bool Success { get; set; }
     }
 }

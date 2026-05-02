@@ -8,7 +8,7 @@ namespace LIMTIC.E2Es.Extensions
 {
     public static class ClientExtensions
     {
-        public static async Task<CreateUserResponse> AddUser(this HttpClient client, CreateUserRequest createUserRequest)
+        public static async Task<CreateUserResponse?> AddUser(this HttpClient client, CreateUserRequest createUserRequest)
         {
             var response = await client.PostAsJsonAsync("users/addUser/", createUserRequest);
             return await response.Content.ReadFromJsonAsync<CreateUserResponse>();

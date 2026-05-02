@@ -4,6 +4,7 @@ using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.Auth.Login;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.E2Es.Tests
@@ -29,27 +30,24 @@ namespace LIMTIC.E2Es.Tests
             // 5. Send a POST request to the API endpoint to authenticate the user
             // 6. Assert that the response isn't null and the access token is not empty
 
-            var user = new User
+            var user = new CreateUserRequest
             {
-                Id = Guid.NewGuid(),
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "John.Doe@example.com",
                 PasswordHash = PasswordHasher.HashPassword("password"),
                 Role = UserRole.Admin,
-                AvatarBlobName = null,
-                IsActive = true,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
+                IsActive = true
             };
 
             var addResponse = await Client.AddUser(user);
-            Assert.True(addResponse, "User added successfully");
+            Assert.NotNull(addResponse);
 
-            var loginRequest = new LoginRequest("John.Doe@example.com", "password");
+            var loginRequest = new LoginRequest(addResponse.User.Email, "password");
 
             var authResponse = await Client.AuthenticateUser(loginRequest);
             Assert.NotNull(authResponse);
+            Assert.NotNull(authResponse.AccessToken);
             Assert.NotEmpty(authResponse.AccessToken);
         }
     }
