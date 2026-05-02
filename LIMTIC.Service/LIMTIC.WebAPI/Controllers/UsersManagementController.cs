@@ -1,8 +1,11 @@
-﻿using LIMTIC.Application.Commands.CreateUser;
+﻿using FluentValidation;
+using LIMTIC.Application.Commands.CreateUser;
 using LIMTIC.Application.Contracts.UserManagement;
+using LIMTIC.WebAPI.Helpers;
 using LIMTIC.WebAPI.Mappers.UserMapper;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.WebAPI.Controllers
@@ -21,7 +24,9 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
-        public async Task<IActionResult> AddUser(CreateUserRequest user)
+        public async Task<IActionResult> AddUser(
+            CreateUserRequest user,
+            [FromServices] IValidator<CreateUserCommand> validator)
         {
             var command = new CreateUserCommand
             {
@@ -32,6 +37,16 @@ namespace LIMTIC.WebAPI.Controllers
                 Role = user.Role,
                 IsActive = true,
             };
+
+            var validationResult = validator.Validate(command);
+            if (!validationResult.IsValid)
+            {
+                return BadRequest(new CreateUserResponse
+                {
+                    Message = "Validation failed",
+                    ValidationErrors = ValidationHelper.ParseValidationErrors(validationResult)
+                });
+            }
 
             var result = await _usersManagementService.CreateUserAsync(command);
             if (result.Success)

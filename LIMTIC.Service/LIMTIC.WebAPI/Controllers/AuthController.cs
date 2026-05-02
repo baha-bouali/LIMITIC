@@ -29,7 +29,7 @@ namespace LIMTIC.WebAPI.Controllers
             [FromBody] LoginRequest loginRequest,
             [FromServices] IValidator<LoginCommand> validator)
         {
-            var loginCommand = new LoginCommand(loginRequest.Username, loginRequest.Password);
+            var loginCommand = new LoginCommand(loginRequest.Username.ToLower(), loginRequest.Password);
 
             var validationResult = validator.Validate(loginCommand);
             if (!validationResult.IsValid)

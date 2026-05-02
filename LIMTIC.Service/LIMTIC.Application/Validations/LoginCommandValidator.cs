@@ -3,9 +3,9 @@ using LIMTIC.Application.Commands.Login;
 
 namespace LIMTIC.Application.Validations
 {
-    public class LoginRequestValidator : AbstractValidator<LoginCommand>
+    public class LoginCommandValidator : AbstractValidator<LoginCommand>
     {
-        public LoginRequestValidator()
+        public LoginCommandValidator()
         {
             RuleFor(e => e.Username)
                 .NotEmpty().WithMessage("Username is required")
