@@ -1,6 +1,7 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
-using Microsoft.Extensions.Configuration;
+using LIMTIC.Infrastructure.Settings;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -11,11 +12,11 @@ namespace LIMTIC.Infrastructure.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration _configuration;
+        private readonly JwtSettings _jwtSettings;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IOptions<JwtSettings> jwtSettings)
         {
-            _configuration = configuration;
+            _jwtSettings = jwtSettings.Value;
         }
 
         public string GenerateAccessToken(User user)
@@ -28,15 +29,15 @@ namespace LIMTIC.Infrastructure.Services
             };
 
             var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+                Encoding.UTF8.GetBytes(_jwtSettings.Key));
 
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: _configuration["Jwt:Issuer"],
-                audience: _configuration["Jwt:Audience"],
+                issuer: _jwtSettings.Issuer,
+                audience: _jwtSettings.Audience,
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(int.Parse(_configuration["Jwt:ExpireInMinutes"]!)),
+                expires: DateTime.Now.AddMinutes(_jwtSettings.ExpireInMinutes),
                 signingCredentials: credentials
             );
 

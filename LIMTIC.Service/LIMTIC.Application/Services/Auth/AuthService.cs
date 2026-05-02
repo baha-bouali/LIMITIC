@@ -5,6 +5,9 @@ using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Shared;
 using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Contracts.Auth;
+using LIMTIC.Application.Settings;
+using FluentValidation;
+using Microsoft.Extensions.Options;
 
 namespace LIMTIC.Application.Services.Auth
 {
@@ -15,22 +18,25 @@ namespace LIMTIC.Application.Services.Auth
         private readonly IUserRepository _userRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly RefreshTokenSettings _refreshTokenSettings;
 
         public AuthService(
             IPasswordHasher passwordHasher,
             ITokenService tokenService,
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IOptions<RefreshTokenSettings> refreshTokenSettings)
         {
             _passwordHasher = passwordHasher;
             _tokenService = tokenService;
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _currentUserService = currentUserService;
+            _refreshTokenSettings = refreshTokenSettings.Value;
         }
 
-        public async Task<Result<LoginCommandResponse>> Login(LoginCommand command, int refreshTokenExpirationDays)
+        public async Task<Result<LoginCommandResponse>> Login(LoginCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.Username);
             if (user == null)
@@ -47,7 +53,7 @@ namespace LIMTIC.Application.Services.Auth
                 Id = Guid.NewGuid(),
                 Token = refreshToken,
                 UserId = user.Id,
-                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays)
+                ExpiryDate = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
             });
 
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));

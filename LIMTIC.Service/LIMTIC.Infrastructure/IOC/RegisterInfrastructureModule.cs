@@ -1,9 +1,11 @@
 ﻿using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Repositories;
 using LIMTIC.Infrastructure.Services;
+using LIMTIC.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +24,14 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            // configure refresh token settings
+            services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
+
+            // configure jwt settings
+            services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+
+            var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()!;
+
             // register authentication middleware
             services.AddAuthentication(defaultScheme: "jwt")
                 .AddJwtBearer("jwt", options =>
@@ -32,10 +42,10 @@ namespace LIMTIC.Infrastructure.IOC
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
-                        ValidIssuer = configuration["Jwt:Issuer"],
-                        ValidAudience = configuration["Jwt:Audience"],
+                        ValidIssuer = jwtSettings.Issuer,
+                        ValidAudience = jwtSettings.Audience,
                         IssuerSigningKey = new SymmetricSecurityKey(
-                            Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)),
+                            Encoding.UTF8.GetBytes(jwtSettings.Key)),
                         ClockSkew = TimeSpan.Zero
                     };
                 });

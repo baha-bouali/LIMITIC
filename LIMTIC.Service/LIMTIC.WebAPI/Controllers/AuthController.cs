@@ -1,12 +1,13 @@
 ﻿using FluentValidation;
 using LIMTIC.Application.Commands.Login;
 using LIMTIC.Application.Contracts.Auth;
-using LIMTIC.Application.Services.Auth;
+using LIMTIC.Application.Settings;
 using LIMTIC.WebAPI.Helpers;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace LIMTIC.WebAPI.Controllers
 {
@@ -15,12 +16,12 @@ namespace LIMTIC.WebAPI.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IConfiguration _configuration;
+        private readonly RefreshTokenSettings _refreshTokenSettings;
 
-        public AuthController(IAuthService authService, IConfiguration configuration)
+        public AuthController(IAuthService authService, IOptions<RefreshTokenSettings> refreshTokenSettings)
         {
             _authService = authService;
-            _configuration = configuration;
+            _refreshTokenSettings = refreshTokenSettings.Value;
         }
 
         [HttpPost]
@@ -42,9 +43,7 @@ namespace LIMTIC.WebAPI.Controllers
                 });
             }
 
-            int refreshTokenExpirationDays = _configuration.GetValue<int>("RefreshToken:ExpireInDays");
-
-            var result = await _authService.Login(loginCommand, refreshTokenExpirationDays);
+            var result = await _authService.Login(loginCommand);
             if (result.IsFailure)
                 return BadRequest(new LoginResponse { Message = result.Error });
 
@@ -53,7 +52,7 @@ namespace LIMTIC.WebAPI.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays),
             });
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });

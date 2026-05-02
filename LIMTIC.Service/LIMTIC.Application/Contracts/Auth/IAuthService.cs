@@ -5,7 +5,7 @@ namespace LIMTIC.Application.Contracts.Auth
 {
     public interface IAuthService
     {
-        Task<Result<LoginCommandResponse>> Login(LoginCommand command, int refreshTokenExpirationDays);
+        Task<Result<LoginCommandResponse>> Login(LoginCommand command);
         Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken);
         Task Logout();
     }
