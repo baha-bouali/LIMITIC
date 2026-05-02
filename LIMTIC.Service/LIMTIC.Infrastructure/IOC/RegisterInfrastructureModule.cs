@@ -52,7 +52,6 @@ namespace LIMTIC.Infrastructure.IOC
 
             // Register infrastructure services
             services.AddHttpContextAccessor();
-            services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();

@@ -15,10 +15,10 @@ namespace LIMTIC.WebAPI
 
             // Add application & infrastructure services
             builder.Services
+                .AddWebApi()
                 .AddApplication()
                 .AddInfrastructure(builder.Configuration)
-                .AddMappers()
-                .AddWebApi();
+                .AddMappers();
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
