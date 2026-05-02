@@ -26,7 +26,7 @@ namespace LIMTIC.E2Es.Tests
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "john.doe@example.com",
-                PasswordHash = "hashedpassword",
+                Password = "password",
                 Role = UserRole.Admin,
                 IsActive = true
             };

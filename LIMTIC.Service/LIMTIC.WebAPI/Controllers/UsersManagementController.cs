@@ -33,7 +33,7 @@ namespace LIMTIC.WebAPI.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                PasswordHash = user.PasswordHash,
+                Password = user.Password,
                 Role = user.Role,
                 IsActive = true,
             };

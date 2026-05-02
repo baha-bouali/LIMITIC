@@ -1,4 +1,5 @@
-﻿using LIMTIC.Application.Commands.CreateUser;
+﻿using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Commands.CreateUser;
 using LIMTIC.Application.Commands.GetUser;
 using LIMTIC.Application.Contracts.UserManagement;
 using LIMTIC.Domain.Abstractions;
@@ -10,10 +11,12 @@ namespace LIMTIC.Application.Services.UserManagement
     public class UsersManagementService : IUsersManagementService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasher _passwordHasher;
 
-        public UsersManagementService(IUserRepository userRepository)
+        public UsersManagementService(IUserRepository userRepository, IPasswordHasher passwordHasher)
         {
             _userRepository = userRepository;
+            _passwordHasher = passwordHasher;
         }
 
         public async Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command)
@@ -26,7 +29,7 @@ namespace LIMTIC.Application.Services.UserManagement
                 email: command.Email, 
                 firstName: command.FirstName, 
                 lastName: command.LastName, 
-                passwordHash: command.PasswordHash, 
+                passwordHash: _passwordHasher.HashPassword(command.Password), 
                 isActive: true,
                 role: command.Role);
 

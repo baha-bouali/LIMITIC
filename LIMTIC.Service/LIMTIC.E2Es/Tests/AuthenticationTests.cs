@@ -12,9 +12,6 @@ namespace LIMTIC.E2Es.Tests
     [Collection("E2E collection")]
     public class AuthenticationTests : BaseE2ETests
     {
-        private IPasswordHasher PasswordHasher => Factory.Services
-            .GetRequiredService<IPasswordHasher>();
-
         public AuthenticationTests(PostgresFixture fixture) : base(fixture)
         {
         }
@@ -35,7 +32,7 @@ namespace LIMTIC.E2Es.Tests
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "John.Doe@example.com",
-                PasswordHash = PasswordHasher.HashPassword("password"),
+                Password = "password",
                 Role = UserRole.Admin,
                 IsActive = true
             };
@@ -43,7 +40,7 @@ namespace LIMTIC.E2Es.Tests
             var addResponse = await Client.AddUser(user);
             Assert.NotNull(addResponse);
 
-            var loginRequest = new LoginRequest(addResponse.User.Email, "password");
+            var loginRequest = new LoginRequest(user.Email, user.Password);
 
             var authResponse = await Client.AuthenticateUser(loginRequest);
             Assert.NotNull(authResponse);

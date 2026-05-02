@@ -17,8 +17,9 @@ namespace LIMTIC.Application.Validations
                 .NotNull().NotEmpty().WithMessage("Email is required")
                 .EmailAddress().WithMessage("Email must be a valid email address");
 
-            RuleFor(e => e.PasswordHash)
-                .NotNull().NotEmpty().WithMessage("Password is required");
+            RuleFor(e => e.Password)
+                .NotNull().NotEmpty().WithMessage("Password is required")
+                .MinimumLength(6).WithMessage("Password must be at least 6 characters long");
         }
     }
 }

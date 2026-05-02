@@ -29,13 +29,13 @@ namespace LIMTIC.Application.Services.Auth
             _currentUserService = currentUserService;
         }
 
-        public async Task<Result<LoginCommandResponse>> Login(LoginCommand loginRequest, int refreshTokenExpirationDays)
+        public async Task<Result<LoginCommandResponse>> Login(LoginCommand command, int refreshTokenExpirationDays)
         {
-            var user = await _userRepository.GetUserByEmailAsync(loginRequest.Username);
+            var user = await _userRepository.GetUserByEmailAsync(command.Username);
             if (user == null)
                 return Result<LoginCommandResponse>.FailureResult("Invalid username");
 
-            if (!_passwordHasher.VerifyPassword(user.PasswordHash, loginRequest.Password))
+            if (!_passwordHasher.VerifyPassword(user.PasswordHash, command.Password))
                 return Result<LoginCommandResponse>.FailureResult("Invalid password");
 
             string accessToken = _tokenService.GenerateAccessToken(user);
