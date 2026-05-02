@@ -3,6 +3,7 @@ using System;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,42 +12,18 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LIMTIC.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260501214945_AddUsersIndexes")]
+    partial class AddUsersIndexes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("ProductVersion", "8.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex(new[] { "Token" }, "IX_RefreshToken")
-                        .IsUnique();
-
-                    b.ToTable("RefreshTokens");
-                });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.User", b =>
                 {
@@ -57,7 +34,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<string>("AvatarBlobName")
                         .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
@@ -102,18 +79,6 @@ namespace LIMTIC.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_User_LastName_NotEmpty", "LTRIM(RTRIM(\"LastName\")) <> ''");
                         });
-                });
-
-            modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_RefreshToken_User");
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

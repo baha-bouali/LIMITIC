@@ -1,4 +1,6 @@
 ﻿using FluentValidation;
+using LIMTIC.Application.Contracts.UserManagement;
+using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Application.Services;
 using LIMTIC.Application.Services.Auth;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +16,7 @@ namespace LIMTIC.Application.IOC
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<AuthService>();
 
-            services.AddScoped<UsersManagementService>();
+            services.AddScoped<IUsersManagementService, UsersManagementService>();
 
             return services;
         }

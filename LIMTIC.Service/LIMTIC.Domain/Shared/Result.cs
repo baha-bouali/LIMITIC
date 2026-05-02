@@ -1,18 +1,15 @@
 ﻿namespace LIMTIC.Domain.Shared
 {
-    public class Result
+    public class Result<T>
     {
-        protected internal Result(bool isSuccess, string? errorMessage = null)
-        {
-            IsSuccess = isSuccess;
-            ErrorMessage = errorMessage ?? string.Empty;
-        }
+        public bool Success { get; private set; }
+        public T Data { get; private set; }
+        public string Error { get; private set; }
 
-        public bool IsSuccess { get; }
-        public bool IsFailure => !IsSuccess;
-        public string ErrorMessage { get; }
+      public static Result<T> SuccessResult(T data) =>
+            new Result<T> { Success = true, Data = data };
 
-        public static Result Success() => new Result(true);
-        public static Result Failure(string errorMessage) => new Result(false, errorMessage);
+        public static Result<T> FailureResult(string error) =>
+            new Result<T> { Success = false, Error = error };
     }
 }
