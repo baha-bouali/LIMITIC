@@ -1,7 +1,13 @@
 ﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.Events;
+using LIMTIC.Domain.Entities.RefreshToken;
+using LIMTIC.Domain.Entities.ResearchAxis;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
-using LIMTIC.Infrastructure.Data.Configurations;
+using LIMTIC.Infrastructure.Data.Configurations.Events;
+using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
+using LIMTIC.Infrastructure.Data.Configurations.ResearchAxis;
+using LIMTIC.Infrastructure.Data.Configurations.Users;
 using Microsoft.EntityFrameworkCore;
 
 namespace LIMTIC.Infrastructure.Data
@@ -17,8 +23,23 @@ namespace LIMTIC.Infrastructure.Data
             _currentUserService = currentUserService;
         }
 
-        public DbSet<User> Users { get; set; }
-        public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<RefreshTokenEntity> RefreshTokens { get; set; }
+        public DbSet<UserEntity> Users { get; set; }
+        public DbSet<ResearcherEntity> Researchers { get; set; }
+        public DbSet<PhDStudentEntity> PhDStudents { get; set; }
+        public DbSet<MasterianEntity> Masterians { get; set; }
+
+        //public DbSet<ResearchAxisEntity> ResearchAxes { get; set; }
+
+        //public DbSet<EventEntity> Events { get; set; }
+        //public DbSet<SpeakerEntity> Speakers { get; set; }
+
+        //public DbSet<PublicationEntity> Publications { get; set; }
+        //public DbSet<BookChapterEntity> BookChapters { get; set; }
+        //public DbSet<InternationalConferenceEntity> InternationalConferences { get; set; }
+        //public DbSet<NationalConferenceEntity> NationalConferences { get; set; }
+        //public DbSet<TechnicalReportEntity> TechnicalReports { get; set; }
+        //public DbSet<JournalArticleEntity> JournalArticles { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -41,8 +62,25 @@ namespace LIMTIC.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+           
+            modelBuilder.ApplyConfiguration(new UserConfiguration());
+            modelBuilder.ApplyConfiguration(new PhDStudentConfiguration());
+            modelBuilder.ApplyConfiguration(new MasterianConfiguration());
+            modelBuilder.ApplyConfiguration(new ResearcherConfiguration());
+
+            //modelBuilder.ApplyConfiguration(new ResearchAxisConfiguration());
+
+            //modelBuilder.ApplyConfiguration(new EventConfiguration());
+            //modelBuilder.ApplyConfiguration(new SpeakerConfiguration());
+            
+
+            //modelBuilder.ApplyConfiguration(new PublicationConfiguration());
+            //modelBuilder.ApplyConfiguration(new BookChapterConfiguration());
+            //modelBuilder.ApplyConfiguration(new InternationalConferenceConfiguration());
+            //modelBuilder.ApplyConfiguration(new NationalConferenceConfiguration());
+            //modelBuilder.ApplyConfiguration(new TechnicalReportConfiguration());
+            //modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }
