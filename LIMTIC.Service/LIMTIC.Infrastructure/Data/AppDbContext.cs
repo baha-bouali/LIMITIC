@@ -29,7 +29,7 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<PhDStudentEntity> PhDStudents { get; set; }
         public DbSet<MasterianEntity> Masterians { get; set; }
 
-        //public DbSet<ResearchAxisEntity> ResearchAxes { get; set; }
+        public DbSet<ResearchAxisEntity> ResearchAxes { get; set; }
 
         //public DbSet<EventEntity> Events { get; set; }
         //public DbSet<SpeakerEntity> Speakers { get; set; }
@@ -69,7 +69,7 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new MasterianConfiguration());
             modelBuilder.ApplyConfiguration(new ResearcherConfiguration());
 
-            //modelBuilder.ApplyConfiguration(new ResearchAxisConfiguration());
+            modelBuilder.ApplyConfiguration(new ResearchAxisConfiguration());
 
             //modelBuilder.ApplyConfiguration(new EventConfiguration());
             //modelBuilder.ApplyConfiguration(new SpeakerConfiguration());
