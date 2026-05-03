@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using LIMTIC.WebAPI.Base;
 
-namespace LIMTIC.Application.Commands.ChangeUserPassword
+namespace LIMTIC.WebAPI.Models.Auth.ResetPassword
 {
-    public class ResetPasswordCommand
+    public class ResetPasswordRequest
     {
         public string email { get; set; }
         public string NewPassword { get; set; }
         public string ResetToken { get; set; }
-
-
-    }
+    
+}
 }

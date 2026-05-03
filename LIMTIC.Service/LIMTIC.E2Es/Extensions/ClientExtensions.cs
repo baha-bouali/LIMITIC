@@ -1,9 +1,13 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using LIMTIC.Domain.Entities;
+using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
+using LIMTIC.WebAPI.Models.Auth.ResetPassword;
+using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
+using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -45,6 +49,27 @@ namespace LIMTIC.E2Es.Extensions
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<LoginResponse>();
             return null;
+        }
+        public static async Task<HttpResponseMessage> ChangePassword(this HttpClient client,ChangeUserPasswordRequest request,string accessToken)
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            return await client.PostAsJsonAsync("api/users/changePassword", request);
+        }
+        public static async Task<HttpResponseMessage> ForgotPassword(this HttpClient client, ForgetPasswordRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/forgotPassword", request);
+        }
+
+        public static async Task<HttpResponseMessage> VerifyOTP(this HttpClient client, VerifyResetCodeRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/verifyOTP", request);
+        }
+
+        public static async Task<HttpResponseMessage> ResetPassword(this HttpClient client, ResetPasswordRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/resetPassword", request);
         }
     }
 }

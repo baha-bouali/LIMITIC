@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LIMTIC.Application.Commands.ChangeUserPassword
+namespace LIMTIC.Application.Contracts.Commands.VerifyResetCode
 {
     public class VerifyResetCodeCommandResponse
     {

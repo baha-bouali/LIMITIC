@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LIMTIC.WebAPI.Models.UserManagement.ForgetPassword
+namespace LIMTIC.Application.Contracts.Commands.VerifyResetCode
 {
-    public class ForgetPasswordRequest
+   public class VerifyResetCodeCommand
     {
         public string email { get; set; }
+        public string otpToken { get; set; }
     }
 }

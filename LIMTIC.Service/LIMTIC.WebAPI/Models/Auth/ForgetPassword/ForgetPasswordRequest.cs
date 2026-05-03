@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace LIMTIC.Application.Commands.ChangeUserPassword
+namespace LIMTIC.WebAPI.Models.Auth.ForgetPassword
 {
-    public class ForgetPasswordCommand
+    public class ForgetPasswordRequest
     {
         public string email { get; set; }
     }

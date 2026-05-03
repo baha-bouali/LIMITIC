@@ -17,7 +17,7 @@ namespace LIMTIC.UnitTests.Base
         protected readonly AppDbContext DbContext;
         protected IUserRepository UserRepository => ServiceProvider.GetRequiredService<IUserRepository>();
         protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
-      
+        protected IResetPasswordRepository ResetPasswordRepository => ServiceProvider.GetRequiredService<IResetPasswordRepository>();
         protected BaseTests()
         {
             var services = new ServiceCollection();
