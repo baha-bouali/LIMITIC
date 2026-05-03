@@ -1,4 +1,4 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.UnitTests.Base;
 
@@ -16,7 +16,7 @@ namespace LIMTIC.UnitTests.Tests
             // 4. Retrieve the user by email and assert that the retrieved user matches the original user
 
             // 1. Create a new user object with valid data
-            var user = new User
+            var user = new UserEntity
             {
                 Id = Guid.NewGuid(),
                 FirstName = "John",

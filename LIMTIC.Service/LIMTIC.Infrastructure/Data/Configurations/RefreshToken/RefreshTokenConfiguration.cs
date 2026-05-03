@@ -1,12 +1,12 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.RefreshToken;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LIMTIC.Infrastructure.Data.Configurations
+namespace LIMTIC.Infrastructure.Data.Configurations.RefreshToken
 {
-    public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshToken>
+    public class RefreshTokenConfiguration : IEntityTypeConfiguration<RefreshTokenEntity>
     {
-        public void Configure(EntityTypeBuilder<RefreshToken> builder)
+        public void Configure(EntityTypeBuilder<RefreshTokenEntity> builder)
         {
             builder.HasKey(e => e.Id);
 

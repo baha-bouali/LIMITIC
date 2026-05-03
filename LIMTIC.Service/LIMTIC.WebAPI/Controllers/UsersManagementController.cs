@@ -1,8 +1,8 @@
 ﻿using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.WebAPI.Mappers.UserMapper;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using LIMTIC.Application.DTOs.UserManagement.CreateUser;
+using LIMTIC.Application.DTOs.UserManagement.GetUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -22,7 +22,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
-        [Authorize(Roles = "Super_Admin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> AddUser(CreateUserRequest user)
         {
             var command = new CreateUserCommand
@@ -73,5 +73,5 @@ namespace LIMTIC.WebAPI.Controllers
                 });
             }
         }
-    }
+	}
 }

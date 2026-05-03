@@ -2,7 +2,7 @@
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.Application.DTOs.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {

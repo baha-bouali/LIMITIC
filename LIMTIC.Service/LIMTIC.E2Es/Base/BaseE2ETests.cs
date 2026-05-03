@@ -1,5 +1,5 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.Infrastructure.Data;
@@ -34,14 +34,14 @@ namespace LIMTIC.E2Es.Base
             if (db.Users.Any(u => u.Email == "admin@test.com"))
                 return;
 
-            db.Users.Add(new User
+            db.Users.Add(new UserEntity
             {
                 Id = Guid.NewGuid(),
                 FirstName = "Admin",
                 LastName = "Admin",
                 IsActive = true,
                 Email = "admin@test.com",
-                Role = UserRole.Super_Admin,
+                Role = UserRole.SuperAdmin,
                 PasswordHash = PasswordHasher.HashPassword("AdminPassword"),
                 CreatedAtUtc = DateTime.UtcNow,
                 CreatedBy = Guid.Empty

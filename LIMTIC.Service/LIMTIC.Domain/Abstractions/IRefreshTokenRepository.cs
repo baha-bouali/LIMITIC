@@ -1,11 +1,11 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.RefreshToken;
 
 namespace LIMTIC.Domain.Abstractions
 {
     public interface IRefreshTokenRepository
     {
-        Task AddRefreshTokenAsync(RefreshToken refreshToken);
-        Task<RefreshToken?> GetRefreshTokenAsync(string token);
+        Task AddRefreshTokenAsync(RefreshTokenEntity refreshToken);
+        Task<RefreshTokenEntity?> GetRefreshTokenAsync(string token);
         Task RevokeRefreshTokenAsync(Guid userId);
     }
 }

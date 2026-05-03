@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Domain.Enums;
 
-namespace LIMTIC.WebAPI.Models.UserManagement.CreateUser
+namespace LIMTIC.Application.DTOs.UserManagement.CreateUser
 {
     public class CreateUserRequest
     {
