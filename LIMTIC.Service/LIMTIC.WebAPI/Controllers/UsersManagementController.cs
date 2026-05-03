@@ -1,5 +1,5 @@
-﻿using LIMTIC.Application.Commands.CreateUser;
-using LIMTIC.Application.Contracts.UserManagement;
+﻿using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.WebAPI.Mappers.UserMapper;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;

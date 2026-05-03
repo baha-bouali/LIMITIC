@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 
-namespace LIMTIC.Infrastructure.Services
+namespace LIMTIC.Infrastructure.Persistence
 {
     public class PasswordHasher : IPasswordHasher
     {

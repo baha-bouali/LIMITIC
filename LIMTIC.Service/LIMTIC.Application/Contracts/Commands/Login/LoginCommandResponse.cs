@@ -1,4 +1,4 @@
-﻿namespace LIMTIC.Application.Commands.Login
+﻿namespace LIMTIC.Application.Contracts.Commands.Login
 {
     public record LoginCommandResponse(
         string AccessToken,

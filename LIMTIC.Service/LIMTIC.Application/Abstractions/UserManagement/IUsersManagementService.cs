@@ -1,8 +1,8 @@
-﻿using LIMTIC.Application.Commands.CreateUser;
-using LIMTIC.Application.Commands.GetUser;
+﻿using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Domain.Shared;
 
-namespace LIMTIC.Application.Contracts.UserManagement
+namespace LIMTIC.Application.Abstractions.UserManagement
 {
     public interface IUsersManagementService
     {

@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Domain.Entities;
 
-namespace LIMTIC.Application.Commands.CreateUser
+namespace LIMTIC.Application.Contracts.Commands.CreateUser
 {
     public class CreateUserCommandResponse
     {

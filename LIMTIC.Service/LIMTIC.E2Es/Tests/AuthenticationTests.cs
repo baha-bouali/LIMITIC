@@ -7,9 +7,9 @@ using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
-    public class AuthenticationTests : BaseE2ETests
+    public class AuthenticationE2ETests : BaseE2ETests
     {
-        public AuthenticationTests(PostgresFixture fixture) : base(fixture)
+        public AuthenticationE2ETests(PostgresFixture fixture) : base(fixture)
         {
         }
 

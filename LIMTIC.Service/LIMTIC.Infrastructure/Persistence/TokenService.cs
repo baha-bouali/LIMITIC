@@ -8,7 +8,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace LIMTIC.Infrastructure.Services
+namespace LIMTIC.Infrastructure.Persistence
 {
     public class TokenService : ITokenService
     {

@@ -1,7 +1,7 @@
-﻿using LIMTIC.Application.Commands.Login;
+﻿using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Domain.Shared;
 
-namespace LIMTIC.Application.Contracts.Auth
+namespace LIMTIC.Application.Abstractions.Auth
 {
     public interface IAuthService
     {

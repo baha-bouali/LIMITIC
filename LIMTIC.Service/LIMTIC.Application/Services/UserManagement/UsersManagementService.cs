@@ -1,8 +1,8 @@
 ﻿using FluentValidation;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Application.Commands.CreateUser;
-using LIMTIC.Application.Commands.GetUser;
-using LIMTIC.Application.Contracts.UserManagement;
+using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
