@@ -1,11 +1,11 @@
-﻿using LIMTIC.Application.Contracts.Commands.Login;
-using LIMTIC.Application.Abstractions.Auth;
+﻿using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Settings;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using LIMTIC.Application.Settings;
 
 namespace LIMTIC.WebAPI.Controllers
 {
