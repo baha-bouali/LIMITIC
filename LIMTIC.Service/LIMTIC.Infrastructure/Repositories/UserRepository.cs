@@ -39,5 +39,10 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext.Users.Update(user);
             return await _dbContext.SaveChangesAsync() > 0;
         }
+        public async Task<bool> UpdateUserAsync(User user)
+        {
+            _dbContext.Users.Update(user);
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
     }
 }

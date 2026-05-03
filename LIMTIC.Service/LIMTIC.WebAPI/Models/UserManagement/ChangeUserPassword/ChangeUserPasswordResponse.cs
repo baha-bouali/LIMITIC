@@ -7,7 +7,7 @@ using LIMTIC.WebAPI.Base;
 
 namespace LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword
 {
-    internal class ChangeUserPasswordResponse : BaseResponse
+    public class ChangeUserPasswordResponse : BaseResponse
     {
         public UserDto? User { get; set; }
     }

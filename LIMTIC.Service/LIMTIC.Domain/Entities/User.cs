@@ -12,7 +12,7 @@ namespace LIMTIC.Domain.Entities
         public UserRole Role { get; set; }
         public string? AvatarBlobName { get; set; }
         public bool IsActive { get; set; }
-
+       
         public static Result<User> Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
         {
             if (string.IsNullOrWhiteSpace(email))
