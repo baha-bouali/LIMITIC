@@ -31,8 +31,8 @@ namespace LIMTIC.Infrastructure.Data
 
         public DbSet<ResearchAxisEntity> ResearchAxes { get; set; }
 
-        //public DbSet<EventEntity> Events { get; set; }
-        //public DbSet<SpeakerEntity> Speakers { get; set; }
+        public DbSet<EventEntity> Events { get; set; }
+        public DbSet<SpeakerEntity> Speakers { get; set; }
 
         //public DbSet<PublicationEntity> Publications { get; set; }
         //public DbSet<BookChapterEntity> BookChapters { get; set; }
@@ -71,8 +71,8 @@ namespace LIMTIC.Infrastructure.Data
 
             modelBuilder.ApplyConfiguration(new ResearchAxisConfiguration());
 
-            //modelBuilder.ApplyConfiguration(new EventConfiguration());
-            //modelBuilder.ApplyConfiguration(new SpeakerConfiguration());
+            modelBuilder.ApplyConfiguration(new EventConfiguration());
+            modelBuilder.ApplyConfiguration(new SpeakerConfiguration());
             
 
             //modelBuilder.ApplyConfiguration(new PublicationConfiguration());
