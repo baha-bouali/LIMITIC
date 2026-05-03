@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Contracts.UserManagement;
+﻿using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.IOC;
 using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;

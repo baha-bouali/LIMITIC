@@ -1,15 +1,14 @@
 ﻿using FluentValidation;
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Application.Commands.Login;
-using LIMTIC.Application.Contracts.Auth;
+using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
+using LIMTIC.Application.Abstractions.Auth;
 
 namespace LIMTIC.Application.Services.Auth
 {

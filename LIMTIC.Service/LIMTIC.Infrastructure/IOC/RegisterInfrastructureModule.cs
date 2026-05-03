@@ -1,10 +1,9 @@
-﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Application.Abstractions.Security;
+﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Repositories;
-using LIMTIC.Infrastructure.Services;
+using LIMTIC.Infrastructure.Persistence;
 using LIMTIC.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

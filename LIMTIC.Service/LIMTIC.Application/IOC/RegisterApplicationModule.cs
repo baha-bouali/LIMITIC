@@ -1,11 +1,10 @@
 ﻿using FluentValidation;
-using LIMTIC.Application.Contracts.UserManagement;
 using LIMTIC.Application.Services.UserManagement;
-using LIMTIC.Application.Services;
 using LIMTIC.Application.Services.Auth;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
-using LIMTIC.Application.Contracts.Auth;
+using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Abstractions.Auth;
 
 namespace LIMTIC.Application.IOC
 {

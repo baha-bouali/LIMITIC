@@ -1,5 +1,5 @@
-﻿using LIMTIC.Application.Commands.Login;
-using LIMTIC.Application.Contracts.Auth;
+﻿using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Settings;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.Logout;

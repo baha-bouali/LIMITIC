@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using LIMTIC.Application.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.Login;
 
 namespace LIMTIC.Application.Validations
 {
