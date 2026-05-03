@@ -1,0 +1,6 @@
+services:
+  limtic.webapi:
+    image: ${DOCKER_REGISTRY-}limticwebapi
+    build:
+      context: .
+      dockerfile: LIMTIC.WebAPI/Dockerfile
