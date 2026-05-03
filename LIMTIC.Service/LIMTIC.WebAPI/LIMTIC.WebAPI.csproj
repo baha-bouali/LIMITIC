@@ -18,5 +18,5 @@
     <ProjectReference Include="..\LIMTIC.Application\LIMTIC.Application.csproj" />
     <ProjectReference Include="..\LIMTIC.Infrastructure\LIMTIC.Infrastructure.csproj" />
   </ItemGroup>
-
+	
 </Project>

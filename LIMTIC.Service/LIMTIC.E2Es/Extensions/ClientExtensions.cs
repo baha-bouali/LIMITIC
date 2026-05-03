@@ -1,25 +1,49 @@
 ﻿using LIMTIC.Domain.Entities;
+using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace LIMTIC.E2Es.Extensions
 {
     public static class ClientExtensions
     {
-        public static async Task<CreateUserResponse> AddUser(this HttpClient client, CreateUserRequest createUserRequest)
+        private static HttpRequestMessage CreateRequest(string endpoint, HttpMethod httpMethod, string accessToken)
         {
-            var response = await client.PostAsJsonAsync("users/addUser/", createUserRequest);
+            var request = new HttpRequestMessage(httpMethod, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            return request;
+        }
+
+        public static async Task<CreateUserResponse?> AddUser(this HttpClient client, CreateUserRequest createUserRequest, string accessToken)
+        {
+            var request = CreateRequest("api/users/addUser/", HttpMethod.Post, accessToken);
+            request.Content = JsonContent.Create(createUserRequest);
+
+            var response = await client.SendAsync(request);
             return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
         }
 
-        public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id)
+        public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
         {
-            var response = await client.GetAsync($"users/getUser?id={id}");
+            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+
+            var response = await client.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<GetUserResponse>();
             }
+            return null;
+        }
+
+        public static async Task<LoginResponse?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
+        {
+            var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
+            
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<LoginResponse>();
             return null;
         }
     }

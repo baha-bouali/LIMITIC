@@ -15,6 +15,7 @@ namespace LIMTIC.WebAPI
 
             // Add application & infrastructure services
             builder.Services
+                .AddWebApi()
                 .AddApplication()
                 .AddInfrastructure(builder.Configuration)
                 .AddMappers();
@@ -33,6 +34,8 @@ namespace LIMTIC.WebAPI
             }
 
             app.UseHttpsRedirection();
+
+            app.UseAuthentication();
 
             app.UseAuthorization();
 

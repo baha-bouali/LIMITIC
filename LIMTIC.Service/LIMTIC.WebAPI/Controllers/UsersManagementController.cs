@@ -1,20 +1,15 @@
-﻿using LIMTIC.Application.Commands.ChangeUserPassword;
-using LIMTIC.Application.Commands.CreateUser;
-using LIMTIC.Application.Contracts.UserManagement;
-using LIMTIC.WebAPI.Base;
+﻿using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.WebAPI.Mappers.UserMapper;
-using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.ForgetPassword;
 using LIMTIC.WebAPI.Models.UserManagement.GetUser;
-using LIMTIC.WebAPI.Models.UserManagement.ResetPassword;
-using LIMTIC.WebAPI.Models.UserManagement.VerifyResetCode;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.WebAPI.Controllers
 {
     [ApiController]
-    [Route("users/")]
+    [Route("api/users/")]
     public class UsersManagementController : ControllerBase
     {
         private readonly IUsersManagementService _usersManagementService;
@@ -27,6 +22,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
+        [Authorize(Roles = "Super_Admin")]
         public async Task<IActionResult> AddUser(CreateUserRequest user)
         {
             var command = new CreateUserCommand
@@ -34,7 +30,7 @@ namespace LIMTIC.WebAPI.Controllers
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 Email = user.Email,
-                PasswordHash = user.PasswordHash,
+                Password = user.Password,
                 Role = user.Role,
                 IsActive = true,
             };
@@ -51,12 +47,14 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new CreateUserResponse
                 {
-                    Message = result.Error
+                    Message = result.Error,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
 
         [HttpGet("getUser")]
+        [Authorize]
         public async Task<IActionResult> GetUser(Guid id)
         {
             var result = await _usersManagementService.GetUserByIdAsync(id);
