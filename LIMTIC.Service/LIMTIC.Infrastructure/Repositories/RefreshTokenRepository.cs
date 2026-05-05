@@ -19,6 +19,7 @@ namespace LIMTIC.Infrastructure.Repositories
             await _dbContext
                 .RefreshTokens
                 .AddAsync(refreshToken);
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task<RefreshToken?> GetRefreshTokenAsync(string token)

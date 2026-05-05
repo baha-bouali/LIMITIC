@@ -1,11 +1,13 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Enums;
+using LIMTIC.E2Es.HttpCookie;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace LIMTIC.E2Es.Base
 {
@@ -13,13 +15,17 @@ namespace LIMTIC.E2Es.Base
     {
         protected readonly HttpClient Client;
         protected readonly CustomWebApplicationFactory Factory;
+        private readonly CookieContainer _cookieContainer;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
 
         public BaseE2ETests(PostgresFixture fixture)
         {
             Factory = new CustomWebApplicationFactory(fixture.ConnectionString);
-            Client = Factory.CreateClient();
+
+            // Configure HttpClient with CookieHandler to manage cookies across requests
+            _cookieContainer = new CookieContainer();
+            Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(_cookieContainer));
 
             // Apply migrations once
             using var scope = Factory.Services.CreateScope();
