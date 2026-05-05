@@ -86,10 +86,9 @@ namespace LIMTIC.Application.Services.Auth
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
         }
 
-        public async Task Logout()
+        public async Task Logout(string? refreshToken)
         {
-            var currentUserId = _currentUserService.UserId;
-            await _refreshTokenRepository.RevokeRefreshTokenAsync(currentUserId);
+            await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
         }
     }
 }

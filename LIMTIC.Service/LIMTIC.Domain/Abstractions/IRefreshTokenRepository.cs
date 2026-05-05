@@ -6,6 +6,6 @@ namespace LIMTIC.Domain.Abstractions
     {
         Task<int> AddRefreshTokenAsync(RefreshToken refreshToken);
         Task<RefreshToken?> GetRefreshTokenAsync(string token);
-        Task<int> RevokeRefreshTokenAsync(Guid userId);
+        Task<int> RevokeRefreshTokenAsync(string? token);
     }
 }

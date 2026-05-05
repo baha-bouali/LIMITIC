@@ -30,11 +30,11 @@ namespace LIMTIC.Infrastructure.Repositories
                 .FirstOrDefaultAsync(e => e.Token == token);
         }
 
-        public async Task<int> RevokeRefreshTokenAsync(Guid userId)
+        public async Task<int> RevokeRefreshTokenAsync(string? token)
         {
             return await _dbContext
                 .RefreshTokens
-                .Where(e => e.UserId == userId)
+                .Where(e => e.Token == token)
                 .ExecuteDeleteAsync();
         }
     }

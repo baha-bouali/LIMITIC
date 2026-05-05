@@ -63,7 +63,9 @@ namespace LIMTIC.WebAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await _authService.Logout();
+            Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
+
+            await _authService.Logout(refreshToken);
 
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
