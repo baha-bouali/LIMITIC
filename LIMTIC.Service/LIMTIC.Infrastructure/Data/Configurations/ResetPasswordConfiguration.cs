@@ -14,6 +14,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations
         public void Configure(EntityTypeBuilder<ResetPassword> builder)
         {
             builder.HasKey(rp => rp.Id);
+
             builder.HasOne(rp => rp.User)
                    .WithMany()
                    .HasForeignKey(rp => rp.UserId)

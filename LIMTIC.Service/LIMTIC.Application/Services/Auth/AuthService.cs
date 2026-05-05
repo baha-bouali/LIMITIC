@@ -106,6 +106,7 @@ namespace LIMTIC.Application.Services.Auth
             var currentUserId = _currentUserService.UserId;
             await _refreshTokenRepository.RevokeRefreshTokenAsync(currentUserId);
         }
+
         public async Task<Result<string>> ForgetPasswordAsync(ForgetPasswordCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.email);
@@ -140,6 +141,7 @@ namespace LIMTIC.Application.Services.Auth
              return Result<string>.SuccessResult("OTP sent to email");
 
             }
+
         public async Task<Result<VerifyResetCodeCommandResponse>> VerifyResetTokenAsync(VerifyResetCodeCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.email);

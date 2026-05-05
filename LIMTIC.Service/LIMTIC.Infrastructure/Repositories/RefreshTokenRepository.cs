@@ -8,7 +8,7 @@ namespace LIMTIC.Infrastructure.Repositories
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly AppDbContext _dbContext;
-
+        
         public RefreshTokenRepository(AppDbContext dbContext)
         {
             _dbContext = dbContext;
@@ -20,7 +20,6 @@ namespace LIMTIC.Infrastructure.Repositories
                 .RefreshTokens
                 .AddAsync(refreshToken);
         }
-
         public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
         {
             return await _dbContext
@@ -28,7 +27,6 @@ namespace LIMTIC.Infrastructure.Repositories
                 .Include(e => e.User)
                 .FirstOrDefaultAsync(e => e.Token == token);
         }
-
         public async Task RevokeRefreshTokenAsync(Guid userId)
         {
             await _dbContext

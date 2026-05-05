@@ -27,16 +27,15 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     {
         builder.ConfigureServices(services =>
         {
-            // Replace DbContext
-            var dbDescriptor = services.SingleOrDefault(
+            // Remove existing DbContext
+            var descriptor = services.SingleOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
-            if (dbDescriptor != null)
-                services.Remove(dbDescriptor);
+            if (descriptor != null)
+                services.Remove(descriptor);
 
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(_connectionString));
 
-            // Replace EmailSettings entirely so MailHog is used — bypasses appsettings.json
             if (_mailHogSmtpPort.HasValue)
             {
                 var emailDescriptor = services.SingleOrDefault(
@@ -51,7 +50,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                     SenderEmail = "test@test.com",
                     SenderName = "Test",
                     Password = "",
-                    EnableSsl = false   // MailHog has no SSL
+                    EnableSsl = false  
                 }));
             }
         });

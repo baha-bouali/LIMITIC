@@ -81,6 +81,7 @@ namespace LIMTIC.WebAPI.Controllers
 
             return Ok(new LogoutResponse { Success = true });
         }
+
         [HttpPost("forgotPassword")]
         public async Task<IActionResult> ForgotPassword(ForgetPasswordRequest request)
         {
@@ -119,8 +120,8 @@ namespace LIMTIC.WebAPI.Controllers
                     Message = result.Error
                 });
             }
-
         }
+
         [HttpPost("resetPassword")]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
@@ -144,7 +145,6 @@ namespace LIMTIC.WebAPI.Controllers
                 {
                     Message = result.Error
                 });
-
             }
         }
     }

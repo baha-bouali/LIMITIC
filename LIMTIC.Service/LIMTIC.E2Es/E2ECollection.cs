@@ -1,4 +1,4 @@
-using LIMTIC.E2Es.Base;
+using LIMTIC.E2Es.MailFixture;
 
 namespace LIMTIC.E2Es
 {

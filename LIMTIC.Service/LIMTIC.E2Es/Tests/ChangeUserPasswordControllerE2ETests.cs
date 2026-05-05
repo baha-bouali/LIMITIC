@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using LIMTIC.Domain.Enums;
+﻿using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
@@ -29,7 +24,6 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            // 1. Login as super admin and create a new user
             var createUserRequest = new CreateUserRequest
             {
                 FirstName = "Alice",
@@ -44,7 +38,6 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(createResponse.User);
             Assert.Null(createResponse.Message);
 
-            // 2. Send a POST request to change the user's password with the correct old password
             var changePasswordRequest = new ChangeUserPasswordRequest
             {
                 email = createUserRequest.Email,
@@ -54,10 +47,8 @@ namespace LIMTIC.E2Es.Tests
 
             var changePasswordResponse = await Client.ChangePassword(changePasswordRequest, superAdminAccessToken);
 
-            // 3. Assert that the response indicates success
             Assert.True(changePasswordResponse.IsSuccessStatusCode);
 
-            // 4. Send a GET request to retrieve the user and assert all other fields are unchanged
             var retrievedUser = await Client.GetUserById(createResponse.User.Id, superAdminAccessToken);
             Assert.NotNull(retrievedUser);
             Assert.Equal(createResponse.User.Id, retrievedUser.User.Id);

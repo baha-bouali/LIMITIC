@@ -29,17 +29,14 @@ namespace LIMTIC.UnitTests.Tests
                 // 2. Update the user's password
                 // 3. Retrieve the user and assert the password hash was updated
 
-                // 1. Create and add a user to the repository
                 var user = BuildUser(email: "change.valid@example.com");
                 var added = await UserRepository.AddUserAsync(user);
                 Assert.True(added);
 
-                // 2. Update the user's password
                 const string newPasswordHash = "new_hashed_password";
                 var result = await UserRepository.UpdateUserPasswordAsync(user, newPasswordHash);
                 Assert.True(result);
 
-                // 3. Retrieve the user and assert the password hash was updated
                 var retrievedUser = await UserRepository.GetUserByEmailAsync(user.Email);
                 Assert.NotNull(retrievedUser);
                 Assert.Equal(newPasswordHash, retrievedUser.PasswordHash);
@@ -53,17 +50,14 @@ namespace LIMTIC.UnitTests.Tests
                 // 2. Update to a new password hash
                 // 3. Retrieve the user and assert the old hash is gone
 
-                // 1. Create and add a user with a known password hash
                 const string oldPasswordHash = "old_hashed_password";
                 var user = BuildUser(email: "change.old.gone@example.com", passwordHash: oldPasswordHash);
                 var added = await UserRepository.AddUserAsync(user);
                 Assert.True(added);
 
-                // 2. Update to a new password hash
                 var result = await UserRepository.UpdateUserPasswordAsync(user, "new_hashed_password");
                 Assert.True(result);
 
-                // 3. Retrieve the user and assert the old hash is no longer stored
                 var retrievedUser = await UserRepository.GetUserByEmailAsync(user.Email);
                 Assert.NotNull(retrievedUser);
                 Assert.NotEqual(oldPasswordHash, retrievedUser.PasswordHash);
@@ -77,16 +71,13 @@ namespace LIMTIC.UnitTests.Tests
                 // 2. Update only the password hash
                 // 3. Retrieve the user and assert all other fields remain unchanged
 
-                // 1. Create and add a user with known field values
                 var user = BuildUser(email: "change.fields@example.com");
                 var added = await UserRepository.AddUserAsync(user);
                 Assert.True(added);
 
-                // 2. Update only the password hash
                 var result = await UserRepository.UpdateUserPasswordAsync(user, "new_hashed_password");
                 Assert.True(result);
 
-                // 3. Retrieve the user and assert all other fields remain unchanged
                 var retrievedUser = await UserRepository.GetUserByEmailAsync(user.Email);
                 Assert.NotNull(retrievedUser);
                 Assert.Equal(user.Id, retrievedUser.Id);
@@ -105,12 +96,10 @@ namespace LIMTIC.UnitTests.Tests
                 // 2. Change the password a first time and assert the update
                 // 3. Change the password a second time and assert the update
 
-                // 1. Create and add a user
                 var user = BuildUser(email: "change.multiple@example.com");
                 var added = await UserRepository.AddUserAsync(user);
                 Assert.True(added);
 
-                // 2. Change the password a first time
                 const string firstNewHash = "first_new_hashed_password";
                 var firstResult = await UserRepository.UpdateUserPasswordAsync(user, firstNewHash);
                 Assert.True(firstResult);
@@ -119,7 +108,6 @@ namespace LIMTIC.UnitTests.Tests
                 Assert.NotNull(afterFirstChange);
                 Assert.Equal(firstNewHash, afterFirstChange.PasswordHash);
 
-                // 3. Change the password a second time
                 const string secondNewHash = "second_new_hashed_password";
                 var secondResult = await UserRepository.UpdateUserPasswordAsync(afterFirstChange, secondNewHash);
                 Assert.True(secondResult);
@@ -137,7 +125,6 @@ namespace LIMTIC.UnitTests.Tests
                 // 2. Update the password of the first user only
                 // 3. Assert the second user's password hash is unchanged
 
-                // 1. Create and add two distinct users
                 const string sharedOriginalHash = "shared_original_hash";
                 var userOne = BuildUser(email: "change.userone@example.com", passwordHash: sharedOriginalHash);
                 var userTwo = BuildUser(email: "change.usertwo@example.com", passwordHash: sharedOriginalHash);
@@ -145,11 +132,9 @@ namespace LIMTIC.UnitTests.Tests
                 Assert.True(await UserRepository.AddUserAsync(userOne));
                 Assert.True(await UserRepository.AddUserAsync(userTwo));
 
-                // 2. Update the password of the first user only
                 var result = await UserRepository.UpdateUserPasswordAsync(userOne, "userone_new_hash");
                 Assert.True(result);
 
-                // 3. Assert the second user's password hash is unchanged
                 var retrievedUserTwo = await UserRepository.GetUserByEmailAsync(userTwo.Email);
                 Assert.NotNull(retrievedUserTwo);
                 Assert.Equal(sharedOriginalHash, retrievedUserTwo.PasswordHash);

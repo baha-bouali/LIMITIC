@@ -43,7 +43,6 @@ namespace LIMTIC.Infrastructure.Persistence
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
         public string GenerateToken()
         {
             var randomBytes = new byte[64];
@@ -56,9 +55,12 @@ namespace LIMTIC.Infrastructure.Persistence
         public string GenerateOTPToken()
         {
             var randomNumber = new byte[4];
+
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(randomNumber);
+
             int otp = Math.Abs(BitConverter.ToInt32(randomNumber, 0)) % 1000000;
+
             return otp.ToString("D6");
         }
     }

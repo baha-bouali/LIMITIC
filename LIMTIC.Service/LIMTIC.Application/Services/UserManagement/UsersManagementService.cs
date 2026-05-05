@@ -66,9 +66,11 @@ namespace LIMTIC.Application.Services.UserManagement
             var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
                 return Result<string>.FailureResult("User not found");
+
             if (!_passwordHasher.VerifyPassword(user.PasswordHash, command.OldPassword))
                 return Result<string>.FailureResult("Old password is incorrect");
             var result = await _userRepository.UpdateUserPasswordAsync(user, _passwordHasher.HashPassword(command.NewPassword));
+
             return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
 
         }

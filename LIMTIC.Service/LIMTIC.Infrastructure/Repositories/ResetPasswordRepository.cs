@@ -8,10 +8,12 @@ namespace LIMTIC.Infrastructure.Repositories
     public class ResetPasswordRepository : IResetPasswordRepository
     {
         private readonly AppDbContext _dbContext;
+        
         public ResetPasswordRepository(AppDbContext dbContext)
         {
             _dbContext = dbContext;
         }
+
         public async Task AddOTPTokenAsync(ResetPassword resetPassword)
         {
             await _dbContext
@@ -37,7 +39,6 @@ namespace LIMTIC.Infrastructure.Repositories
                .ResetPasswords
                .Where(e => e.UserId == userId)
                .ExecuteDeleteAsync();
-        }
-    
+        } 
     }
-    }
+ }

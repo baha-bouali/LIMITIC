@@ -29,13 +29,14 @@ namespace LIMTIC.Infrastructure.IOC
 
             // configure jwt settings
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+
             // configure otp settings
             services.Configure<OTPTokenSettings>(configuration.GetSection("OTPToken"));
             // configure resettoken settings
             services.Configure<ResetPasswordTokenSettings>(configuration.GetSection("ResetPasswordToken"));
+
             // Add email settings
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
-
             // Add email service
             services.AddScoped<IEmailService, EmailService>();
 

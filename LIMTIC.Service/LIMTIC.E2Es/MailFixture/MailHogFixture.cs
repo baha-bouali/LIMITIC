@@ -1,7 +1,7 @@
 ﻿using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 
-namespace LIMTIC.E2Es.Base
+namespace LIMTIC.E2Es.MailFixture
 {
     public class MailHogFixture : IAsyncLifetime
     {

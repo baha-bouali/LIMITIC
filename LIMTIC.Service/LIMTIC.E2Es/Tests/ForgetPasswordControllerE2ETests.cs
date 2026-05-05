@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Enums;
-using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
+using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
@@ -37,10 +37,6 @@ namespace LIMTIC.E2Es.Tests
             db.Database.Migrate();
             SeedAdminUser(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
         }
-
-        // -----------------------------------------------------------------------
-        // Tests
-        // -----------------------------------------------------------------------
 
         [Fact]
         public async Task ForgotPassword_ValidEmail_ReturnsOk()
@@ -164,10 +160,6 @@ namespace LIMTIC.E2Es.Tests
             Assert.False(resetResponse.IsSuccessStatusCode);
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, resetResponse.StatusCode);
         }
-
-        // -----------------------------------------------------------------------
-        // Helpers
-        // -----------------------------------------------------------------------
 
         /// <summary>
         /// Polls MailHog until the email arrives, then decodes the body and

@@ -31,7 +31,6 @@ using Microsoft.Extensions.Options;
             {
                 Port = _emailSettings.SmtpPort,
                 Credentials = new NetworkCredential(_emailSettings.SenderEmail, _emailSettings.Password),
-                // AFTER
                 EnableSsl = _emailSettings.EnableSsl
             };
 
