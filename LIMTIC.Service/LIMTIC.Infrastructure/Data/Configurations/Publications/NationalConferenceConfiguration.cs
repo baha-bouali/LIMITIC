@@ -8,7 +8,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<NationalConferenceEntity> builder)
         {
-            builder.HasKey(c => c.PublicationId);
+            builder.HasKey(c => c.Id);
 
             builder.Property(c => c.ConferenceName)
                    .IsRequired()
@@ -23,7 +23,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
 
             builder.HasOne(c => c.Publication)
                    .WithOne(p => p.NationalConference)
-                   .HasForeignKey<NationalConferenceEntity>(c => c.PublicationId)
+                   .HasForeignKey<NationalConferenceEntity>(c => c.Id)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

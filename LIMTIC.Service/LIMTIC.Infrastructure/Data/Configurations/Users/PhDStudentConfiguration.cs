@@ -8,12 +8,12 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Users
     {
         public void Configure(EntityTypeBuilder<PhDStudentEntity> builder)
         {
-            builder.HasKey(e => e.UserId);
+            builder.HasKey(e => e.Id);
 
             builder
                 .HasOne(e => e.User)
                 .WithOne(e => e.PhDStudent)
-                .HasForeignKey<PhDStudentEntity>(e => e.UserId)
+                .HasForeignKey<PhDStudentEntity>(e => e.Id)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(e => e.Supervisor)

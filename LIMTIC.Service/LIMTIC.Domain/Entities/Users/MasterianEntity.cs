@@ -4,7 +4,6 @@ namespace LIMTIC.Domain.Entities.Users
 {
     public class MasterianEntity : BaseEntity
     {
-        public Guid UserId { get; set; }
         public UserEntity User { get; set; }
 
         public string DissertationSubject { get; set; }

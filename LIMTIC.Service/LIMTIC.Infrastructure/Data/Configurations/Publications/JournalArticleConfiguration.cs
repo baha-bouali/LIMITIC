@@ -8,7 +8,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<JournalArticleEntity> builder)
         {
-            builder.HasKey(a => a.PublicationId);
+            builder.HasKey(a => a.Id);
 
             builder.Property(a => a.JournalName)
                    .IsRequired()
@@ -32,7 +32,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
 
             builder.HasOne(a => a.Publication)
                    .WithOne(p => p.JournalArticle)
-                   .HasForeignKey<JournalArticleEntity>(a => a.PublicationId)
+                   .HasForeignKey<JournalArticleEntity>(a => a.Id)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

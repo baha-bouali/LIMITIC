@@ -5,7 +5,6 @@ namespace LIMTIC.Domain.Entities.Publications
 {
     public class JournalArticleEntity : BaseEntity
     {
-        public Guid PublicationId { get; set; }
         public PublicationEntity Publication { get; set; }
 
         public string JournalName { get; set; }

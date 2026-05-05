@@ -8,7 +8,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<BookChapterEntity> builder)
         {
-            builder.HasKey(b => b.PublicationId);
+            builder.HasKey(b => b.Id);
 
             builder.Property(b => b.BookTitle)
                    .IsRequired()
@@ -26,7 +26,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
 
             builder.HasOne(b => b.Publication)
                    .WithOne(p => p.BookChapter)
-                   .HasForeignKey<BookChapterEntity>(b => b.PublicationId)
+                   .HasForeignKey<BookChapterEntity>(b => b.Id)
                    .OnDelete(DeleteBehavior.Cascade);
         }
     }

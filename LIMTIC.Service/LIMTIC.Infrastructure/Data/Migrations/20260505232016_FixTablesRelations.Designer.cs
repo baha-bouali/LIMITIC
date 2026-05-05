@@ -3,6 +3,7 @@ using System;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LIMTIC.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260505232016_FixTableRelations")]
+    partial class FixTableRelations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -134,7 +137,7 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("PublicationId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("BookTitle")
@@ -146,6 +149,9 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Isbn")
@@ -161,14 +167,14 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
-                    b.HasKey("Id");
+                    b.HasKey("PublicationId");
 
                     b.ToTable("BookChapters");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("PublicationId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ConferenceName")
@@ -180,6 +186,9 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Location")
@@ -195,20 +204,23 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("PublicationId");
 
                     b.ToTable("InternationalConferences");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("PublicationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("JournalName")
@@ -235,14 +247,14 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id");
+                    b.HasKey("PublicationId");
 
                     b.ToTable("JournalArticles");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("PublicationId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ConferenceName")
@@ -256,6 +268,9 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Location")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -265,7 +280,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id");
+                    b.HasKey("PublicationId");
 
                     b.ToTable("NationalConferences");
                 });
@@ -334,13 +349,16 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("PublicationId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Institution")
@@ -352,7 +370,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                    b.HasKey("PublicationId");
 
                     b.ToTable("TechnicalReports");
                 });
@@ -421,7 +439,7 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Cohort")
@@ -438,13 +456,16 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PhotoUrl")
                         .HasColumnType("text");
 
                     b.Property<Guid>("SupervisorId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
                     b.HasIndex("SupervisorId");
 
@@ -453,7 +474,7 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.PhDStudentEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -465,6 +486,9 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<int>("EnrollmentYear")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("PhotoUrl")
                         .HasColumnType("text");
 
@@ -475,7 +499,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
                     b.HasIndex("SupervisorId");
 
@@ -484,7 +508,7 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.ResearcherEntity", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Biography")
@@ -498,6 +522,9 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.Property<string>("GoogleScholar")
                         .HasColumnType("text");
+
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("LinkedIn")
                         .HasColumnType("text");
@@ -527,7 +554,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
 
                     b.ToTable("Researchers");
                 });
@@ -614,7 +641,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
                         .WithOne("BookChapter")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.BookChapterEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.BookChapterEntity", "PublicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -625,7 +652,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
                         .WithOne("InternationalConference")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", "PublicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -636,7 +663,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
                         .WithOne("JournalArticle")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", "PublicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -647,7 +674,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
                         .WithOne("NationalConference")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", "PublicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -677,7 +704,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
                         .WithOne("TechnicalReport")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", "PublicationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -698,16 +725,16 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithOne("Masterian")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.MasterianEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
                         .WithMany()
                         .HasForeignKey("SupervisorId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                        .WithOne("Masterian")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Users.MasterianEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Supervisor");
@@ -717,16 +744,16 @@ namespace LIMTIC.Infrastructure.Migrations
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.PhDStudentEntity", b =>
                 {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithOne("PhDStudent")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.PhDStudentEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
                         .WithMany()
                         .HasForeignKey("SupervisorId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                        .WithOne("PhDStudent")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Users.PhDStudentEntity", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Supervisor");
@@ -738,7 +765,7 @@ namespace LIMTIC.Infrastructure.Migrations
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
                         .WithOne("Researcher")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Id")
+                        .HasForeignKey("LIMTIC.Domain.Entities.Users.ResearcherEntity", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
