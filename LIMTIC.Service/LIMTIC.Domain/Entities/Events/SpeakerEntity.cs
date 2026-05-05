@@ -4,8 +4,6 @@ namespace LIMTIC.Domain.Entities.Events
 {
     public class SpeakerEntity : BaseEntity
     {
-        public Guid Id { get; set; }
-
         public Guid EventId { get; set; }
         public EventEntity Event { get; set; }
 

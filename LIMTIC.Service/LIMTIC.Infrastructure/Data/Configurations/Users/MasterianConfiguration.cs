@@ -13,7 +13,8 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Users
             builder
                 .HasOne(e => e.User)
                 .WithOne(e => e.Masterian)
-                .HasForeignKey<MasterianEntity>(e => e.UserId);
+                .HasForeignKey<MasterianEntity>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(e => e.Supervisor)
                 .WithMany()

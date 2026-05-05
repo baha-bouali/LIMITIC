@@ -6,9 +6,7 @@ using LIMTIC.Domain.Shared;
 namespace LIMTIC.Domain.Entities.Publications
 {
     public class PublicationEntity : BaseEntity
-    {
-        public Guid Id { get; set; }
-        
+    {        
         public Guid UserId { get; set; }
         public UserEntity User { get; set; }
 
@@ -24,7 +22,6 @@ namespace LIMTIC.Domain.Entities.Publications
         public PublicationStatus Status { get; set; }
         public PublicationVisibility Visibility { get; set; }
         public int Year { get; set; }
-        public DateTime CreatedAt { get; set; }
 
         public JournalArticleEntity? JournalArticle { get; set; }
         public TechnicalReportEntity? TechnicalReport { get; set; }

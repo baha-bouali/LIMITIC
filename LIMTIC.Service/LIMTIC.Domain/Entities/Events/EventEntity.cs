@@ -6,7 +6,6 @@ namespace LIMTIC.Domain.Entities.Events
 {
     public class EventEntity : BaseEntity
     {
-        public Guid Id { get; set; }
         public string Title { get; set; }
         public EventType Type { get; set; }
         public DateTime StartDate { get; set; }

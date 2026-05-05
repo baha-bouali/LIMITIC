@@ -5,8 +5,6 @@ namespace LIMTIC.Domain.Entities.Publications
 {
     public class InternationalConferenceEntity : BaseEntity
     {
-        public Guid Id { get; set; }
-
         public Guid PublicationId { get; set; }
         public PublicationEntity Publication { get; set; }
 

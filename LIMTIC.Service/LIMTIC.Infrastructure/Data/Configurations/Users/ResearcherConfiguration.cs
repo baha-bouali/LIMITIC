@@ -13,7 +13,8 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Users
             builder
                 .HasOne(e => e.User)
                 .WithOne(e => e.Researcher)
-                .HasForeignKey<ResearcherEntity>(e => e.UserId);
+                .HasForeignKey<ResearcherEntity>(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

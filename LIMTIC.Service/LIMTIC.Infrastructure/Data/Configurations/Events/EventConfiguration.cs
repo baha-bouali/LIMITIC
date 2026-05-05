@@ -49,14 +49,9 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Events
             builder.Ignore(e => e.Status);
 
             builder.HasOne(e => e.ResearchAxis)
-                   .WithMany()
+                   .WithMany(ra => ra.Events)
                    .HasForeignKey(e => e.ResearchAxisId)
                    .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasMany(e => e.Speakers)
-                   .WithOne(s => s.Event)
-                   .HasForeignKey(s => s.EventId)
-                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
