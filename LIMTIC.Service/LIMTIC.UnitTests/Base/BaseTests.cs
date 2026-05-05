@@ -17,7 +17,8 @@ namespace LIMTIC.UnitTests.Base
         protected readonly AppDbContext DbContext;
         protected IUserRepository UserRepository => ServiceProvider.GetRequiredService<IUserRepository>();
         protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
-      
+        protected IRefreshTokenRepository RefreshTokenRepository => ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
+
         protected BaseTests()
         {
             var services = new ServiceCollection();
@@ -37,6 +38,7 @@ namespace LIMTIC.UnitTests.Base
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
             if (descriptor != null)
                 services.Remove(descriptor);
+
             // Register AppDbContext with in-memory database
             services.AddDbContext<AppDbContext>(options =>
                 options.UseInMemoryDatabase("UnitTestDb"), ServiceLifetime.Scoped);
