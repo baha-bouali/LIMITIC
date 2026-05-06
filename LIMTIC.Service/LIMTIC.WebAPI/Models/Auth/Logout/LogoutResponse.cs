@@ -2,6 +2,5 @@
 {
     public class LogoutResponse : BaseResponse
     {
-        public bool Success { get; set; }
     }
 }
