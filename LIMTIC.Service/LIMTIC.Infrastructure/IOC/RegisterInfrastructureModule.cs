@@ -4,6 +4,7 @@ using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
+using LIMTIC.Infrastructure.Emails;
 using LIMTIC.Infrastructure.Persistence;
 using LIMTIC.Infrastructure.Repositories;
 using LIMTIC.Infrastructure.Settings;
@@ -27,21 +28,15 @@ namespace LIMTIC.Infrastructure.IOC
             // configure refresh token settings
             services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
 
-            // configure jwt settings
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
-
             // configure otp settings
             services.Configure<OTPTokenSettings>(configuration.GetSection("OTPToken"));
             // configure resettoken settings
             services.Configure<ResetPasswordTokenSettings>(configuration.GetSection("ResetPasswordToken"));
-
-            // Add email settings
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
-            // Add email service
-            services.AddScoped<IEmailService, EmailService>();
 
             var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()!;
-         
+
             // register authentication middleware
             services.AddAuthentication(defaultScheme: "jwt")
                 .AddJwtBearer("jwt", options =>
@@ -67,6 +62,8 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();
+            services.AddSingleton<ITemplateRenderer, TemplateRenderer>();
+            services.AddScoped<IEmailService, EmailService>();
 
             return services;
         }

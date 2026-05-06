@@ -7,6 +7,7 @@ using LIMTIC.Application.Contracts.Commands.ForgetPassword;
 using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
+using LIMTIC.Application.Contracts.Models.Emails;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
@@ -114,7 +115,14 @@ namespace LIMTIC.Application.Services.Auth
 
             var otp = _tokenService.GenerateOTPToken();
             await upsertResetPassword(user, otp);
-            await _emailService.SendOTPEmailAsync(user.Email, otp);
+
+            await _emailService.SendOTPEmailAsync(new OTPEmailModel
+            {
+                ToEmail = user.Email,
+                OTPCode = otp,
+                ExpiryMinutes = _otpTokenSettings.ExpireInMinutes
+            });
+
             return Result<string>.SuccessResult("OTP sent to email");
         }
 
