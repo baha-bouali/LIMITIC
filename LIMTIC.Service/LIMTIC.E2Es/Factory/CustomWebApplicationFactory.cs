@@ -38,21 +38,25 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
             if (_mailHogSmtpPort.HasValue)
             {
-                var emailDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(IOptions<EmailSettings>));
-                if (emailDescriptor != null)
-                    services.Remove(emailDescriptor);
-
-                services.AddSingleton<IOptions<EmailSettings>>(Options.Create(new EmailSettings
-                {
-                    SmtpHost = "localhost",
-                    SmtpPort = _mailHogSmtpPort.Value,
-                    SenderEmail = "test@test.com",
-                    SenderName = "Test",
-                    Password = "",
-                    EnableSsl = false  
-                }));
+                RegisterTestEmailSettings(services, _mailHogSmtpPort.Value);
             }
         });
+    }
+    private void RegisterTestEmailSettings(IServiceCollection services, int smtpPort)
+    {
+        var emailDescriptor = services.SingleOrDefault(
+            d => d.ServiceType == typeof(IOptions<EmailSettings>));
+        if (emailDescriptor != null)
+            services.Remove(emailDescriptor);
+
+        services.AddSingleton<IOptions<EmailSettings>>(Options.Create(new EmailSettings
+        {
+            SmtpHost = "localhost",
+            SmtpPort = smtpPort,
+            SenderEmail = "test@test.com",
+            SenderName = "Test",
+            Password = "",
+            EnableSsl = false
+        }));
     }
 }

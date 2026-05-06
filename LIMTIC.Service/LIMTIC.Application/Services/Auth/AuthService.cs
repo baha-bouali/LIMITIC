@@ -18,43 +18,42 @@ namespace LIMTIC.Application.Services.Auth
 {
     public class AuthService : IAuthService
     {
-        private readonly IPasswordHasher _passwordHasher;
         private readonly ITokenService _tokenService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IEmailService _emailService;
         private readonly IUserRepository _userRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly ICurrentUserService _currentUserService;
+        private readonly IResetPasswordRepository _resetPasswordRepository;
+        private readonly IPasswordHasher _passwordHasher;
         private readonly RefreshTokenSettings _refreshTokenSettings;
         private readonly OTPTokenSettings _otpTokenSettings;
         private readonly ResetPasswordTokenSettings _resetPasswordTokenSettings;
         private readonly IValidator<LoginCommand> _loginCommandValidator;
-        private readonly IResetPasswordRepository _resetPasswordRepository;
-        private readonly IEmailService _emailService;
-
 
         public AuthService(
-            IPasswordHasher passwordHasher,
             ITokenService tokenService,
+            ICurrentUserService currentUserService,
+            IEmailService emailService,
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
-            ICurrentUserService currentUserService,
+            IResetPasswordRepository resetPasswordRepository,
+            IPasswordHasher passwordHasher,
             IOptions<RefreshTokenSettings> refreshTokenSettings,
             IOptions<OTPTokenSettings> otpTokenSettings,
             IOptions<ResetPasswordTokenSettings> resetPasswordTokenSettings,
-            IValidator<LoginCommand> loginCommandValidator,
-            IResetPasswordRepository resetPasswordRepository ,
-            IEmailService emailService)
+            IValidator<LoginCommand> loginCommandValidator)
         {
-            _passwordHasher = passwordHasher;
             _tokenService = tokenService;
+            _currentUserService = currentUserService;
+            _emailService = emailService;
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
-            _currentUserService = currentUserService;
+            _resetPasswordRepository = resetPasswordRepository;
+            _passwordHasher = passwordHasher;
             _refreshTokenSettings = refreshTokenSettings.Value;
             _otpTokenSettings = otpTokenSettings.Value;
             _resetPasswordTokenSettings = resetPasswordTokenSettings.Value;
             _loginCommandValidator = loginCommandValidator;
-            _resetPasswordRepository = resetPasswordRepository;
-            _emailService = emailService;
         }
 
         public async Task<Result<LoginCommandResponse>> Login(LoginCommand command)
@@ -114,33 +113,10 @@ namespace LIMTIC.Application.Services.Auth
                 return Result<string>.FailureResult("User not found");
 
             var otp = _tokenService.GenerateOTPToken();
-
-            var existing = await _resetPasswordRepository.GetTokenAsync(user.Id);
-
-            if (existing != null)
-            { 
-                existing.OTPTokenHash = _passwordHasher.HashPassword(otp);
-                existing.OTPTokenExpiry = DateTime.UtcNow.AddMinutes(_otpTokenSettings.ExpireInMinutes);
-                existing.ResetPasswordTokenHash = null;
-                existing.ResetPasswordTokenExpiry = null;
-                await _resetPasswordRepository.UpdateResetPasswordTokenAsync(existing);
-            }
-            else
-            {
-                var resetPassword = new ResetPassword
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.Id,
-                    OTPTokenHash = _passwordHasher.HashPassword(otp),
-                    OTPTokenExpiry = DateTime.UtcNow.AddMinutes(_otpTokenSettings.ExpireInMinutes)
-                };
-                await _resetPasswordRepository.AddOTPTokenAsync(resetPassword);
-            }
-
-             await _emailService.SendOTPEmailAsync(user.Email, otp);
-             return Result<string>.SuccessResult("OTP sent to email");
-
-            }
+            await upsertResetPassword(user, otp);
+            await _emailService.SendOTPEmailAsync(user.Email, otp);
+            return Result<string>.SuccessResult("OTP sent to email");
+        }
 
         public async Task<Result<VerifyResetCodeCommandResponse>> VerifyResetTokenAsync(VerifyResetCodeCommand command)
         {
@@ -148,7 +124,7 @@ namespace LIMTIC.Application.Services.Auth
             if (user == null)
                 return Result<VerifyResetCodeCommandResponse>.FailureResult("User not found");
 
-            var resetPasswordEntry = await _resetPasswordRepository.GetTokenAsync(user.Id);
+            var resetPasswordEntry = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
             if (resetPasswordEntry == null)
                 return Result<VerifyResetCodeCommandResponse>.FailureResult("No reset token found");
 
@@ -161,22 +137,22 @@ namespace LIMTIC.Application.Services.Auth
             var resetToken = _tokenService.GenerateToken();
             resetPasswordEntry.ResetPasswordTokenHash = _passwordHasher.HashPassword(resetToken);
             resetPasswordEntry.ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(_resetPasswordTokenSettings.ExpireInMinutes);
-          
 
-            await _resetPasswordRepository.UpdateResetPasswordTokenAsync(resetPasswordEntry);
+            await _resetPasswordRepository.UpdateResetPasswordAsync(resetPasswordEntry);
 
             return Result<VerifyResetCodeCommandResponse>.SuccessResult(new VerifyResetCodeCommandResponse
             {
                 ResetToken = resetToken
             });
         }
+
         public async Task<Result<string>> ResetPasswordAsync(ResetPasswordCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.email);
             if (user == null)
                 return Result<string>.FailureResult("User not found");
 
-            var resetPasswordEntry = await _resetPasswordRepository.GetTokenAsync(user.Id);
+            var resetPasswordEntry = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
             if (resetPasswordEntry == null)
                 return Result<string>.FailureResult("No reset token found");
 
@@ -187,11 +163,37 @@ namespace LIMTIC.Application.Services.Auth
                 return Result<string>.FailureResult("Reset token is expired");
 
             user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
-            var updateResult = await _userRepository.UpdateUserPasswordAsync(user, user.PasswordHash);
+            var updateResult = await _userRepository.UpdateUserAsync(user);
             if (!updateResult)
                 return Result<string>.FailureResult("Failed to reset password");
 
             return Result<string>.SuccessResult("Password reset successful");
+        }
+
+        private async Task upsertResetPassword(User user, string otp)
+        {
+            var existing = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
+
+            if (existing != null)
+            {
+                existing.OTPTokenHash = _passwordHasher.HashPassword(otp);
+                existing.OTPTokenExpiry = DateTime.UtcNow.AddMinutes(_otpTokenSettings.ExpireInMinutes);
+                existing.ResetPasswordTokenHash = null;
+                existing.ResetPasswordTokenExpiry = null;
+                await _resetPasswordRepository.UpdateResetPasswordAsync(existing);
+            }
+            else
+            {
+                var resetPassword = new ResetPasswordEntity
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    OTPTokenHash = _passwordHasher.HashPassword(otp),
+                    OTPTokenExpiry = DateTime.UtcNow.AddMinutes(_otpTokenSettings.ExpireInMinutes)
+                };
+                await _resetPasswordRepository.AddResetPasswordAsync(resetPassword);
+            }
+
         }
     }
 }

@@ -1,12 +1,12 @@
-﻿using LIMTIC.Application.Abstractions.Security;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Infrastructure.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace LIMTIC.Infrastructure.Persistence
 {
@@ -45,23 +45,26 @@ namespace LIMTIC.Infrastructure.Persistence
         }
         public string GenerateToken()
         {
-            var randomBytes = new byte[64];
-
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomBytes);
+            var randomBytes = generateRandomByteArray(64);
 
             return Convert.ToBase64String(randomBytes);
         }
         public string GenerateOTPToken()
         {
-            var randomNumber = new byte[4];
-
-            using var rng = RandomNumberGenerator.Create();
-            rng.GetBytes(randomNumber);
+            var randomNumber = generateRandomByteArray(4);
 
             int otp = Math.Abs(BitConverter.ToInt32(randomNumber, 0)) % 1000000;
 
             return otp.ToString("D6");
+        }
+
+        private byte[] generateRandomByteArray(int size)
+        {
+            var randomBytes = new byte[size];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomBytes);
+
+            return randomBytes;
         }
     }
 }

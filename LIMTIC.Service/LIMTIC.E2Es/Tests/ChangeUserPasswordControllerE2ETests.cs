@@ -40,7 +40,7 @@ namespace LIMTIC.E2Es.Tests
 
             var changePasswordRequest = new ChangeUserPasswordRequest
             {
-                email = createUserRequest.Email,
+                Email = createUserRequest.Email,
                 OldPassword = "OldPassword1!",
                 NewPassword = "NewPassword2!",
             };

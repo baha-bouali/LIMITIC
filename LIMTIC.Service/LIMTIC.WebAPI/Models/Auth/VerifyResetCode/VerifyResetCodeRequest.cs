@@ -8,7 +8,7 @@ namespace LIMTIC.WebAPI.Models.Auth.VerifyResetCode
 {
     public class VerifyResetCodeRequest
     {
-        public string email { get; set; }
-        public string otpToken { get; set; }
+        public string Email { get; set; }
+        public string OtpToken { get; set; }
     }
 }

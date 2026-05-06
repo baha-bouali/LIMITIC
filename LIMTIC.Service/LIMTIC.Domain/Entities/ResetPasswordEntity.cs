@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace LIMTIC.Domain.Entities
 {
-    public class ResetPassword
+    public class ResetPasswordEntity
     {   
         public Guid Id { get; set; }
         public Guid UserId { get; set; }

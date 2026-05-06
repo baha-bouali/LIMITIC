@@ -1,7 +1,8 @@
-﻿using LIMTIC.Application.Contracts.Commands.CreateUser;
+﻿using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Domain.Shared;
-using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
+
 namespace LIMTIC.Application.Abstractions.UserManagement
 {
     public interface IUsersManagementService

@@ -26,9 +26,15 @@ namespace LIMTIC.E2Es.Extensions
             request.Content = JsonContent.Create(createUserRequest);
 
             var response = await client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
-        }
 
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
+            }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"AddUser failed: {response.StatusCode} - {errorBody}");
+        }
         public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
         {
             var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
@@ -44,12 +50,12 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<LoginResponse?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
         {
             var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
-            
+
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<LoginResponse>();
             return null;
         }
-        public static async Task<HttpResponseMessage> ChangePassword(this HttpClient client,ChangeUserPasswordRequest request,string accessToken)
+        public static async Task<HttpResponseMessage> ChangePassword(this HttpClient client, ChangeUserPasswordRequest request, string accessToken)
         {
             client.DefaultRequestHeaders.Authorization =
                 new AuthenticationHeaderValue("Bearer", accessToken);

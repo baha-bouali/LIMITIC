@@ -2,6 +2,7 @@
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Extensions;
+using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using Microsoft.EntityFrameworkCore;
@@ -21,13 +22,26 @@ namespace LIMTIC.E2Es.Base
             Factory = new CustomWebApplicationFactory(fixture.ConnectionString);
             Client = Factory.CreateClient();
 
-            // Apply migrations once
+            InitializeDatabase();
+        }
+
+        public BaseE2ETests(PostgresFixture postgresFixture, MailHogFixture mailHogFixture)
+        {
+            Factory = new CustomWebApplicationFactory(
+                postgresFixture.ConnectionString,
+                mailHogFixture.SmtpPort);
+            Client = Factory.CreateClient();
+
+            InitializeDatabase();
+        }
+
+        private void InitializeDatabase()
+        {
             using var scope = Factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
             SeedAdminUser(db);
         }
-
         private void SeedAdminUser(AppDbContext db)
         {
             // Avoid duplicate seeding across test runs

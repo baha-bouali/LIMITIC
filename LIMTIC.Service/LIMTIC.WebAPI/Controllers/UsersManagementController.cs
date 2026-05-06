@@ -83,7 +83,7 @@ namespace LIMTIC.WebAPI.Controllers
         {
             var command = new ChangeUserPasswordCommand
             {
-                Email = request.email,
+                Email = request.Email,
                 OldPassword = request.OldPassword,
                 NewPassword = request.NewPassword
             };

@@ -50,9 +50,9 @@ namespace LIMTIC.WebAPI.Controllers
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
-        [HttpPost("refresh")]
+        [HttpPost("refreshToken")]
         [Authorize]
-        public async Task<IActionResult> Refresh()
+        public async Task<IActionResult> RefreshToken()
         {
             Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
 
@@ -87,30 +87,29 @@ namespace LIMTIC.WebAPI.Controllers
         {
             var command = new ForgetPasswordCommand
             {
-                email = request.email
+                email = request.Email
             };
             var result = await _authService.ForgetPasswordAsync(command);
             if (result.Success)
-            
                 return Ok(new BaseResponse { Message = result.Data });
-             else
+            else
                 return BadRequest(new BaseResponse { Message = result.Error });
-        } 
+        }
 
         [HttpPost("verifyOTP")]
         public async Task<IActionResult> VerifyOTP(VerifyResetCodeRequest request)
         {
             var command = new VerifyResetCodeCommand
             {
-                email = request.email,
-                otpToken = request.otpToken
+                email = request.Email,
+                otpToken = request.OtpToken
             };
             var result = await _authService.VerifyResetTokenAsync(command);
             if (result.Success)
             {
                 return Ok(new VerifyResetCodeResponse
                 {
-                    resetToken = result.Data.ResetToken,
+                    ResetToken = result.Data.ResetToken,
                 });
             }
             else
@@ -127,7 +126,7 @@ namespace LIMTIC.WebAPI.Controllers
         {
             var command = new ResetPasswordCommand
             {
-                email = request.email,
+                email = request.Email,
                 NewPassword = request.NewPassword,
                 ResetToken = request.ResetToken
             };

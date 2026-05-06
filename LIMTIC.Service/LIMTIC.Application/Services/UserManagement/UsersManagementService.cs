@@ -38,10 +38,10 @@ namespace LIMTIC.Application.Services.UserManagement
                 return Result<CreateUserCommandResponse>.FailureResult("Email already registered");
 
             var user = User.Create(
-                email: command.Email, 
-                firstName: command.FirstName, 
-                lastName: command.LastName, 
-                passwordHash: _passwordHasher.HashPassword(command.Password), 
+                email: command.Email,
+                firstName: command.FirstName,
+                lastName: command.LastName,
+                passwordHash: _passwordHasher.HashPassword(command.Password),
                 isActive: true,
                 role: command.Role);
 
@@ -69,10 +69,11 @@ namespace LIMTIC.Application.Services.UserManagement
 
             if (!_passwordHasher.VerifyPassword(user.PasswordHash, command.OldPassword))
                 return Result<string>.FailureResult("Old password is incorrect");
-            var result = await _userRepository.UpdateUserPasswordAsync(user, _passwordHasher.HashPassword(command.NewPassword));
+
+            user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
+            var result = await _userRepository.UpdateUserAsync(user);
 
             return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
-
         }
-}
+    }
 }

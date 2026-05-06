@@ -18,7 +18,7 @@ namespace LIMTIC.Infrastructure.Data
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<ResetPassword> ResetPasswords { get; set; }
+        public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

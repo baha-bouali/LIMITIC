@@ -9,9 +9,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace LIMTIC.Infrastructure.Data.Configurations
 {
-    public class ResetPasswordConfiguration : IEntityTypeConfiguration<ResetPassword>
+    public class ResetPasswordConfiguration : IEntityTypeConfiguration<ResetPasswordEntity>
     {
-        public void Configure(EntityTypeBuilder<ResetPassword> builder)
+        public void Configure(EntityTypeBuilder<ResetPasswordEntity> builder)
         {
             builder.HasKey(rp => rp.Id);
 

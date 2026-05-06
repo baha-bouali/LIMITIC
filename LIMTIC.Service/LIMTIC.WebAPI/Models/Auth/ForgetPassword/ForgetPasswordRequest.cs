@@ -8,6 +8,6 @@ namespace LIMTIC.WebAPI.Models.Auth.ForgetPassword
 {
     public class ForgetPasswordRequest
     {
-        public string email { get; set; }
+        public string Email { get; set; }
     }
 }

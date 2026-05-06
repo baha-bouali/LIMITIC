@@ -1,7 +1,6 @@
 using LIMTIC.Application.IOC;
 using LIMTIC.Infrastructure.IOC;
 using LIMTIC.WebAPI.IOC;
-using Microsoft.OpenApi.Models;
 
 namespace LIMTIC.WebAPI
 {
@@ -17,39 +16,9 @@ namespace LIMTIC.WebAPI
                 .AddWebApi()
                 .AddApplication()
                 .AddInfrastructure(builder.Configuration)
-                .AddMappers();
-
-            builder.Services.AddEndpointsApiExplorer();
-
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "LIMTIC API", Version = "v1" });
-
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Name = "Authorization",
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "Bearer",
-                    BearerFormat = "JWT",
-                    In = ParameterLocation.Header,
-                    Description = "Enter your JWT token. Example: eyJhbGci..."
-                });
-
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id   = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                });
-            });
+                .AddMappers()
+                .AddEndpointsApiExplorer()
+                .AddSwaggerDocumentation();
 
             var app = builder.Build();
 

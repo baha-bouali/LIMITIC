@@ -9,9 +9,9 @@ namespace LIMTIC.Domain.Abstractions
 {
     public interface IResetPasswordRepository
     {
-        Task AddOTPTokenAsync(ResetPassword resetPassword);
-        Task <ResetPassword?> GetTokenAsync(Guid userId);
-        Task <ResetPassword> UpdateResetPasswordTokenAsync(ResetPassword resetPassword);
-        Task RevokeTokenAsync(Guid userId);
+        Task AddResetPasswordAsync(ResetPasswordEntity resetPassword);
+        Task <ResetPasswordEntity?> GetResetPasswordAsync(Guid userId);
+        Task <ResetPasswordEntity> UpdateResetPasswordAsync(ResetPasswordEntity resetPassword);
+        Task DeleteResetPasswordAsync(Guid userId);
     }
 }

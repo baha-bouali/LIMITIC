@@ -14,26 +14,26 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task AddOTPTokenAsync(ResetPassword resetPassword)
+        public async Task AddResetPasswordAsync(ResetPasswordEntity resetPassword)
         {
             await _dbContext
                 .ResetPasswords
                 .AddAsync(resetPassword);
             await _dbContext.SaveChangesAsync();
         }
-        public async Task<ResetPassword?> GetTokenAsync(Guid userId)
+        public async Task<ResetPasswordEntity?> GetResetPasswordAsync(Guid userId)
         {
             return await _dbContext
                 .ResetPasswords
                 .FirstOrDefaultAsync(rp => rp.UserId == userId);
         }
-        public async Task<ResetPassword> UpdateResetPasswordTokenAsync(ResetPassword resetPassword)
+        public async Task<ResetPasswordEntity> UpdateResetPasswordAsync(ResetPasswordEntity resetPassword)
         {
             _dbContext.ResetPasswords.Update(resetPassword);
             await _dbContext.SaveChangesAsync();
             return resetPassword;
         }
-        public async Task RevokeTokenAsync(Guid userId)
+        public async Task DeleteResetPasswordAsync(Guid userId)
         {
             await _dbContext
                .ResetPasswords

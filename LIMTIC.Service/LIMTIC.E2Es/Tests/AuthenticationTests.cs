@@ -3,6 +3,7 @@ using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.E2Es.MailFixture;
 
 namespace LIMTIC.E2Es.Tests
 {

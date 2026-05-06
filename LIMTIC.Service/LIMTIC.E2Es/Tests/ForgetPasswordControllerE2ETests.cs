@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Enums;
+using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
@@ -10,32 +11,20 @@ using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
-    public class ForgetPasswordControllerE2ETests
+    public class ForgetPasswordControllerE2ETests : BaseE2ETests
     {
-        private readonly HttpClient _client;
-        private readonly CustomWebApplicationFactory _factory;
         private readonly string _mailHogApiUrl;
 
-        public ForgetPasswordControllerE2ETests(PostgresFixture postgresFixture, MailHogFixture mailHogFixture)
+        public ForgetPasswordControllerE2ETests(
+            PostgresFixture postgresFixture,
+            MailHogFixture mailHogFixture)
+            : base(postgresFixture, mailHogFixture)   
         {
             _mailHogApiUrl = mailHogFixture.ApiUrl;
-
-            _factory = new CustomWebApplicationFactory(
-                postgresFixture.ConnectionString,
-                mailHogFixture.SmtpPort);
-
-            _client = _factory.CreateClient();
-
-            using var scope = _factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.Migrate();
-            SeedAdminUser(db, scope.ServiceProvider.GetRequiredService<IPasswordHasher>());
         }
 
         [Fact]
@@ -44,7 +33,7 @@ namespace LIMTIC.E2Es.Tests
             var userEmail = "forgot.test1@example.com";
             await CreateTestUser(userEmail, "Pass1!");
 
-            var response = await _client.ForgotPassword(new ForgetPasswordRequest { email = userEmail });
+            var response = await Client.ForgotPassword(new ForgetPasswordRequest { Email = userEmail });
 
             Assert.True(response.IsSuccessStatusCode,
                 $"Expected 200 but got {(int)response.StatusCode}. Body: {await response.Content.ReadAsStringAsync()}");
@@ -53,8 +42,8 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task ForgotPassword_UnknownEmail_ReturnsBadRequest()
         {
-            var response = await _client.ForgotPassword(
-                new ForgetPasswordRequest { email = "nobody@nowhere.com" });
+            var response = await Client.ForgotPassword(
+                new ForgetPasswordRequest { Email = "nobody@nowhere.com" });
 
             Assert.False(response.IsSuccessStatusCode);
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
@@ -65,20 +54,20 @@ namespace LIMTIC.E2Es.Tests
         {
             var userEmail = "forgot.test2@example.com";
             await CreateTestUser(userEmail, "Pass1!");
-            await _client.ForgotPassword(new ForgetPasswordRequest { email = userEmail });
+            await Client.ForgotPassword(new ForgetPasswordRequest { Email = userEmail });
 
             var otp = await GetOtpFromMailHog(userEmail);
             Assert.NotNull(otp);
 
-            var verifyResponse = await _client.VerifyOTP(
-                new VerifyResetCodeRequest { email = userEmail, otpToken = otp });
+            var verifyResponse = await Client.VerifyOTP(
+                new VerifyResetCodeRequest { Email = userEmail, OtpToken = otp });
 
             Assert.True(verifyResponse.IsSuccessStatusCode,
                 $"Expected 200 but got {(int)verifyResponse.StatusCode}. Body: {await verifyResponse.Content.ReadAsStringAsync()}");
 
             var body = await verifyResponse.Content.ReadFromJsonAsync<VerifyResetCodeResponse>();
-            Assert.NotNull(body?.resetToken);
-            Assert.NotEmpty(body!.resetToken);
+            Assert.NotNull(body?.ResetToken);
+            Assert.NotEmpty(body!.ResetToken);
         }
 
         [Fact]
@@ -86,10 +75,10 @@ namespace LIMTIC.E2Es.Tests
         {
             var userEmail = "forgot.test3@example.com";
             await CreateTestUser(userEmail, "Pass1!");
-            await _client.ForgotPassword(new ForgetPasswordRequest { email = userEmail });
+            await Client.ForgotPassword(new ForgetPasswordRequest { Email = userEmail });
 
-            var verifyResponse = await _client.VerifyOTP(
-                new VerifyResetCodeRequest { email = userEmail, otpToken = "000000" });
+            var verifyResponse = await Client.VerifyOTP(
+                new VerifyResetCodeRequest { Email = userEmail, OtpToken = "000000" });
 
             Assert.False(verifyResponse.IsSuccessStatusCode);
             Assert.Equal(System.Net.HttpStatusCode.BadRequest, verifyResponse.StatusCode);
@@ -104,8 +93,8 @@ namespace LIMTIC.E2Es.Tests
             await CreateTestUser(userEmail, "OldPass1!");
 
             // Step 1 - request OTP
-            var forgotResponse = await _client.ForgotPassword(
-                new ForgetPasswordRequest { email = userEmail });
+            var forgotResponse = await Client.ForgotPassword(
+                new ForgetPasswordRequest { Email = userEmail });
             Assert.True(forgotResponse.IsSuccessStatusCode,
                 $"ForgotPassword failed: {await forgotResponse.Content.ReadAsStringAsync()}");
 
@@ -114,26 +103,26 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(otp);
 
             // Step 3 - verify OTP
-            var verifyResponse = await _client.VerifyOTP(
-                new VerifyResetCodeRequest { email = userEmail, otpToken = otp });
+            var verifyResponse = await Client.VerifyOTP(
+                new VerifyResetCodeRequest { Email = userEmail, OtpToken = otp });
             Assert.True(verifyResponse.IsSuccessStatusCode,
                 $"VerifyOTP failed: {await verifyResponse.Content.ReadAsStringAsync()}");
 
             var verifyBody = await verifyResponse.Content.ReadFromJsonAsync<VerifyResetCodeResponse>();
-            Assert.NotNull(verifyBody?.resetToken);
+            Assert.NotNull(verifyBody?.ResetToken);
 
             // Step 4 - reset password
-            var resetResponse = await _client.ResetPassword(new ResetPasswordRequest
+            var resetResponse = await Client.ResetPassword(new ResetPasswordRequest
             {
-                email = userEmail,
+                Email = userEmail,
                 NewPassword = newPassword,
-                ResetToken = verifyBody!.resetToken
+                ResetToken = verifyBody!.ResetToken
             });
             Assert.True(resetResponse.IsSuccessStatusCode,
                 $"ResetPassword failed: {await resetResponse.Content.ReadAsStringAsync()}");
 
             // Step 5 - confirm new password works
-            var loginResponse = await _client.AuthenticateUser(new LoginRequest(userEmail, newPassword));
+            var loginResponse = await Client.AuthenticateUser(new LoginRequest(userEmail, newPassword));
             Assert.NotNull(loginResponse);
             Assert.NotEmpty(loginResponse!.AccessToken);
         }
@@ -143,16 +132,16 @@ namespace LIMTIC.E2Es.Tests
         {
             var userEmail = "forgot.test5@example.com";
             await CreateTestUser(userEmail, "Pass1!");
-            await _client.ForgotPassword(new ForgetPasswordRequest { email = userEmail });
+            await Client.ForgotPassword(new ForgetPasswordRequest { Email = userEmail });
 
             var otp = await GetOtpFromMailHog(userEmail);
             Assert.NotNull(otp);
 
-            await _client.VerifyOTP(new VerifyResetCodeRequest { email = userEmail, otpToken = otp });
+            await Client.VerifyOTP(new VerifyResetCodeRequest { Email = userEmail, OtpToken = otp });
 
-            var resetResponse = await _client.ResetPassword(new ResetPasswordRequest
+            var resetResponse = await Client.ResetPassword(new ResetPasswordRequest
             {
-                email = userEmail,
+                Email = userEmail,
                 NewPassword = "NewPass2!",
                 ResetToken = "invalid-token-that-will-never-match"
             });
@@ -225,7 +214,7 @@ namespace LIMTIC.E2Es.Tests
         private async Task CreateTestUser(string email, string password)
         {
             var token = await LoginAsSuperAdmin();
-            await _client.AddUser(new LIMTIC.WebAPI.Models.UserManagement.CreateUser.CreateUserRequest
+            await Client.AddUser(new LIMTIC.WebAPI.Models.UserManagement.CreateUser.CreateUserRequest
             {
                 FirstName = "Test",
                 LastName = "User",
@@ -238,7 +227,7 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<string> LoginAsSuperAdmin()
         {
-            var auth = await _client.AuthenticateUser(new LoginRequest("admin@test.com", "AdminPassword"));
+            var auth = await Client.AuthenticateUser(new LoginRequest("admin@test.com", "AdminPassword"));
             return auth!.AccessToken;
         }
 
