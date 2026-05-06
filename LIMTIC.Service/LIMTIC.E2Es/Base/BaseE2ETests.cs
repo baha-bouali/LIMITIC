@@ -1,11 +1,13 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
+using LIMTIC.E2Es.HttpCookie;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net;
 
 namespace LIMTIC.E2Es.Base
 {
@@ -16,10 +18,22 @@ namespace LIMTIC.E2Es.Base
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
 
-        public BaseE2ETests(PostgresFixture fixture)
+        public BaseE2ETests(PostgresFixture fixture, bool useShortTokenExpiry = false)
         {
-            Factory = new CustomWebApplicationFactory(fixture.ConnectionString);
-            Client = Factory.CreateClient();
+            var overrides = useShortTokenExpiry
+            ? new Dictionary<string, string?>
+            {
+                ["Jwt:ExpireInMinutes"] = "0",
+                ["Jwt:ExpireInSeconds"] = "3",
+                ["RefreshToken:ExpireInDays"] = "0",
+                ["RefreshToken:ExpireInSeconds"] = "10"
+            }
+            : new Dictionary<string, string?>();
+
+            Factory = new CustomWebApplicationFactory(fixture.ConnectionString, overrides);
+
+            // Configure HttpClient with CookieHandler to manage cookies across requests
+            Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(new CookieContainer()));
 
             // Apply migrations once
             using var scope = Factory.Services.CreateScope();

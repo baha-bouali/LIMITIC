@@ -63,6 +63,7 @@ namespace LIMTIC.Application.Services.Auth
                 Token = refreshToken,
                 UserId = user.Id,
                 ExpiryDate = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
+                    .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
@@ -77,7 +78,7 @@ namespace LIMTIC.Application.Services.Auth
             if (token == null)
                 return Result<LoginCommandResponse>.FailureResult("Refresh token not found");
 
-            if (token.ExpiryDate > DateTime.UtcNow)
+            if (token.ExpiryDate < DateTime.UtcNow)
                 return Result<LoginCommandResponse>.FailureResult("Refresh token is expired");
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
@@ -85,10 +86,9 @@ namespace LIMTIC.Application.Services.Auth
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
         }
 
-        public async Task Logout()
+        public async Task Logout(string? refreshToken)
         {
-            var currentUserId = _currentUserService.UserId;
-            await _refreshTokenRepository.RevokeRefreshTokenAsync(currentUserId);
+            await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
         }
     }
 }
