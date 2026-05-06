@@ -1,5 +1,5 @@
 ﻿using LIMTIC.Application.Contracts.Commands.Login;
-using LIMTIC.Domain.Shared;
+using LIMTIC.Application.DTOs;
 
 namespace LIMTIC.Application.Abstractions.Auth
 {

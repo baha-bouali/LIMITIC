@@ -1,6 +1,6 @@
-﻿using LIMTIC.WebAPI.Base;
+﻿using LIMTIC.Application.DTOs.UserManagement;
 
-namespace LIMTIC.Application.DTOs.UserManagement.CreateUser
+namespace LIMTIC.WebAPI.Models.UserManagement.CreateUser
 {
     public class CreateUserResponse : BaseResponse
     {

@@ -30,7 +30,7 @@ namespace LIMTIC.WebAPI.Controllers
 
             var result = await _authService.Login(loginCommand);
             if (result.IsFailure)
-                return BadRequest(new LoginResponse { Message = result.Error, ValidationErrors = result.ValidationErrors });
+                return BadRequest(new LoginResponse { Message = result.Message, ValidationErrors = result.ValidationErrors });
 
             Response.Cookies.Append("refreshToken", result.Data!.RefreshToken, new CookieOptions
             {
@@ -53,7 +53,7 @@ namespace LIMTIC.WebAPI.Controllers
 
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
-                return Unauthorized(new LoginResponse { Message = result.Error });
+                return Unauthorized(new LoginResponse { Message = result.Message });
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }

@@ -5,10 +5,9 @@ using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities;
-using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
 using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.DTOs;
 using LIMTIC.Domain.Entities.RefreshToken;
 
 namespace LIMTIC.Application.Services.Auth

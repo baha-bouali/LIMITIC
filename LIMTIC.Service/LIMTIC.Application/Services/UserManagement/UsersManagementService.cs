@@ -3,27 +3,31 @@ using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
+using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Helpers;
+using LIMTIC.Application.Mappers.UserMapper;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Users;
-using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Application.Services.UserManagement
 {
     public class UsersManagementService : IUsersManagementService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IUserMapper _userMapper;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IValidator<CreateUserCommand> _createUserCommandValidator;
 
         public UsersManagementService(
             IUserRepository userRepository,
+            IUserMapper userMapper,
             IPasswordHasher passwordHasher,
             IValidator<CreateUserCommand> createUserCommandValidator)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _createUserCommandValidator = createUserCommandValidator;
+            _userMapper = userMapper;
         }
 
         public async Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command)
@@ -41,13 +45,13 @@ namespace LIMTIC.Application.Services.UserManagement
                 firstName: command.FirstName, 
                 lastName: command.LastName, 
                 passwordHash: _passwordHasher.HashPassword(command.Password), 
-                isActive: true,
+                isActive: command.IsActive,
                 role: command.Role);
 
-            var result = await _userRepository.AddUserAsync(user.Data);
+            var result = await _userRepository.AddUserAsync(user);
             return result ? Result<CreateUserCommandResponse>.SuccessResult(new CreateUserCommandResponse
             {
-                User = user.Data,
+                User = _userMapper.MapToUserDto(user),
             }) : Result<CreateUserCommandResponse>.FailureResult("Failed to create user");
         }
 
@@ -56,8 +60,38 @@ namespace LIMTIC.Application.Services.UserManagement
             var user = await _userRepository.GetUserByIdAsync(userId);
             return user != null ? Result<GetUserCommandResponse>.SuccessResult(new GetUserCommandResponse
             {
-                User = user
+                User = _userMapper.MapToUserDto(user)
             }) : Result<GetUserCommandResponse>.FailureResult("User not found");
+        }
+
+        public async Task<Result<bool>> ActivateUserAsync(Guid userId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null)
+                return Result<bool>.FailureResult("User not found");
+
+            if (user.IsActive)
+                return Result<bool>.SuccessResult(data: true, message: "User is already active");
+
+            user.IsActive = true;
+            var result = await _userRepository.UpdateUserAsync(user);
+
+            return result ? Result<bool>.SuccessResult(data: true) : Result<bool>.FailureResult("Failed to activate user");
+        }
+
+        public async Task<Result<bool>> DeactivateUserAsync(Guid userId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null)
+                return Result<bool>.FailureResult("User not found");
+
+            if (!user.IsActive)
+                return Result<bool>.FailureResult("User is already deactived");
+
+            user.IsActive = false;
+            var result = await _userRepository.UpdateUserAsync(user);
+
+            return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
         }
     }
 }

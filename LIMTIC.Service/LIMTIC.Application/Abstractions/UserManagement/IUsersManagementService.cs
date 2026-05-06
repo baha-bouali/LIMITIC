@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
-using LIMTIC.Domain.Shared;
+using LIMTIC.Application.DTOs;
 
 namespace LIMTIC.Application.Abstractions.UserManagement
 {
@@ -8,5 +8,7 @@ namespace LIMTIC.Application.Abstractions.UserManagement
     {
         public Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command);
         public Task<Result<GetUserCommandResponse>> GetUserByIdAsync(Guid userId);
+        public Task<Result<bool>> ActivateUserAsync(Guid userId);
+        public Task<Result<bool>> DeactivateUserAsync(Guid userId);
     }
 }

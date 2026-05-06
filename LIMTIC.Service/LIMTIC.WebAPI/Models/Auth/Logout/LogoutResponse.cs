@@ -1,6 +1,4 @@
-﻿using LIMTIC.WebAPI.Base;
-
-namespace LIMTIC.WebAPI.Models.Auth.Logout
+﻿namespace LIMTIC.WebAPI.Models.Auth.Logout
 {
     public class LogoutResponse : BaseResponse
     {

@@ -1,6 +1,7 @@
-﻿using LIMTIC.WebAPI.Base;
+﻿
+using LIMTIC.Application.DTOs.UserManagement;
 
-namespace LIMTIC.Application.DTOs.UserManagement.GetUser
+namespace LIMTIC.WebAPI.Models.UserManagement.GetUser
 {
     public class GetUserResponse : BaseResponse
     {
