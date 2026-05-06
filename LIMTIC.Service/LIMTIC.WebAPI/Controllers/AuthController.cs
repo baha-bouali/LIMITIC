@@ -1,8 +1,8 @@
 ﻿using LIMTIC.Application.Abstractions.Auth;
 using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Settings;
+using LIMTIC.WebAPI.Models;
 using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Auth.Logout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -74,7 +74,7 @@ namespace LIMTIC.WebAPI.Controllers
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new LogoutResponse { Success = true });
+            return Ok(new BaseResponse{ Success = true });
         }
     }
 }
