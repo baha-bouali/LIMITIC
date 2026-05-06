@@ -18,9 +18,19 @@ namespace LIMTIC.E2Es.Base
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
 
-        public BaseE2ETests(PostgresFixture fixture)
+        public BaseE2ETests(PostgresFixture fixture, bool useShortTokenExpiry = false)
         {
-            Factory = new CustomWebApplicationFactory(fixture.ConnectionString);
+            var overrides = useShortTokenExpiry
+            ? new Dictionary<string, string?>
+            {
+                ["Jwt:ExpireInMinutes"] = "0",
+                ["Jwt:ExpireInSeconds"] = "3",
+                ["RefreshToken:ExpireInDays"] = "0",
+                ["RefreshToken:ExpireInSeconds"] = "10"
+            }
+            : null;
+
+            Factory = new CustomWebApplicationFactory(fixture.ConnectionString, overrides);
 
             // Configure HttpClient with CookieHandler to manage cookies across requests
             Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(new CookieContainer()));

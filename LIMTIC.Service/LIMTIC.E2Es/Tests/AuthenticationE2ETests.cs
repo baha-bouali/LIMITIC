@@ -10,7 +10,7 @@ namespace LIMTIC.E2Es.Tests
     [Collection("E2E collection")]
     public class AuthenticationE2ETests : BaseE2ETests
     {
-        public AuthenticationE2ETests(PostgresFixture fixture) : base(fixture)
+        public AuthenticationE2ETests(PostgresFixture fixture) : base(fixture, true)
         {
         }
 

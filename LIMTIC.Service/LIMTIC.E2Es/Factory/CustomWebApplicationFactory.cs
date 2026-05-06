@@ -3,20 +3,29 @@ using LIMTIC.WebAPI;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    private readonly Dictionary<string, string?> _configOverrides;
 
-    public CustomWebApplicationFactory(string connectionString)
+    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?>? configOverrides = null)
     {
         _connectionString = connectionString;
+        _configOverrides = configOverrides ?? new Dictionary<string, string?>();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
+
+        builder.ConfigureAppConfiguration((context, config) =>
+        {
+            if (_configOverrides.Any())
+                config.AddInMemoryCollection(_configOverrides);
+        });
 
         builder.ConfigureServices(services =>
         {
