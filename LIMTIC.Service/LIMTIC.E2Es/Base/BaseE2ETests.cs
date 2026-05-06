@@ -28,7 +28,7 @@ namespace LIMTIC.E2Es.Base
                 ["RefreshToken:ExpireInDays"] = "0",
                 ["RefreshToken:ExpireInSeconds"] = "10"
             }
-            : null;
+            : new Dictionary<string, string?>();
 
             Factory = new CustomWebApplicationFactory(fixture.ConnectionString, overrides);
 

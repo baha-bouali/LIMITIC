@@ -11,7 +11,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly string _connectionString;
     private readonly Dictionary<string, string?> _configOverrides;
 
-    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?>? configOverrides = null)
+    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?> configOverrides)
     {
         _connectionString = connectionString;
         _configOverrides = configOverrides ?? new Dictionary<string, string?>();
@@ -23,7 +23,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureAppConfiguration((context, config) =>
         {
-            if (_configOverrides.Any())
+            if (_configOverrides.Count != 0)
                 config.AddInMemoryCollection(_configOverrides);
         });
 

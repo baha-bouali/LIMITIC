@@ -65,7 +65,7 @@ namespace LIMTIC.E2Es.Tests
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             // 3. Attempt to access a protected resource with the expired access token and assert that it fails
-            var protectedResponse = await Client.GetUserByIdFullResponse(Guid.NewGuid(), superAdminAccessToken);
+            var protectedResponse = await Client.GetUserByIdFullHttpResponse(Guid.NewGuid(), superAdminAccessToken);
             Assert.Equal(HttpStatusCode.Unauthorized, protectedResponse.StatusCode);
 
             // 4. Send a POST request to the API endpoint to refresh the access token using the refresh token
@@ -90,7 +90,7 @@ namespace LIMTIC.E2Es.Tests
             await Task.Delay(TimeSpan.FromSeconds(10));
 
             // 3. Attempt to refresh the access token using the expired refresh token and assert that it fails
-            var refreshTokenReponse = await Client.RefreshTokenFullResponse();
+            var refreshTokenReponse = await Client.RefreshTokenFullHttpResponse();
             Assert.Equal(HttpStatusCode.Unauthorized, refreshTokenReponse.StatusCode);
         }
     }

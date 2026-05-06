@@ -38,7 +38,7 @@ namespace LIMTIC.E2Es.Extensions
             return null;
         }
 
-        public static async Task<HttpResponseMessage> GetUserByIdFullResponse(this HttpClient client, Guid id, string accessToken)
+        public static async Task<HttpResponseMessage> GetUserByIdFullHttpResponse(this HttpClient client, Guid id, string accessToken)
         {
             var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
             return await client.SendAsync(request);
@@ -62,7 +62,7 @@ namespace LIMTIC.E2Es.Extensions
             return null;
         }
 
-        public static async Task<HttpResponseMessage> RefreshTokenFullResponse(this HttpClient client)
+        public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
         {
             return await client.PostAsync("api/auth/refresh", null);
         }
