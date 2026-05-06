@@ -1,11 +1,11 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.Users;
 
 namespace LIMTIC.Domain.Abstractions
 {
     public interface IUserRepository
     {
-        Task<User?> GetUserByIdAsync(Guid userId);
-        Task<User?> GetUserByEmailAsync(string email);
-        Task<bool> AddUserAsync(User user);
+        Task<UserEntity?> GetUserByIdAsync(Guid userId);
+        Task<UserEntity?> GetUserByEmailAsync(string email);
+        Task<bool> AddUserAsync(UserEntity user);
     }
 }

@@ -1,10 +1,10 @@
-﻿using LIMTIC.Domain.Entities;
-using LIMTIC.WebAPI.Models.UserManagement;
+﻿using LIMTIC.Application.DTOs.UserManagement;
+using LIMTIC.Domain.Entities.Users;
 
 namespace LIMTIC.WebAPI.Mappers.UserMapper
 {
     public interface IUserMapper
     {
-        public UserDto MapToUserDto(User user);
+        public UserDto MapToUserDto(UserEntity user);
     }
 }

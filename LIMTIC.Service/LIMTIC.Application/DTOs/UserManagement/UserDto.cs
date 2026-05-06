@@ -1,6 +1,6 @@
 ﻿using LIMTIC.Domain.Enums;
 
-namespace LIMTIC.WebAPI.Models.UserManagement
+namespace LIMTIC.Application.DTOs.UserManagement
 {
     public class UserDto
     {
