@@ -62,9 +62,8 @@ namespace LIMTIC.Application.Services.Auth
                 Id = Guid.NewGuid(),
                 Token = refreshToken,
                 UserId = user.Id,
-                ExpiryDate = _refreshTokenSettings.ExpireInDays > 0
-                    ? DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
-                    : DateTime.UtcNow.AddSeconds(_refreshTokenSettings.ExpireInSeconds)
+                ExpiryDate = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
+                    .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));

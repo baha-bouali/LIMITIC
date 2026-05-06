@@ -15,7 +15,6 @@ namespace LIMTIC.E2Es.Base
     {
         protected readonly HttpClient Client;
         protected readonly CustomWebApplicationFactory Factory;
-        private readonly CookieContainer _cookieContainer;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
 
@@ -24,8 +23,7 @@ namespace LIMTIC.E2Es.Base
             Factory = new CustomWebApplicationFactory(fixture.ConnectionString);
 
             // Configure HttpClient with CookieHandler to manage cookies across requests
-            _cookieContainer = new CookieContainer();
-            Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(_cookieContainer));
+            Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(new CookieContainer()));
 
             // Apply migrations once
             using var scope = Factory.Services.CreateScope();

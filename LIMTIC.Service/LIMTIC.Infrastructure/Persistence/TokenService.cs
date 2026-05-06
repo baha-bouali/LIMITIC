@@ -37,9 +37,8 @@ namespace LIMTIC.Infrastructure.Persistence
                 issuer: _jwtSettings.Issuer,
                 audience: _jwtSettings.Audience,
                 claims: claims,
-                expires: _jwtSettings.ExpireInMinutes > 0
-                    ? DateTime.Now.AddMinutes(_jwtSettings.ExpireInMinutes)
-                    : DateTime.Now.AddSeconds(_jwtSettings.ExpireInSeconds),
+                expires: DateTime.Now.AddMinutes(_jwtSettings.ExpireInMinutes)
+                    .AddSeconds(_jwtSettings.ExpireInSeconds),
                 signingCredentials: credentials
             );
 

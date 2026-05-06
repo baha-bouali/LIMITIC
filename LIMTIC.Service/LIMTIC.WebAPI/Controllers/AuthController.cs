@@ -38,9 +38,8 @@ namespace LIMTIC.WebAPI.Controllers
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
                 Path = "/",
-                Expires = _refreshTokenSettings.ExpireInDays > 0
-                    ? DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
-                    : DateTime.UtcNow.AddSeconds(_refreshTokenSettings.ExpireInSeconds)
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
+                    .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
