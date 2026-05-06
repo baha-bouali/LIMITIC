@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.RefreshToken;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.UnitTests.Base;
 
@@ -10,7 +11,7 @@ namespace LIMTIC.UnitTests.Tests
         public async Task AddRefreshToken_ThenGetRefreshToken_ReturnsToken()
         {
             // 1. Create a new user object with valid data
-            var user = new User
+            var user = new UserEntity
             {
                 Id = Guid.NewGuid(),
                 FirstName = "Test",
@@ -26,7 +27,7 @@ namespace LIMTIC.UnitTests.Tests
             await UserRepository.AddUserAsync(user);
 
             // 2. Create a new refresh token for the user and add it to the repository
-            var refreshToken = new RefreshToken
+            var refreshToken = new RefreshTokenEntity
             {
                 Id = Guid.NewGuid(),
                 Token = Guid.NewGuid().ToString(),

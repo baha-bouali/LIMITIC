@@ -9,6 +9,7 @@ using LIMTIC.Domain.Entities;
 using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
 using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Domain.Entities.RefreshToken;
 
 namespace LIMTIC.Application.Services.Auth
 {
@@ -56,7 +57,7 @@ namespace LIMTIC.Application.Services.Auth
             string accessToken = _tokenService.GenerateAccessToken(user);
             string refreshToken = _tokenService.GenerateRefreshToken();
 
-            await _refreshTokenRepository.AddRefreshTokenAsync(new RefreshToken
+            await _refreshTokenRepository.AddRefreshTokenAsync(new RefreshTokenEntity
             {
                 Id = Guid.NewGuid(),
                 Token = refreshToken,

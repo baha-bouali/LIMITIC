@@ -1,5 +1,5 @@
 ﻿using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,21 +14,21 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<User?> GetUserByIdAsync(Guid userId)
+        public async Task<UserEntity?> GetUserByIdAsync(Guid userId)
         {
             return await _dbContext
                 .Users
                 .FirstOrDefaultAsync(u => u.Id == userId);
         }
 
-        public async Task<User?> GetUserByEmailAsync(string email)
+        public async Task<UserEntity?> GetUserByEmailAsync(string email)
         {
             return await _dbContext
                 .Users
                 .FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<bool> AddUserAsync(User user)
+        public async Task<bool> AddUserAsync(UserEntity user)
         {
             await _dbContext.Users.AddAsync(user);
             return await _dbContext.SaveChangesAsync() > 0;

@@ -1,7 +1,7 @@
 ﻿using LIMTIC.Domain.Entities;
 using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+using LIMTIC.Application.DTOs.UserManagement.CreateUser;
+using LIMTIC.Application.DTOs.UserManagement.GetUser;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
