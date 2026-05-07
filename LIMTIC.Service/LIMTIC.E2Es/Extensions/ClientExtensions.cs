@@ -1,9 +1,9 @@
-﻿using LIMTIC.Domain.Entities;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.Application.DTOs.UserManagement.CreateUser;
-using LIMTIC.Application.DTOs.UserManagement.GetUser;
+﻿using LIMTIC.WebAPI.Models.Auth.Login;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using LIMTIC.WebAPI.Models;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.UserManagement.GetUser;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -27,13 +27,41 @@ namespace LIMTIC.E2Es.Extensions
         }
 
         public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
+            {
+                var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+
+                var response = await client.SendAsync(request);
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadFromJsonAsync<GetUserResponse>();
+                }
+                return null;
+            }
+
+        public static async Task<HttpResponseMessage> GetUserByIdFullResponse(this HttpClient client, Guid id, string accessToken)
         {
             var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(request);
+        }
 
+        public static async Task<BaseResponse?> ActivateUser(this HttpClient client, Guid userId, string accessToken)
+        {
+            var request = CreateRequest($"api/users/activateUser?userId={userId}", HttpMethod.Post, accessToken);
             var response = await client.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadFromJsonAsync<GetUserResponse>();
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+            }
+            return null;
+        }
+
+        public static async Task<BaseResponse?> DeactivateUser(this HttpClient client, Guid userId, string accessToken)
+        {
+            var request = CreateRequest($"api/users/deactivateUser?userId={userId}", HttpMethod.Post, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
             }
             return null;
         }

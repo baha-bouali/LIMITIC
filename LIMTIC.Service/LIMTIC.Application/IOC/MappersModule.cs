@@ -1,6 +1,7 @@
-﻿using LIMTIC.WebAPI.Mappers.UserMapper;
+﻿using LIMTIC.Application.Mappers.UserMapper;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace LIMTIC.WebAPI.IOC
+namespace LIMTIC.Application.IOC
 {
     public static class MappersModule
     {
