@@ -70,7 +70,9 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Success = false
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
@@ -91,7 +93,9 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Success = false
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
@@ -105,6 +109,7 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return Ok(new GetUserResponse
                 {
+                    Success = true,
                     User = result.Data.User
                 });
             }
@@ -112,7 +117,9 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new GetUserResponse
                 {
-                    Message = result.Message
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
@@ -130,12 +137,16 @@ namespace LIMTIC.WebAPI.Controllers
             var result = await _usersManagementService.ChangeUserPasswordAsync(command);
             if (result.Success)
             {
-                return Ok();
+                return Ok(new BaseResponse
+                {
+                    Success = true,
+                });
             }
             else
             {
                 return BadRequest(new BaseResponse
                 {
+                    Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });

@@ -1,6 +1,6 @@
-﻿using System.Collections.Concurrent;
+﻿using LIMTIC.Application.Abstractions.Email;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
-using LIMTIC.Application.Abstractions.Email;
 
 namespace LIMTIC.Infrastructure.Emails
 {

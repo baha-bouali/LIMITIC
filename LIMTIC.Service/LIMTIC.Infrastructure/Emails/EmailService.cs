@@ -1,9 +1,9 @@
-﻿using System.Net;
-using System.Net.Mail;
-using LIMTIC.Application.Abstractions.Email;
-using LIMTIC.Application.Contracts.Models.Emails;
+﻿using LIMTIC.Application.Abstractions.Email;
+using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Settings;
 using Microsoft.Extensions.Options;
+using System.Net;
+using System.Net.Mail;
 
 namespace LIMTIC.Infrastructure.Emails
 {
@@ -27,7 +27,7 @@ namespace LIMTIC.Infrastructure.Emails
         }
 
         // ─── How to add a new email ────────────────────────────────────────────
-        // 1. Create a model in Application/Contracts/Models/Emails/
+        // 1. Create a model in Application/Emails/Models/
         // 2. Create a template in Infrastructure/Emails/Templates/
         // 3. Add the method signature to IEmailService
         // 4. Implement it here following the exact same pattern:

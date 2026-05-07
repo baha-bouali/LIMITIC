@@ -44,8 +44,6 @@ namespace LIMTIC.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "ResetPasswords");
-
-      
         }
     }
 }

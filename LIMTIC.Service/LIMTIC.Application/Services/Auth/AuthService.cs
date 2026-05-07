@@ -7,8 +7,8 @@ using LIMTIC.Application.Contracts.Commands.ForgetPassword;
 using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
-using LIMTIC.Application.Contracts.Models.Emails;
 using LIMTIC.Application.DTOs;
+using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
@@ -130,7 +130,7 @@ namespace LIMTIC.Application.Services.Auth
 
         public async Task<Result<VerifyResetCodeCommandResponse>> VerifyResetTokenAsync(VerifyResetCodeCommand command)
         {
-            var user = await _userRepository.GetUserByEmailAsync(command.email);
+            var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
                 return Result<VerifyResetCodeCommandResponse>.FailureResult("User not found");
 
@@ -138,7 +138,7 @@ namespace LIMTIC.Application.Services.Auth
             if (resetPasswordEntry == null)
                 return Result<VerifyResetCodeCommandResponse>.FailureResult("No reset token found");
 
-            if (!_passwordHasher.VerifyPassword(resetPasswordEntry.OTPTokenHash, command.otpToken))
+            if (!_passwordHasher.VerifyPassword(resetPasswordEntry.OTPTokenHash, command.OtpToken))
                 return Result<VerifyResetCodeCommandResponse>.FailureResult("Invalid OTP token");
 
             if (resetPasswordEntry.OTPTokenExpiry < DateTime.UtcNow)
@@ -158,7 +158,7 @@ namespace LIMTIC.Application.Services.Auth
 
         public async Task<Result<string>> ResetPasswordAsync(ResetPasswordCommand command)
         {
-            var user = await _userRepository.GetUserByEmailAsync(command.email);
+            var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
                 return Result<string>.FailureResult("User not found");
 

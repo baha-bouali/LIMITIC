@@ -21,6 +21,7 @@ namespace LIMTIC.Infrastructure.Repositories
                 .AddAsync(resetPassword);
             await _dbContext.SaveChangesAsync();
         }
+
         public async Task<ResetPasswordEntity?> GetResetPasswordAsync(Guid userId)
         {
             return await _dbContext

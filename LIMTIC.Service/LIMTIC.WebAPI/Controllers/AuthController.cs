@@ -100,8 +100,8 @@ namespace LIMTIC.WebAPI.Controllers
         {
             var command = new VerifyResetCodeCommand
             {
-                email = request.Email,
-                otpToken = request.OtpToken
+                Email = request.Email,
+                OtpToken = request.OtpToken
             };
             var result = await _authService.VerifyResetTokenAsync(command);
             if (result.Success)
@@ -125,7 +125,7 @@ namespace LIMTIC.WebAPI.Controllers
         {
             var command = new ResetPasswordCommand
             {
-                email = request.Email,
+                Email = request.Email,
                 NewPassword = request.NewPassword,
                 ResetToken = request.ResetToken
             };

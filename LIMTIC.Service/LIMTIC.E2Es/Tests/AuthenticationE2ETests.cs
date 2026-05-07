@@ -2,6 +2,7 @@
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
+using LIMTIC.E2Es.MailFixture;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
@@ -10,7 +11,7 @@ namespace LIMTIC.E2Es.Tests
     [Collection("E2E collection")]
     public class AuthenticationE2ETests : BaseE2ETests
     {
-        public AuthenticationE2ETests(PostgresFixture fixture) : base(fixture, true)
+        public AuthenticationE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
         {
         }
 
