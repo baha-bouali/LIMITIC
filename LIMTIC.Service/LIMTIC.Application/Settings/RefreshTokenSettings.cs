@@ -3,5 +3,6 @@
     public class RefreshTokenSettings
     {
         public int ExpireInDays { get; set; }
+        public int ExpireInSeconds { get; set; }
     }
 }

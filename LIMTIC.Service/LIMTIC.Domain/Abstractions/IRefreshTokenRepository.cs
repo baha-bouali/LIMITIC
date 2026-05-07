@@ -4,8 +4,8 @@ namespace LIMTIC.Domain.Abstractions
 {
     public interface IRefreshTokenRepository
     {
-        Task AddRefreshTokenAsync(RefreshTokenEntity refreshToken);
+        Task<int> AddRefreshTokenAsync(RefreshTokenEntity refreshToken);
         Task<RefreshTokenEntity?> GetRefreshTokenAsync(string token);
-        Task RevokeRefreshTokenAsync(Guid userId);
+        Task<int> RevokeRefreshTokenAsync(string? token);
     }
 }

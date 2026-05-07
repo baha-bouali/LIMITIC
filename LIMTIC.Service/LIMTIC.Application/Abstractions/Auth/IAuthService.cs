@@ -10,10 +10,11 @@ namespace LIMTIC.Application.Abstractions.Auth
     {
         Task<Result<LoginCommandResponse>> Login(LoginCommand command);
         Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken);
-        Task Logout();
+      
         Task<Result<string>> ForgetPasswordAsync(ForgetPasswordCommand command);
         Task<Result<VerifyResetCodeCommandResponse>> VerifyResetTokenAsync(VerifyResetCodeCommand command);
         Task<Result<string>> ResetPasswordAsync(ResetPasswordCommand command);
 
+        Task Logout(string? refreshToken);
     }
 }

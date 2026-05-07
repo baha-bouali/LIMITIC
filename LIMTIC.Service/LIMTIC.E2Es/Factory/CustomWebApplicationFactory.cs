@@ -4,27 +4,39 @@ using LIMTIC.WebAPI;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    private readonly Dictionary<string, string?> _configOverrides;
     private readonly int? _mailHogSmtpPort;
 
-    public CustomWebApplicationFactory(string connectionString)
+    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?> configOverrides)
     {
         _connectionString = connectionString;
+        _configOverrides = configOverrides ?? new Dictionary<string, string?>();
     }
 
     public CustomWebApplicationFactory(string connectionString, int mailHogSmtpPort)
     {
         _connectionString = connectionString;
         _mailHogSmtpPort = mailHogSmtpPort;
+        _configOverrides = new Dictionary<string, string?>();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Test");
+
+        builder.ConfigureAppConfiguration((context, config) =>
+        {
+            if (_configOverrides.Count != 0)
+                config.AddInMemoryCollection(_configOverrides);
+        });
+
         builder.ConfigureServices(services =>
         {
             // Remove existing DbContext

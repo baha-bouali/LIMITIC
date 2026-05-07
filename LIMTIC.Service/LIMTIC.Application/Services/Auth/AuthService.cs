@@ -81,6 +81,7 @@ namespace LIMTIC.Application.Services.Auth
                 Token = refreshToken,
                 UserId = user.Id,
                 ExpiryDate = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
+                    .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
@@ -103,10 +104,9 @@ namespace LIMTIC.Application.Services.Auth
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
         }
 
-        public async Task Logout()
+        public async Task Logout(string? refreshToken)
         {
-            var currentUserId = _currentUserService.UserId;
-            await _refreshTokenRepository.RevokeRefreshTokenAsync(currentUserId);
+            await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
         }
 
         public async Task<Result<string>> ForgetPasswordAsync(ForgetPasswordCommand command)
@@ -165,6 +165,9 @@ namespace LIMTIC.Application.Services.Auth
             var resetPasswordEntry = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
             if (resetPasswordEntry == null)
                 return Result<string>.FailureResult("No reset token found");
+
+            if (resetPasswordEntry.ResetPasswordTokenHash == null || command.ResetToken == null)
+                return Result<string>.FailureResult("Invalid reset token");
 
             if (!_passwordHasher.VerifyPassword(resetPasswordEntry.ResetPasswordTokenHash, command.ResetToken))
                 return Result<string>.FailureResult("Invalid reset token");

@@ -10,6 +10,5 @@ namespace LIMTIC.Application.DTOs.UserManagement
         public string LastName { get; set; }
         public UserRole Role { get; set; }
         public bool IsActive { get; set; }
-        public DateTime CreatedAt { get; set; }
     }
 }

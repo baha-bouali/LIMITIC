@@ -48,9 +48,24 @@ namespace LIMTIC.E2Es.Extensions
             return null;
         }
 
+        public static async Task<HttpResponseMessage> GetUserByIdFullHttpResponse(this HttpClient client, Guid id, string accessToken)
+        {
+            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(request);
+        }
+
         public static async Task<LoginResponse?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
         {
             var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<LoginResponse>();
+            return null;
+        }
+
+        public static async Task<LoginResponse?> RefreshToken(this HttpClient client)
+        {
+            var response = await client.PostAsync("api/auth/refreshToken", null);
 
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<LoginResponse>();
@@ -76,6 +91,11 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<HttpResponseMessage> ResetPassword(this HttpClient client, ResetPasswordRequest request)
         {
             return await client.PostAsJsonAsync("api/auth/resetPassword", request);
+        }
+
+        public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
+        {
+            return await client.PostAsync("api/auth/refreshToken", null);
         }
     }
 }

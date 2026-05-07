@@ -44,24 +44,22 @@ namespace LIMTIC.WebAPI.Controllers
                 HttpOnly = true,
                 Secure = true,
                 SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays),
+                Path = "/",
+                Expires = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
+                    .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
         [HttpPost("refreshToken")]
-        [Authorize]
         public async Task<IActionResult> RefreshToken()
         {
             Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
 
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
-            {
-                await _authService.Logout();
                 return Unauthorized(new LoginResponse { Message = result.Error });
-            }
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
@@ -70,12 +68,15 @@ namespace LIMTIC.WebAPI.Controllers
         [Authorize]
         public async Task<IActionResult> Logout()
         {
-            await _authService.Logout();
+            Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
+
+            await _authService.Logout(refreshToken);
 
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
+                Path = "/",
                 SameSite = SameSiteMode.Strict
             });
 

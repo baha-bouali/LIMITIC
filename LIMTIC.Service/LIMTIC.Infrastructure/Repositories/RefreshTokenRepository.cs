@@ -14,11 +14,12 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task AddRefreshTokenAsync(RefreshTokenEntity refreshToken)
+        public async Task<int> AddRefreshTokenAsync(RefreshTokenEntity refreshToken)
         {
             await _dbContext
                 .RefreshTokens
                 .AddAsync(refreshToken);
+            return await _dbContext.SaveChangesAsync();
         }
 
         public async Task<RefreshTokenEntity?> GetRefreshTokenAsync(string token)
@@ -29,11 +30,11 @@ namespace LIMTIC.Infrastructure.Repositories
                 .FirstOrDefaultAsync(e => e.Token == token);
         }
 
-        public async Task RevokeRefreshTokenAsync(Guid userId)
+        public async Task<int> RevokeRefreshTokenAsync(string? token)
         {
-            await _dbContext
+            return await _dbContext
                 .RefreshTokens
-                .Where(e => e.UserId == userId)
+                .Where(e => e.Token == token)
                 .ExecuteDeleteAsync();
         }
     }
