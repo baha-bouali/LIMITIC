@@ -1,6 +1,6 @@
-﻿using LIMTIC.Application.Abstractions;
+﻿using System.Security.Claims;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Enums;
-using System.Security.Claims;
 
 namespace LIMTIC.WebAPI.Services
 {

@@ -1,4 +1,4 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.UnitTests.Base;
 
@@ -7,7 +7,7 @@ namespace LIMTIC.UnitTests.Tests
 {
     public class ChangeUserPasswordTests : BaseTests
     {
-        private static User BuildUser(string email = "jane.doe@example.com", string passwordHash = "old_hashed_password") => new()
+        private static UserEntity BuildUser(string email = "jane.doe@example.com", string passwordHash = "old_hashed_password") => new()
         {
             Id = Guid.NewGuid(),
             FirstName = "Jane",

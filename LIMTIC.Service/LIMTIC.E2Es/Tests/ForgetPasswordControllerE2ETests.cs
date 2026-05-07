@@ -1,7 +1,8 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Application.DTOs.UserManagement.CreateUser;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
@@ -214,7 +215,7 @@ namespace LIMTIC.E2Es.Tests
         private async Task CreateTestUser(string email, string password)
         {
             var token = await LoginAsSuperAdmin();
-            await Client.AddUser(new LIMTIC.WebAPI.Models.UserManagement.CreateUser.CreateUserRequest
+            await Client.AddUser(new CreateUserRequest
             {
                 FirstName = "Test",
                 LastName = "User",
@@ -236,14 +237,14 @@ namespace LIMTIC.E2Es.Tests
             if (db.Users.Any(u => u.Email == "admin@test.com"))
                 return;
 
-            db.Users.Add(new User
+            db.Users.Add(new UserEntity
             {
                 Id = Guid.NewGuid(),
                 FirstName = "Admin",
                 LastName = "Admin",
                 IsActive = true,
                 Email = "admin@test.com",
-                Role = UserRole.Super_Admin,
+                Role = UserRole.SuperAdmin,
                 PasswordHash = passwordHasher.HashPassword("AdminPassword"),
                 CreatedAtUtc = DateTime.UtcNow,
                 CreatedBy = Guid.Empty

@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Infrastructure.Settings;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -19,7 +19,7 @@ namespace LIMTIC.Infrastructure.Persistence
             _jwtSettings = jwtSettings.Value;
         }
 
-        public string GenerateAccessToken(User user)
+        public string GenerateAccessToken(UserEntity user)
         {
             var claims = new[]
             {

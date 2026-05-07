@@ -11,7 +11,9 @@ using LIMTIC.Application.Contracts.Models.Emails;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.RefreshToken;
+using LIMTIC.Domain.Entities.ResetPassword;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
 
@@ -73,7 +75,7 @@ namespace LIMTIC.Application.Services.Auth
             string accessToken = _tokenService.GenerateAccessToken(user);
             string refreshToken = _tokenService.GenerateToken();
 
-            await _refreshTokenRepository.AddRefreshTokenAsync(new RefreshToken
+            await _refreshTokenRepository.AddRefreshTokenAsync(new RefreshTokenEntity
             {
                 Id = Guid.NewGuid(),
                 Token = refreshToken,
@@ -178,7 +180,7 @@ namespace LIMTIC.Application.Services.Auth
             return Result<string>.SuccessResult("Password reset successful");
         }
 
-        private async Task upsertResetPassword(User user, string otp)
+        private async Task upsertResetPassword(UserEntity user, string otp)
         {
             var existing = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
 
@@ -199,9 +201,9 @@ namespace LIMTIC.Application.Services.Auth
                     OTPTokenHash = _passwordHasher.HashPassword(otp),
                     OTPTokenExpiry = DateTime.UtcNow.AddMinutes(_otpTokenSettings.ExpireInMinutes)
                 };
+
                 await _resetPasswordRepository.AddResetPasswordAsync(resetPassword);
             }
-
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.ResetPassword;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.UnitTests.Base;
 
@@ -6,7 +7,7 @@ namespace LIMTIC.UnitTests.Tests
 {
     public class ForgetPasswordTests : BaseTests
     {
-        private static User BuildUser(string email) => new()
+        private static UserEntity BuildUser(string email) => new()
         {
             Id = Guid.NewGuid(),
             FirstName = "Jane",

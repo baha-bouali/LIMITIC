@@ -1,12 +1,13 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using LIMTIC.Application.DTOs.UserManagement.CreateUser;
+using LIMTIC.Application.DTOs.UserManagement.GetUser;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUser;
+
 
 namespace LIMTIC.E2Es.Extensions
 {

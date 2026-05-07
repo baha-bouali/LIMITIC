@@ -1,9 +1,9 @@
-﻿using LIMTIC.Domain.Entities;
+﻿using LIMTIC.Domain.Entities.Users;
 
 namespace LIMTIC.Application.Contracts.Commands.CreateUser
 {
     public class CreateUserCommandResponse
     {
-        public User User { get; set; }
+        public UserEntity User { get; set; }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,14 +14,14 @@ namespace LIMTIC.Infrastructure.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task AddRefreshTokenAsync(RefreshToken refreshToken)
+        public async Task AddRefreshTokenAsync(RefreshTokenEntity refreshToken)
         {
             await _dbContext
                 .RefreshTokens
                 .AddAsync(refreshToken);
         }
 
-        public async Task<RefreshToken?> GetRefreshTokenAsync(string token)
+        public async Task<RefreshTokenEntity?> GetRefreshTokenAsync(string token)
         {
             return await _dbContext
                 .RefreshTokens

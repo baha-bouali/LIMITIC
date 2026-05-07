@@ -1,9 +1,9 @@
 ﻿using LIMTIC.Domain.Enums;
 using LIMTIC.Domain.Shared;
 
-namespace LIMTIC.Domain.Entities
+namespace LIMTIC.Domain.Entities.Users
 {
-    public class User : BaseEntity
+    public class UserEntity : BaseEntity
     {
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
@@ -12,10 +12,14 @@ namespace LIMTIC.Domain.Entities
         public UserRole Role { get; set; }
         public string? AvatarBlobName { get; set; }
         public bool IsActive { get; set; }
-       
-        public static Result<User> Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
+
+        public ResearcherEntity? Researcher { get; set; }
+        public PhDStudentEntity? PhDStudent { get; set; }
+        public MasterianEntity? Masterian { get; set; }
+
+        public static Result<UserEntity> Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
         {
-            var user = new User
+            var user = new UserEntity
             {
                 Email = email.ToLower(),
                 FirstName = firstName.Trim(),
@@ -26,7 +30,7 @@ namespace LIMTIC.Domain.Entities
                 AvatarBlobName = avatarBlobName
             };
 
-            return Result<User>.SuccessResult(user);
+            return Result<UserEntity>.SuccessResult(user);
         }
     }
 }

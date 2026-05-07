@@ -6,7 +6,7 @@ using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Application.Services.UserManagement
@@ -37,7 +37,7 @@ namespace LIMTIC.Application.Services.UserManagement
             if (existingUser != null)
                 return Result<CreateUserCommandResponse>.FailureResult("Email already registered");
 
-            var user = User.Create(
+            var user = UserEntity.Create(
                 email: command.Email,
                 firstName: command.FirstName,
                 lastName: command.LastName,
