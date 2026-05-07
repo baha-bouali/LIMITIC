@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace LIMTIC.Infrastructure.Data.Configurations
+namespace LIMTIC.Infrastructure.Data.Configurations.ResetPassword
 {
     public class ResetPasswordConfiguration : IEntityTypeConfiguration<ResetPasswordEntity>
     {
@@ -14,7 +14,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations
                    .WithMany()
                    .HasForeignKey(rp => rp.UserId)
                    .OnDelete(DeleteBehavior.Cascade);
-
         }
     }
 }

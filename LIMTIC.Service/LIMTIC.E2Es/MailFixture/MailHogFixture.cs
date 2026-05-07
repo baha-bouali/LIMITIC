@@ -16,7 +16,7 @@ namespace LIMTIC.E2Es.MailFixture
                 .WithImage("mailhog/mailhog")
                 .WithPortBinding(1025, assignRandomHostPort: true)
                 .WithPortBinding(8025, assignRandomHostPort: true)
-                 .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8025).ForPath("/")))
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilHttpRequestIsSucceeded(r => r.ForPort(8025).ForPath("/")))
                 .Build();
             await _container.StartAsync();
         }

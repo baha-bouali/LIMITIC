@@ -6,11 +6,11 @@ using LIMTIC.Domain.Entities.ResearchAxis;
 using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
-using LIMTIC.Infrastructure.Data.Configurations;
 using LIMTIC.Infrastructure.Data.Configurations.Events;
 using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
 using LIMTIC.Infrastructure.Data.Configurations.ResearchAxis;
+using LIMTIC.Infrastructure.Data.Configurations.ResetPassword;
 using LIMTIC.Infrastructure.Data.Configurations.Users;
 using Microsoft.EntityFrameworkCore;
 

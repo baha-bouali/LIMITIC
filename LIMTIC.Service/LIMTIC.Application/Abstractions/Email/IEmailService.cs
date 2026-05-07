@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Contracts.Models.Emails;
+﻿using LIMTIC.Application.Emails.Models;
 
 namespace LIMTIC.Application.Abstractions.Email
 {

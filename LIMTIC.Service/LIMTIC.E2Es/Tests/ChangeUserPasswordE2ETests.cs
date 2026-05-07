@@ -1,6 +1,7 @@
 ﻿using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
+using LIMTIC.E2Es.MailFixture;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
@@ -10,7 +11,7 @@ namespace LIMTIC.E2Es.Tests
     [Collection("E2E collection")]
     public class ChangeUserPasswordE2ETests : BaseE2ETests
     {
-        public ChangeUserPasswordE2ETests(PostgresFixture fixture) : base(fixture)
+        public ChangeUserPasswordE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
         {
         }
 

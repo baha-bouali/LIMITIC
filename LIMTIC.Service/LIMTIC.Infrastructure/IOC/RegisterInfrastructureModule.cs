@@ -1,5 +1,4 @@
-﻿using System.Text;
-using LIMTIC.Application.Abstractions.Email;
+﻿using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
@@ -12,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace LIMTIC.Infrastructure.IOC
 {
@@ -31,7 +31,7 @@ namespace LIMTIC.Infrastructure.IOC
             services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
             // configure otp settings
             services.Configure<OTPTokenSettings>(configuration.GetSection("OTPToken"));
-            // configure resettoken settings
+            // configure reset token settings
             services.Configure<ResetPasswordTokenSettings>(configuration.GetSection("ResetPasswordToken"));
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
 

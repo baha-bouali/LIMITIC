@@ -14,17 +14,11 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     private readonly Dictionary<string, string?> _configOverrides;
     private readonly int? _mailHogSmtpPort;
 
-    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?> configOverrides)
+    public CustomWebApplicationFactory(string connectionString, Dictionary<string, string?> configOverrides, int mailHogSmtpPort)
     {
         _connectionString = connectionString;
         _configOverrides = configOverrides ?? new Dictionary<string, string?>();
-    }
-
-    public CustomWebApplicationFactory(string connectionString, int mailHogSmtpPort)
-    {
-        _connectionString = connectionString;
         _mailHogSmtpPort = mailHogSmtpPort;
-        _configOverrides = new Dictionary<string, string?>();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

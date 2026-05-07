@@ -1,4 +1,4 @@
-﻿namespace LIMTIC.Application.Contracts.Models.Emails
+﻿namespace LIMTIC.Application.Emails.Models
 {
     public class OTPEmailModel
     {

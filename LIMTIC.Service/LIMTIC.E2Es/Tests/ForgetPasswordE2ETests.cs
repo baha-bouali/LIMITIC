@@ -20,12 +20,9 @@ namespace LIMTIC.E2Es.Tests
     {
         private readonly string _mailHogApiUrl;
 
-        public ForgetPasswordE2ETests(
-            PostgresFixture postgresFixture,
-            MailHogFixture mailHogFixture)
-            : base(postgresFixture, mailHogFixture)
+        public ForgetPasswordE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
         {
-            _mailHogApiUrl = mailHogFixture.ApiUrl;
+            _mailHogApiUrl = mailFixture.ApiUrl;
         }
 
         [Fact]
