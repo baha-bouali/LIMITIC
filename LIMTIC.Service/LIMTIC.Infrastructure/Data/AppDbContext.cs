@@ -3,12 +3,14 @@ using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResearchAxis;
+using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
 using LIMTIC.Infrastructure.Data.Configurations.Events;
 using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
 using LIMTIC.Infrastructure.Data.Configurations.ResearchAxis;
+using LIMTIC.Infrastructure.Data.Configurations.ResetPassword;
 using LIMTIC.Infrastructure.Data.Configurations.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -42,6 +44,7 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<NationalConferenceEntity> NationalConferences { get; set; }
         public DbSet<TechnicalReportEntity> TechnicalReports { get; set; }
         public DbSet<JournalArticleEntity> JournalArticles { get; set; }
+        public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -65,7 +68,7 @@ namespace LIMTIC.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
-           
+
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new PhDStudentConfiguration());
             modelBuilder.ApplyConfiguration(new MasterianConfiguration());
@@ -75,7 +78,7 @@ namespace LIMTIC.Infrastructure.Data
 
             modelBuilder.ApplyConfiguration(new EventConfiguration());
             modelBuilder.ApplyConfiguration(new SpeakerConfiguration());
-            
+
 
             modelBuilder.ApplyConfiguration(new PublicationConfiguration());
             modelBuilder.ApplyConfiguration(new BookChapterConfiguration());
@@ -83,6 +86,8 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new NationalConferenceConfiguration());
             modelBuilder.ApplyConfiguration(new TechnicalReportConfiguration());
             modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
+
+            modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

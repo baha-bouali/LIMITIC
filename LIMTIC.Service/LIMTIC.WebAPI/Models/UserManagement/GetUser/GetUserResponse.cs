@@ -1,10 +1,10 @@
 ﻿
-using LIMTIC.Application.DTOs.UserManagement;
+using LIMTIC.WebAPI;
 
-namespace LIMTIC.WebAPI.Models.UserManagement.GetUser
+namespace LIMTIC.Application.DTOs.UserManagement.GetUser
 {
     public class GetUserResponse : BaseResponse
     {
-        public UserDto User { get; set; }
+        public UserDto? User { get; set; }
     }
 }

@@ -1,10 +1,11 @@
 ﻿using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using LIMTIC.WebAPI.Models;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUser;
 
 namespace LIMTIC.WebAPI.Controllers
 {
@@ -14,7 +15,7 @@ namespace LIMTIC.WebAPI.Controllers
     {
         private readonly IUsersManagementService _usersManagementService;
 
-        public UsersManagementController(IUsersManagementService usersManagementService)    
+        public UsersManagementController(IUsersManagementService usersManagementService)
         {
             _usersManagementService = usersManagementService;
         }
@@ -69,7 +70,9 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Success = false
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
@@ -90,7 +93,9 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Success = false
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
@@ -104,6 +109,7 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return Ok(new GetUserResponse
                 {
+                    Success = true,
                     User = result.Data.User
                 });
             }
@@ -111,9 +117,40 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new GetUserResponse
                 {
-                    Message = result.Message
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
                 });
             }
         }
-	}
+
+        [HttpPost("changePassword")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangeUserPasswordRequest request)
+        {
+            var command = new ChangeUserPasswordCommand
+            {
+                Email = request.Email,
+                OldPassword = request.OldPassword,
+                NewPassword = request.NewPassword
+            };
+            var result = await _usersManagementService.ChangeUserPasswordAsync(command);
+            if (result.Success)
+            {
+                return Ok(new BaseResponse
+                {
+                    Success = true,
+                });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse
+                {
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
+                });
+            }
+        }
+    }
 }

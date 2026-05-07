@@ -27,4 +27,9 @@
     <ProjectReference Include="..\LIMTIC.Application\LIMTIC.Application.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<Content Include="Emails\Templates\**\*.html">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 </Project>

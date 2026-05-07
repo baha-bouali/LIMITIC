@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.DTOs;
@@ -41,10 +42,10 @@ namespace LIMTIC.Application.Services.UserManagement
                 return Result<CreateUserCommandResponse>.FailureResult("Email already registered");
 
             var user = UserEntity.Create(
-                email: command.Email, 
-                firstName: command.FirstName, 
-                lastName: command.LastName, 
-                passwordHash: _passwordHasher.HashPassword(command.Password), 
+                email: command.Email,
+                firstName: command.FirstName,
+                lastName: command.LastName,
+                passwordHash: _passwordHasher.HashPassword(command.Password),
                 isActive: command.IsActive,
                 role: command.Role);
 
@@ -92,6 +93,21 @@ namespace LIMTIC.Application.Services.UserManagement
             var result = await _userRepository.UpdateUserAsync(user);
 
             return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
+        }
+
+        public async Task<Result<string>> ChangeUserPasswordAsync(ChangeUserPasswordCommand command)
+        {
+            var user = await _userRepository.GetUserByEmailAsync(command.Email);
+            if (user == null)
+                return Result<string>.FailureResult("User not found");
+
+            if (!_passwordHasher.VerifyPassword(user.PasswordHash, command.OldPassword))
+                return Result<string>.FailureResult("Old password is incorrect");
+
+            user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
+            var result = await _userRepository.UpdateUserAsync(user);
+
+            return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
         }
     }
 }

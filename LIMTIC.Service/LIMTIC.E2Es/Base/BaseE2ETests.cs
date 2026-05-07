@@ -1,8 +1,9 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
-using LIMTIC.E2Es.HttpCookie;
 using LIMTIC.E2Es.Extensions;
+using LIMTIC.E2Es.HttpCookie;
+using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +12,14 @@ using System.Net;
 
 namespace LIMTIC.E2Es.Base
 {
-    public class BaseE2ETests : IClassFixture<PostgresFixture>
+    public class BaseE2ETests : IClassFixture<PostgresFixture>, IClassFixture<MailHogFixture>
     {
         protected readonly HttpClient Client;
         protected readonly CustomWebApplicationFactory Factory;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
 
-        public BaseE2ETests(PostgresFixture fixture, bool useShortTokenExpiry = false)
+        public BaseE2ETests(PostgresFixture dbfixture, MailHogFixture mailHogFixture, bool useShortTokenExpiry = false)
         {
             var overrides = useShortTokenExpiry
             ? new Dictionary<string, string?>
@@ -30,12 +31,19 @@ namespace LIMTIC.E2Es.Base
             }
             : new Dictionary<string, string?>();
 
-            Factory = new CustomWebApplicationFactory(fixture.ConnectionString, overrides);
+            Factory = new CustomWebApplicationFactory(
+                connectionString: dbfixture.ConnectionString, 
+                configOverrides: overrides, 
+                mailHogSmtpPort: mailHogFixture.SmtpPort); 
 
             // Configure HttpClient with CookieHandler to manage cookies across requests
             Client = Factory.CreateDefaultClient(new Uri("https://localhost"), new CookieHandler(new CookieContainer()));
 
-            // Apply migrations once
+            InitializeDatabase();
+        }
+
+        private void InitializeDatabase()
+        {
             using var scope = Factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
@@ -64,12 +72,12 @@ namespace LIMTIC.E2Es.Base
             db.SaveChanges();
         }
 
-        protected async Task<string> LoginAsSuperAdmin()
+        protected async Task<string?> LoginAsSuperAdmin()
         {
             var loginRequest = new LoginRequest("admin@test.com", "AdminPassword");
             var authResponse = await Client.AuthenticateUser(loginRequest);
 
-            return authResponse.AccessToken;
+            return authResponse?.AccessToken;
         }
     }
 }

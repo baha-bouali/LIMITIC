@@ -389,6 +389,36 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OTPTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OTPTokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResetPasswordTokenHash")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResetPasswords");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.User", b =>
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -417,7 +447,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ResearchAxes");
-                });
+                }));
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
@@ -777,6 +807,17 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Navigation("PhDStudent");
 
                     b.Navigation("Researcher");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }

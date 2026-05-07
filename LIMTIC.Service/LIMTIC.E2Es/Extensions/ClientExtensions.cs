@@ -1,9 +1,13 @@
-﻿using LIMTIC.WebAPI.Models.Auth.Login;
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using LIMTIC.WebAPI.Models;
+using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.WebAPI;
+using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
+using LIMTIC.WebAPI.Models.Auth.Login;
+using LIMTIC.WebAPI.Models.Auth.ResetPassword;
+using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
+using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUser;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -23,20 +27,26 @@ namespace LIMTIC.E2Es.Extensions
             request.Content = JsonContent.Create(createUserRequest);
 
             var response = await client.SendAsync(request);
-            return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
-        }
 
-        public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
+            if (response.IsSuccessStatusCode)
             {
-                var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
-
-                var response = await client.SendAsync(request);
-                if (response.IsSuccessStatusCode)
-                {
-                    return await response.Content.ReadFromJsonAsync<GetUserResponse>();
-                }
-                return null;
+                return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
             }
+
+            var errorBody = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException($"AddUser failed: {response.StatusCode} - {errorBody}");
+        }
+        public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
+        {
+            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<GetUserResponse>();
+            }
+            return null;
+        }
 
         public static async Task<HttpResponseMessage> GetUserByIdFullResponse(this HttpClient client, Guid id, string accessToken)
         {
@@ -83,16 +93,37 @@ namespace LIMTIC.E2Es.Extensions
 
         public static async Task<LoginResponse?> RefreshToken(this HttpClient client)
         {
-            var response = await client.PostAsync("api/auth/refresh", null);
+            var response = await client.PostAsync("api/auth/refreshToken", null);
 
             if (response.IsSuccessStatusCode)
                 return await response.Content.ReadFromJsonAsync<LoginResponse>();
             return null;
         }
+        public static async Task<HttpResponseMessage> ChangePassword(this HttpClient client, ChangeUserPasswordRequest request, string accessToken)
+        {
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            return await client.PostAsJsonAsync("api/users/changePassword", request);
+        }
+        public static async Task<HttpResponseMessage> ForgotPassword(this HttpClient client, ForgetPasswordRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/forgotPassword", request);
+        }
+
+        public static async Task<HttpResponseMessage> VerifyOTP(this HttpClient client, VerifyResetCodeRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/verifyOTP", request);
+        }
+
+        public static async Task<HttpResponseMessage> ResetPassword(this HttpClient client, ResetPasswordRequest request)
+        {
+            return await client.PostAsJsonAsync("api/auth/resetPassword", request);
+        }
 
         public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
         {
-            return await client.PostAsync("api/auth/refresh", null);
+            return await client.PostAsync("api/auth/refreshToken", null);
         }
     }
 }

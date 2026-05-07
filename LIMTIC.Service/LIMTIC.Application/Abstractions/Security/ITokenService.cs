@@ -5,6 +5,7 @@ namespace LIMTIC.Application.Abstractions.Security
     public interface ITokenService
     {
         string GenerateAccessToken(UserEntity user);
-        string GenerateRefreshToken();
+        string GenerateToken();
+        String GenerateOTPToken();
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace LIMTIC.WebAPI.Models
+﻿namespace LIMTIC.WebAPI
 {
     public class BaseResponse
     {

@@ -1,8 +1,13 @@
 ﻿using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.Contracts.Commands.ForgetPassword;
 using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.ResetPassword;
+using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.Settings;
-using LIMTIC.WebAPI.Models;
+using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
+using LIMTIC.WebAPI.Models.Auth.ResetPassword;
+using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -45,9 +50,8 @@ namespace LIMTIC.WebAPI.Controllers
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
 
-        [HttpPost("refresh")]
-        [AllowAnonymous]
-        public async Task<IActionResult> Refresh()
+        [HttpPost("refreshToken")]
+        public async Task<IActionResult> RefreshToken()
         {
             Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
 
@@ -74,7 +78,73 @@ namespace LIMTIC.WebAPI.Controllers
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new BaseResponse{ Success = true });
+            return Ok(new BaseResponse { Success = true });
+        }
+
+        [HttpPost("forgotPassword")]
+        public async Task<IActionResult> ForgotPassword(ForgetPasswordRequest request)
+        {
+            var command = new ForgetPasswordCommand
+            {
+                email = request.Email
+            };
+            var result = await _authService.ForgetPasswordAsync(command);
+            if (result.Success)
+                return Ok(new BaseResponse { Message = result.Data });
+            else
+                return BadRequest(new BaseResponse { Message = result.Message });
+        }
+
+        [HttpPost("verifyOTP")]
+        public async Task<IActionResult> VerifyOTP(VerifyResetCodeRequest request)
+        {
+            var command = new VerifyResetCodeCommand
+            {
+                Email = request.Email,
+                OtpToken = request.OtpToken
+            };
+            var result = await _authService.VerifyResetTokenAsync(command);
+            if (result.Success)
+            {
+                return Ok(new VerifyResetCodeResponse
+                {
+                    ResetToken = result.Data.ResetToken,
+                });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse
+                {
+                    Message = result.Message
+                });
+            }
+        }
+
+        [HttpPost("resetPassword")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            var command = new ResetPasswordCommand
+            {
+                Email = request.Email,
+                NewPassword = request.NewPassword,
+                ResetToken = request.ResetToken
+            };
+            var result = await _authService.ResetPasswordAsync(command);
+            if (result.Success)
+            {
+                return Ok(new BaseResponse
+                {
+                    Message = "Password reset successful"
+                });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse
+                {
+                    Message = result.Message
+                });
+            }
         }
     }
 }
+

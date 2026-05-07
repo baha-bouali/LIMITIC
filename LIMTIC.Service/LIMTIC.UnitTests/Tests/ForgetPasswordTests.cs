@@ -1,0 +1,193 @@
+﻿using LIMTIC.Domain.Entities.ResetPassword;
+using LIMTIC.Domain.Entities.Users;
+using LIMTIC.Domain.Enums;
+using LIMTIC.UnitTests.Base;
+
+namespace LIMTIC.UnitTests.Tests
+{
+    public class ForgetPasswordTests : BaseTests
+    {
+        private static UserEntity BuildUser(string email) => new()
+        {
+            Id = Guid.NewGuid(),
+            FirstName = "Jane",
+            LastName = "Doe",
+            Email = email,
+            PasswordHash = "hashed_password",
+            Role = UserRole.Admin,
+            AvatarBlobName = null,
+            IsActive = true,
+            CreatedBy = Guid.NewGuid(),
+            CreatedAtUtc = DateTime.UtcNow,
+        };
+
+
+        [Fact]
+        public async Task ForgetPassword_AddOTPToken_TokenIsPersistedForUser()
+        {
+            // Steps:
+            // 1. Create and add a user
+            // 2. Add a reset password entry with an OTP token
+            // 3. Retrieve the token and assert it matches
+
+            var user = BuildUser("forget.addotp@example.com");
+            Assert.True(await UserRepository.AddUserAsync(user));
+
+            var resetPassword = new ResetPasswordEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                OTPTokenHash = "hashed_otp_token",
+                OTPTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+            };
+            await ResetPasswordRepository.AddResetPasswordAsync(resetPassword);
+
+            var retrieved = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.NotNull(retrieved);
+            Assert.Equal(user.Id, retrieved.UserId);
+            Assert.Equal("hashed_otp_token", retrieved.OTPTokenHash);
+            Assert.NotNull(retrieved.OTPTokenExpiry);
+        }
+
+        [Fact]
+        public async Task ForgetPassword_UpdateExistingOTPToken_NewTokenReplacesPrevious()
+        {
+            // Steps:
+            // 1. Create and add a user
+            // 2. Add an initial OTP token
+            // 3. Update the entry with a new OTP token
+            // 4. Retrieve and assert the new token is stored and reset token fields are cleared
+
+            var user = BuildUser("forget.updateotp@example.com");
+            Assert.True(await UserRepository.AddUserAsync(user));
+
+            var resetPassword = new ResetPasswordEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                OTPTokenHash = "hashed_otp_old",
+                OTPTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+            };
+            await ResetPasswordRepository.AddResetPasswordAsync(resetPassword);
+
+            var existing = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.NotNull(existing);
+            existing.OTPTokenHash = "hashed_otp_new";
+            existing.OTPTokenExpiry = DateTime.UtcNow.AddMinutes(10);
+            existing.ResetPasswordTokenHash = null;
+            existing.ResetPasswordTokenExpiry = null;
+            await ResetPasswordRepository.UpdateResetPasswordAsync(existing);
+
+            var retrieved = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.NotNull(retrieved);
+            Assert.Equal("hashed_otp_new", retrieved.OTPTokenHash);
+            Assert.Null(retrieved.ResetPasswordTokenHash);
+            Assert.Null(retrieved.ResetPasswordTokenExpiry);
+        }
+
+        [Fact]
+        public async Task VerifyOTP_UpdateResetPasswordToken_TokenIsPersistedAfterVerification()
+        {
+            // Steps:
+            // 1. Create and add a user
+            // 2. Add an OTP token entry
+            // 3. Simulate verification by updating with a reset password token
+            // 4. Retrieve and assert the reset password token is stored
+
+            var user = BuildUser("verify.otp@example.com");
+            Assert.True(await UserRepository.AddUserAsync(user));
+
+            var resetPassword = new ResetPasswordEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                OTPTokenHash = "hashed_otp_token",
+                OTPTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+            };
+            await ResetPasswordRepository.AddResetPasswordAsync(resetPassword);
+
+            var existing = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.NotNull(existing);
+            existing.ResetPasswordTokenHash = "hashed_reset_token";
+            existing.ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(15);
+            await ResetPasswordRepository.UpdateResetPasswordAsync(existing);
+
+            var retrieved = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.NotNull(retrieved);
+            Assert.Equal("hashed_reset_token", retrieved.ResetPasswordTokenHash);
+            Assert.NotNull(retrieved.ResetPasswordTokenExpiry);
+        }
+
+        [Fact]
+        public async Task VerifyOTP_GetTokenAsync_ReturnsNullForUserWithNoEntry()
+        {
+            // Steps:
+            // 1. Create and add a user without adding any reset password entry
+            // 2. Assert that retrieving the token returns null
+
+            var user = BuildUser("verify.noentry@example.com");
+            Assert.True(await UserRepository.AddUserAsync(user));
+
+            var retrieved = await ResetPasswordRepository.GetResetPasswordAsync(user.Id);
+            Assert.Null(retrieved);
+        }
+
+        [Fact]
+        public async Task ResetPassword_UpdateUserPassword_PasswordHashIsUpdated()
+        {
+            // Steps:
+            // 1. Create and add a user with a known password hash
+            // 2. Add a reset password entry with a valid reset token
+            // 3. Update the user's password via the repository
+            // 4. Retrieve the user and assert the password hash was updated
+
+            var user = BuildUser("reset.password@example.com");
+            Assert.True(await UserRepository.AddUserAsync(user));
+
+            var resetPassword = new ResetPasswordEntity
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                OTPTokenHash = "hashed_otp_token",
+                OTPTokenExpiry = DateTime.UtcNow.AddMinutes(10),
+                ResetPasswordTokenHash = "hashed_reset_token",
+                ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(15),
+            };
+            await ResetPasswordRepository.AddResetPasswordAsync(resetPassword);
+
+            const string newHash = "new_hashed_password";
+            user.PasswordHash = newHash;
+            var result = await UserRepository.UpdateUserAsync(user);
+            Assert.True(result);
+
+            var retrievedUser = await UserRepository.GetUserByEmailAsync(user.Email);
+            Assert.NotNull(retrievedUser);
+            Assert.Equal(newHash, retrievedUser.PasswordHash);
+        }
+
+        [Fact]
+        public async Task ResetPassword_DoesNotAffectOtherUserPassword()
+        {
+            // Steps:
+            // 1. Create and add two users
+            // 2. Reset the password for the first user only
+            // 3. Assert the second user's password hash is unchanged
+
+            const string originalHash = "original_hashed_password";
+            var userOne = BuildUser("reset.userone@example.com");
+            var userTwo = BuildUser("reset.usertwo@example.com");
+            userTwo.PasswordHash = originalHash;
+
+            Assert.True(await UserRepository.AddUserAsync(userOne));
+            Assert.True(await UserRepository.AddUserAsync(userTwo));
+
+            userOne.PasswordHash = originalHash;
+            var result = await UserRepository.UpdateUserAsync(userOne);
+            Assert.True(result);
+
+            var retrievedUserTwo = await UserRepository.GetUserByEmailAsync(userTwo.Email);
+            Assert.NotNull(retrievedUserTwo);
+            Assert.Equal(originalHash, retrievedUserTwo.PasswordHash);
+        }
+    }
+}
