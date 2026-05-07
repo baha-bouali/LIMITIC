@@ -1,13 +1,13 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using LIMTIC.Application.DTOs.UserManagement.CreateUser;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.WebAPI;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
-
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -44,6 +44,34 @@ namespace LIMTIC.E2Es.Extensions
             if (response.IsSuccessStatusCode)
             {
                 return await response.Content.ReadFromJsonAsync<GetUserResponse>();
+            }
+            return null;
+        }
+
+        public static async Task<HttpResponseMessage> GetUserByIdFullResponse(this HttpClient client, Guid id, string accessToken)
+        {
+            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(request);
+        }
+
+        public static async Task<BaseResponse?> ActivateUser(this HttpClient client, Guid userId, string accessToken)
+        {
+            var request = CreateRequest($"api/users/activateUser?userId={userId}", HttpMethod.Post, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+            }
+            return null;
+        }
+
+        public static async Task<BaseResponse?> DeactivateUser(this HttpClient client, Guid userId, string accessToken)
+        {
+            var request = CreateRequest($"api/users/deactivateUser?userId={userId}", HttpMethod.Post, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
             }
             return null;
         }

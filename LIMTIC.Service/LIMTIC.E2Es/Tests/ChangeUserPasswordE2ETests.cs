@@ -1,16 +1,16 @@
-﻿using LIMTIC.Application.DTOs.UserManagement.CreateUser;
-using LIMTIC.Domain.Enums;
+﻿using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
-    public class ChangeUserPasswordControllerE2ETests : BaseE2ETests
+    public class ChangeUserPasswordE2ETests : BaseE2ETests
     {
-        public ChangeUserPasswordControllerE2ETests(PostgresFixture fixture) : base(fixture)
+        public ChangeUserPasswordE2ETests(PostgresFixture fixture) : base(fixture)
         {
         }
 

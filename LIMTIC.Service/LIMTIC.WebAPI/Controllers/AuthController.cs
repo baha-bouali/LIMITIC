@@ -4,10 +4,8 @@ using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.Settings;
-using LIMTIC.WebAPI.Base;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Auth.Logout;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using Microsoft.AspNetCore.Authorization;
@@ -37,7 +35,7 @@ namespace LIMTIC.WebAPI.Controllers
 
             var result = await _authService.Login(loginCommand);
             if (result.IsFailure)
-                return BadRequest(new LoginResponse { Message = result.Error, ValidationErrors = result.ValidationErrors });
+                return BadRequest(new LoginResponse { Message = result.Message, ValidationErrors = result.ValidationErrors });
 
             Response.Cookies.Append("refreshToken", result.Data!.RefreshToken, new CookieOptions
             {
@@ -59,7 +57,7 @@ namespace LIMTIC.WebAPI.Controllers
 
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
-                return Unauthorized(new LoginResponse { Message = result.Error });
+                return Unauthorized(new LoginResponse { Message = result.Message });
 
             return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
         }
@@ -80,7 +78,7 @@ namespace LIMTIC.WebAPI.Controllers
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new LogoutResponse { Success = true });
+            return Ok(new BaseResponse { Success = true });
         }
 
         [HttpPost("forgotPassword")]
@@ -94,7 +92,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new BaseResponse { Message = result.Data });
             else
-                return BadRequest(new BaseResponse { Message = result.Error });
+                return BadRequest(new BaseResponse { Message = result.Message });
         }
 
         [HttpPost("verifyOTP")]
@@ -117,7 +115,7 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Message = result.Error
+                    Message = result.Message
                 });
             }
         }
@@ -143,7 +141,7 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Message = result.Error
+                    Message = result.Message
                 });
             }
         }

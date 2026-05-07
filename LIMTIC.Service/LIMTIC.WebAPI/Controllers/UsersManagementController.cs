@@ -1,11 +1,9 @@
 ﻿using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
-using LIMTIC.Application.DTOs.UserManagement.CreateUser;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
-using LIMTIC.WebAPI.Base;
-using LIMTIC.WebAPI.Mappers.UserMapper;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,26 +14,24 @@ namespace LIMTIC.WebAPI.Controllers
     public class UsersManagementController : ControllerBase
     {
         private readonly IUsersManagementService _usersManagementService;
-        private readonly IUserMapper _userMapper;
 
-        public UsersManagementController(IUsersManagementService usersManagementService, IUserMapper userMapper)
+        public UsersManagementController(IUsersManagementService usersManagementService)
         {
             _usersManagementService = usersManagementService;
-            _userMapper = userMapper;
         }
 
         [HttpPost("addUser/")]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> AddUser(CreateUserRequest user)
+        public async Task<IActionResult> AddUser(CreateUserRequest createUserRequest)
         {
             var command = new CreateUserCommand
             {
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                Password = user.Password,
-                Role = user.Role,
-                IsActive = true,
+                FirstName = createUserRequest.FirstName,
+                LastName = createUserRequest.LastName,
+                Email = createUserRequest.Email,
+                Password = createUserRequest.Password,
+                Role = createUserRequest.Role,
+                IsActive = createUserRequest.IsActive,
             };
 
             var result = await _usersManagementService.CreateUserAsync(command);
@@ -43,15 +39,59 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return Ok(new CreateUserResponse
                 {
-                    User = _userMapper.MapToUserDto(result.Data.User)
+                    Success = true,
+                    User = result.Data.User
                 });
             }
             else
             {
                 return BadRequest(new CreateUserResponse
                 {
-                    Message = result.Error,
+                    Success = false,
+                    Message = result.Message,
                     ValidationErrors = result.ValidationErrors
+                });
+            }
+        }
+
+        [HttpPost("activateUser/")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> ActivateUser(Guid userId)
+        {
+            var result = await _usersManagementService.ActivateUserAsync(userId);
+            if (result.Success)
+            {
+                return Ok(new BaseResponse
+                {
+                    Success = true,
+                });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse
+                {
+                    Success = false
+                });
+            }
+        }
+
+        [HttpPost("deactivateUser/")]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> DeactivateUser(Guid userId)
+        {
+            var result = await _usersManagementService.DeactivateUserAsync(userId);
+            if (result.Success)
+            {
+                return Ok(new BaseResponse
+                {
+                    Success = true,
+                });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse
+                {
+                    Success = false
                 });
             }
         }
@@ -65,14 +105,14 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return Ok(new GetUserResponse
                 {
-                    User = _userMapper.MapToUserDto(result.Data.User)
+                    User = result.Data.User
                 });
             }
             else
             {
                 return BadRequest(new GetUserResponse
                 {
-                    Message = result.Error
+                    Message = result.Message
                 });
             }
         }
@@ -96,7 +136,7 @@ namespace LIMTIC.WebAPI.Controllers
             {
                 return BadRequest(new BaseResponse
                 {
-                    Message = result.Error,
+                    Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
             }

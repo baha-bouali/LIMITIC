@@ -8,13 +8,13 @@ using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.Contracts.Models.Emails;
+using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
-using LIMTIC.Domain.Shared;
 using Microsoft.Extensions.Options;
 
 namespace LIMTIC.Application.Services.Auth

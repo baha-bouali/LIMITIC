@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using LIMTIC.Application.Abstractions.Security;
-using LIMTIC.Application.DTOs.UserManagement.CreateUser;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
@@ -12,18 +11,19 @@ using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
+using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
-    public class ForgetPasswordControllerE2ETests : BaseE2ETests
+    public class ForgetPasswordE2ETests : BaseE2ETests
     {
         private readonly string _mailHogApiUrl;
 
-        public ForgetPasswordControllerE2ETests(
+        public ForgetPasswordE2ETests(
             PostgresFixture postgresFixture,
             MailHogFixture mailHogFixture)
-            : base(postgresFixture, mailHogFixture)   
+            : base(postgresFixture, mailHogFixture)
         {
             _mailHogApiUrl = mailHogFixture.ApiUrl;
         }

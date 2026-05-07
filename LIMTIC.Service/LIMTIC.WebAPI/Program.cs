@@ -1,7 +1,6 @@
 using LIMTIC.Application.IOC;
 using LIMTIC.Infrastructure.IOC;
 using LIMTIC.WebAPI.IOC;
-using Microsoft.OpenApi.Models;
 
 namespace LIMTIC.WebAPI
 {

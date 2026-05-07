@@ -1,4 +1,5 @@
-﻿using LIMTIC.WebAPI.Base;
+﻿
+using LIMTIC.WebAPI;
 
 namespace LIMTIC.Application.DTOs.UserManagement.GetUser
 {

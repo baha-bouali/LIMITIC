@@ -8,7 +8,7 @@ namespace LIMTIC.Infrastructure.Repositories
     public class RefreshTokenRepository : IRefreshTokenRepository
     {
         private readonly AppDbContext _dbContext;
-        
+
         public RefreshTokenRepository(AppDbContext dbContext)
         {
             _dbContext = dbContext;

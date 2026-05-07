@@ -17,7 +17,7 @@ namespace LIMTIC.Domain.Entities.Users
         public PhDStudentEntity? PhDStudent { get; set; }
         public MasterianEntity? Masterian { get; set; }
 
-        public static Result<UserEntity> Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
+        public static UserEntity Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
         {
             var user = new UserEntity
             {
@@ -30,7 +30,7 @@ namespace LIMTIC.Domain.Entities.Users
                 AvatarBlobName = avatarBlobName
             };
 
-            return Result<UserEntity>.SuccessResult(user);
+            return user;
         }
     }
 }

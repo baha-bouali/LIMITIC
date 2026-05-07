@@ -1,7 +1,7 @@
 ﻿using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Domain.Entities.Users;
 
-namespace LIMTIC.WebAPI.Mappers.UserMapper
+namespace LIMTIC.Application.Mappers.UserMapper
 {
     public class UserMapper : IUserMapper
     {
