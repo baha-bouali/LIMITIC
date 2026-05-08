@@ -4,7 +4,7 @@ namespace LIMTIC.Domain.Abstractions
 {
     public interface IPublicationsSearchRepository
     {
-        Task IndexPublicationAsync(PublicationSearchDocument publication, CancellationToken cancellationToken = default);
+        Task IndexPublicationAsync(PublicationSearchDocument publication);
 
         Task DeleteFromIndexAsync(Guid publicationId);
 
