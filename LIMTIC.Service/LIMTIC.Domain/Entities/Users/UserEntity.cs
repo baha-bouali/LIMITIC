@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Enums;
+﻿using LIMTIC.Domain.Entities.Publications;
+using LIMTIC.Domain.Enums;
 using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.Users
@@ -16,6 +17,9 @@ namespace LIMTIC.Domain.Entities.Users
         public ResearcherEntity? Researcher { get; set; }
         public PhDStudentEntity? PhDStudent { get; set; }
         public MasterianEntity? Masterian { get; set; }
+
+        // Add this if you want the reverse navigation
+        public ICollection<PublicationInternalAuthorEntity> CoAuthoredPublications { get; set; } = new List<PublicationInternalAuthorEntity>();
 
         public static UserEntity Create(string email, string firstName, string lastName, string passwordHash, UserRole role, bool isActive, string? avatarBlobName = null)
         {
