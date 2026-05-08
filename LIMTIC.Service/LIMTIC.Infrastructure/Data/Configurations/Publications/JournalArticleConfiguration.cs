@@ -8,8 +8,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<JournalArticleEntity> builder)
         {
-            builder.HasKey(a => a.Id);
-
             builder.Property(a => a.JournalName)
                    .IsRequired()
                    .HasMaxLength(500);
@@ -29,11 +27,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
             builder.Property(a => a.Ranking)
                    .HasConversion<string>()
                    .IsRequired();
-
-            builder.HasOne(a => a.Publication)
-                   .WithOne(p => p.JournalArticle)
-                   .HasForeignKey<JournalArticleEntity>(a => a.Id)
-                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

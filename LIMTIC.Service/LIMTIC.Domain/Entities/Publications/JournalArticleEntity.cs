@@ -1,12 +1,9 @@
 ﻿using LIMTIC.Domain.Enums;
-using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.Publications
 {
-    public class JournalArticleEntity : BaseEntity
+    public class JournalArticleEntity : PublicationEntity
     {
-        public PublicationEntity Publication { get; set; }
-
         public string JournalName { get; set; }
         public string Volume { get; set; }
         public string Number { get; set; }

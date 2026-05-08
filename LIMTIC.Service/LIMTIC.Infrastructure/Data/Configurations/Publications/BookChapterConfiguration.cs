@@ -8,8 +8,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<BookChapterEntity> builder)
         {
-            builder.HasKey(b => b.Id);
-
             builder.Property(b => b.BookTitle)
                    .IsRequired()
                    .HasMaxLength(500);
@@ -23,11 +21,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
 
             builder.Property(b => b.Pages)
                    .HasMaxLength(50);
-
-            builder.HasOne(b => b.Publication)
-                   .WithOne(p => p.BookChapter)
-                   .HasForeignKey<BookChapterEntity>(b => b.Id)
-                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

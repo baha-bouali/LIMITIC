@@ -8,8 +8,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
     {
         public void Configure(EntityTypeBuilder<InternationalConferenceEntity> builder)
         {
-            builder.HasKey(c => c.Id);
-
             builder.Property(c => c.ConferenceName)
                    .IsRequired()
                    .HasMaxLength(500);
@@ -24,11 +22,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
             builder.Property(c => c.Ranking)
                    .HasConversion<string>()
                    .IsRequired();
-
-            builder.HasOne(c => c.Publication)
-                   .WithOne(p => p.InternationalConference)
-                   .HasForeignKey<InternationalConferenceEntity>(c => c.Id)
-                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
