@@ -39,8 +39,12 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<SpeakerEntity> Speakers { get; set; }
 
         public DbSet<PublicationEntity> Publications { get; set; }
+        public DbSet<BookChapterEntity> BookChapters { get; set; }
+        public DbSet<InternationalConferenceEntity> InternationalConferences { get; set; }
+        public DbSet<NationalConferenceEntity> NationalConferences { get; set; }
+        public DbSet<TechnicalReportEntity> TechnicalReports { get; set; }
+        public DbSet<JournalArticleEntity> JournalArticles { get; set; }
         public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
-        public DbSet<PublicationInternalAuthorEntity> PublicationInternalAuthors { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -77,7 +81,11 @@ namespace LIMTIC.Infrastructure.Data
 
 
             modelBuilder.ApplyConfiguration(new PublicationConfiguration());
-            modelBuilder.ApplyConfiguration(new PublicationInternalAuthorConfiguration());
+            modelBuilder.ApplyConfiguration(new BookChapterConfiguration());
+            modelBuilder.ApplyConfiguration(new InternationalConferenceConfiguration());
+            modelBuilder.ApplyConfiguration(new NationalConferenceConfiguration());
+            modelBuilder.ApplyConfiguration(new TechnicalReportConfiguration());
+            modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
 
             modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
 

@@ -1,4 +1,5 @@
 ﻿using LIMTIC.Domain.Entities.Publications;
+using LIMTIC.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -40,23 +41,23 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
 
             builder.Property(p => p.Keywords)
                 .HasConversion(
-                    v => string.Join(',', v),
-                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                    v => string.Join(',', v ?? Array.Empty<string>()),
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Metadata.SetValueComparer(
-                    new ValueComparer<List<string>>(
-                        (a, b) => a != null && b != null && a.SequenceEqual(b),
+                    new ValueComparer<string[]>(
+                        (a, b) => a.SequenceEqual(b),
                         c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                        c => c.ToList()));
+                        c => c.ToArray()));
 
             builder.Property(p => p.AttachedPdfs)
                 .HasConversion(
-                    v => string.Join(',', v),
-                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+                    v => string.Join(',', v ?? Array.Empty<string>()),
+                    v => v.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 .Metadata.SetValueComparer(
-                    new ValueComparer<List<string>>(
-                        (a, b) => a != null && b != null && a.SequenceEqual(b),
+                    new ValueComparer<string[]>(
+                        (a, b) => a.SequenceEqual(b),
                         c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                        c => c.ToList()));
+                        c => c.ToArray()));
 
             builder.Property(p => p.ResearchAxisId)
                 .IsRequired();
@@ -66,17 +67,12 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
                 .HasForeignKey(p => p.ResearchAxisId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // --- NEW AUTHORS CONFIGURATION ---
-
-            // External Authors (JSON array mapped natively)
-            builder.OwnsMany(p => p.ExternalAuthors, a =>
-            {
-                a.ToJson(); 
-            });
-
-            // Internal Authors mapping is handled primarily by PublicationInternalAuthorConfiguration
-            // but we can explicitly set the navigation property mapping here just to be safe:
-            builder.Navigation(p => p.InternalAuthors).AutoInclude(false);
+            builder.HasDiscriminator(p => p.Type)
+                .HasValue<JournalArticleEntity>(PublicationType.ArticleJournal)
+                .HasValue<TechnicalReportEntity>(PublicationType.TechnicalReport)
+                .HasValue<BookChapterEntity>(PublicationType.ChapterBook)
+                .HasValue<NationalConferenceEntity>(PublicationType.ConferenceNational)
+                .HasValue<InternationalConferenceEntity>(PublicationType.ConferenceInternational);
         }
     }
 }
