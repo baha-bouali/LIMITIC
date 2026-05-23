@@ -18,10 +18,12 @@ namespace LIMTIC.Domain.Entities.Publications
         public string[] Keywords { get; set; }
         public string[] AttachedPdfs { get; set; }
         public string? Doi { get; set; }
+        public string? Venue { get; set; }
         public PublicationType Type { get; set; }
         public PublicationStatus Status { get; set; }
         public PublicationVisibility Visibility { get; set; }
         public int Year { get; set; }
+        public string[] Authors { get; set; }
 
         public JournalArticleEntity? JournalArticle { get; set; }
         public TechnicalReportEntity? TechnicalReport { get; set; }
