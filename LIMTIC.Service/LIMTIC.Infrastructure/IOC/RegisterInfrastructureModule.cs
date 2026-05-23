@@ -6,6 +6,7 @@ using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Emails;
 using LIMTIC.Infrastructure.Persistence;
 using LIMTIC.Infrastructure.Repositories;
+using LIMTIC.Infrastructure.Services;
 using LIMTIC.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,9 @@ namespace LIMTIC.Infrastructure.IOC
             // register DbContext
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+
+            // Register data protection for encrypting sensitive settings
+            services.AddDataProtection();
 
             // configure refresh token settings
             services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
@@ -58,11 +62,13 @@ namespace LIMTIC.Infrastructure.IOC
             // Register infrastructure services
             services.AddHttpContextAccessor();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ISettingsRepository, SettingsRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();
             services.AddSingleton<ITemplateRenderer, TemplateRenderer>();
+            services.AddScoped<ISmtpService, SmtpService>();
             services.AddScoped<IEmailService, EmailService>();
 
             return services;

@@ -1,9 +1,11 @@
 ﻿using System.Reflection;
 using FluentValidation;
 using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.Abstractions.Settings;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Services.Auth;
 using LIMTIC.Application.Services.UserManagement;
+using LIMTIC.Application.Services.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.Application.IOC
@@ -16,6 +18,7 @@ namespace LIMTIC.Application.IOC
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUsersManagementService, UsersManagementService>();
+            services.AddScoped<ISettingsService, SettingsService>();
 
             return services;
         }

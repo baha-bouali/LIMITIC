@@ -46,6 +46,8 @@ namespace LIMTIC.UnitTests.Base
 
             ServiceProvider = services.BuildServiceProvider();
             DbContext = ServiceProvider.GetRequiredService<AppDbContext>();
+            // Ensure in-memory database is created so model seeds (HasData) are applied
+            DbContext.Database.EnsureCreated();
         }
 
         public void Dispose()
