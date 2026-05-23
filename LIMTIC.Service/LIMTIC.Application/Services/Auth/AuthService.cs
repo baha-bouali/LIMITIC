@@ -10,6 +10,7 @@ using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
+using LIMTIC.Application.Interfaces.Services;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.RefreshToken;

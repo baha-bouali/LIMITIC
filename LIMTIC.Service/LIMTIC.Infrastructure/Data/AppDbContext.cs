@@ -1,4 +1,4 @@
-﻿using LIMTIC.Application.Abstractions;
+﻿using LIMTIC.Application.Interfaces.Services;
 using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Entities.RefreshToken;
