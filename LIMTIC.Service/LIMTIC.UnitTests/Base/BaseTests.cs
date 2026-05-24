@@ -1,4 +1,6 @@
-﻿using LIMTIC.Application.Abstractions.UserManagement;
+﻿using LIMTIC.Application.Abstractions.Email;
+using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.IOC;
 using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;
@@ -34,6 +36,11 @@ namespace LIMTIC.UnitTests.Base
             services.AddApplication();
             services.AddWebApi();
 
+            var emailDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailService));
+            if (emailDescriptor != null)
+                services.Remove(emailDescriptor);
+            services.AddScoped<IEmailService, FakeEmailService>();
+
             // Remove previous AppDbContext registration if present
             var descriptor = services.FirstOrDefault(
                 d => d.ServiceType == typeof(DbContextOptions<AppDbContext>));
@@ -48,6 +55,12 @@ namespace LIMTIC.UnitTests.Base
             DbContext = ServiceProvider.GetRequiredService<AppDbContext>();
             // Ensure in-memory database is created so model seeds (HasData) are applied
             DbContext.Database.EnsureCreated();
+        }
+
+        private sealed class FakeEmailService : IEmailService
+        {
+            public Task SendOTPEmailAsync(OTPEmailModel model) => Task.CompletedTask;
+            public Task SendContactEmailAsync(ContactEmailModel model) => Task.CompletedTask;
         }
 
         public void Dispose()
