@@ -1,6 +1,7 @@
 ﻿using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Entities.Contacts;
 using LIMTIC.Domain.Entities.Events;
+using LIMTIC.Domain.Entities.Logs;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResearchAxis;
@@ -9,6 +10,7 @@ using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
 using LIMTIC.Infrastructure.Data.Configurations.Contacts;
 using LIMTIC.Infrastructure.Data.Configurations.Events;
+using LIMTIC.Infrastructure.Data.Configurations.Logs;
 using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
 using LIMTIC.Infrastructure.Data.Configurations.ResearchAxis;
@@ -48,6 +50,7 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<TechnicalReportEntity> TechnicalReports { get; set; }
         public DbSet<JournalArticleEntity> JournalArticles { get; set; }
         public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
+        public DbSet<AuditLogsEntity> AuditLogs { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -92,6 +95,8 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
 
             modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
+
+            modelBuilder.ApplyConfiguration(new AuditLogsConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

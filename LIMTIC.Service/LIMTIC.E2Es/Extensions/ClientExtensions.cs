@@ -9,6 +9,7 @@ using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.Contact;
+using LIMTIC.WebAPI.Models.AuditLogs.GetAuditLogs;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -130,6 +131,29 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
         {
             return await client.PostAsync("api/auth/refreshToken", null);
+        }
+
+        public static async Task<GetAuditLogsResponse?> GetAuditLogs(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
+        {
+            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
+            if (toUtc.HasValue)
+                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
+
+            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<GetAuditLogsResponse>();
+            return null;
+        }
+
+        public static async Task<HttpResponseMessage> GetAuditLogsFullHttpResponse(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
+        {
+            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
+            if (toUtc.HasValue)
+                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
+
+            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
+            return await client.SendAsync(request);
         }
     }
 }
