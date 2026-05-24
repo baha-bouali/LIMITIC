@@ -90,8 +90,7 @@ namespace LIMTIC.WebAPI.Controllers
                     Email = s.Email,
                     Institution = s.Institution,
                     Role = s.Role,
-                    Biography = s.Biography,
-                    Photo = s.Photo
+                    Subject = s.Subject
                 }).ToList()
             };
 
@@ -190,8 +189,7 @@ namespace LIMTIC.WebAPI.Controllers
                 Email = request.Email,
                 Institution = request.Institution,
                 Role = request.Role,
-                Biography = request.Biography,
-                Photo = request.Photo
+                Subject = request.Subject
             };
 
             var result = await _eventsService.AddSpeakerAsync(command);
@@ -225,8 +223,7 @@ namespace LIMTIC.WebAPI.Controllers
                 Email = request.Email,
                 Institution = request.Institution,
                 Role = request.Role,
-                Biography = request.Biography,
-                Photo = request.Photo
+                Subject = request.Subject
             };
 
             var result = await _eventsService.UpdateSpeakerAsync(command);

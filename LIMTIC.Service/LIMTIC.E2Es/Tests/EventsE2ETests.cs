@@ -44,7 +44,7 @@ namespace LIMTIC.E2Es.Tests
                         Email = "john.smith@university.edu",
                         Institution = "MIT",
                         Role = "Professor",
-                        Biography = "Expert in Machine Learning"
+                        Subject = "Machine Learning"
                     }
                 }
             }, accessToken);
@@ -405,7 +405,7 @@ namespace LIMTIC.E2Es.Tests
                         Email = "nora.hamdi@test.com",
                         Institution = "INSAT",
                         Role = "Speaker",
-                        Biography = "AI researcher"
+                        Subject = "Ai"
                     }
                 }
             };
@@ -486,7 +486,7 @@ namespace LIMTIC.E2Es.Tests
                 Email = "amine.benali@test.com",
                 Institution = "ENIT",
                 Role = "Lecturer",
-                Biography = "Initial biography"
+                Subject = "Initial biography"
             }, accessToken);
 
             Assert.NotNull(addSpeakerResponse);
@@ -503,7 +503,7 @@ namespace LIMTIC.E2Es.Tests
                 Email = "amine.benali@test.com",
                 Institution = "ENIT",
                 Role = "Keynote",
-                Biography = "Updated biography"
+               Subject = "update subject"
             }, accessToken);
 
             Assert.NotNull(updateSpeakerResponse);

@@ -55,7 +55,7 @@ namespace LIMTIC.Application.Services.Events
                         Email = s.Email,
                         Institution = s.Institution,
                         Role = s.Role,
-                        Biography = s.Biography,
+                        Subject = s.Subject,
                     }).ToList()
                 }).ToList();
 
@@ -94,8 +94,7 @@ namespace LIMTIC.Application.Services.Events
                     Email = s.Email,
                     Institution = s.Institution,
                     Role = s.Role,
-                    Biography = s.Biography,
-                    Photo = s.Photo
+                    Subject = s.Subject
                 }).ToList()
             };
 
@@ -163,8 +162,7 @@ namespace LIMTIC.Application.Services.Events
                 Email = command.Email,
                 Institution = command.Institution,
                 Role = command.Role,
-                Biography = command.Biography,
-                Photo = command.Photo
+                Subject= command.Subject
             };
 
             var created = await _eventsRepository.AddSpeakerAsync(speaker);
@@ -189,8 +187,7 @@ namespace LIMTIC.Application.Services.Events
             existingSpeaker.Email = command.Email;
             existingSpeaker.Institution = command.Institution;
             existingSpeaker.Role = command.Role;
-            existingSpeaker.Biography = command.Biography;
-            existingSpeaker.Photo = command.Photo;
+            existingSpeaker.Subject = command.Subject;
 
             var updated = await _eventsRepository.UpdateSpeakerAsync(existingSpeaker);
             if (!updated)
@@ -237,7 +234,7 @@ namespace LIMTIC.Application.Services.Events
                 Email = speaker.Email,
                 Institution = speaker.Institution,
                 Role = speaker.Role,
-                Biography = speaker.Biography
+                Subject = speaker.Subject
             };
         }
     }

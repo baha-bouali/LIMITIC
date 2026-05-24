@@ -334,7 +334,7 @@ namespace LIMTIC.UnitTests.Tests
                 Email = "jane.doe@test.com",
                 Institution = "INSAT",
                 Role = "Speaker",
-                Biography = "Initial bio",
+                Subject = "Initial bio",
                 CreatedBy = Guid.NewGuid(),
                 CreatedAtUtc = DateTime.UtcNow
             };
@@ -347,14 +347,14 @@ namespace LIMTIC.UnitTests.Tests
             Assert.Equal("Jane", storedSpeaker.FirstName);
 
             storedSpeaker.Role = "Keynote Speaker";
-            storedSpeaker.Biography = "Updated bio";
+            storedSpeaker.Subject = "Updated bio";
             var updated = await EventsRepository.UpdateSpeakerAsync(storedSpeaker);
             Assert.True(updated);
 
             var updatedSpeaker = await EventsRepository.GetSpeakerByIdAsync(eventId, speakerId);
             Assert.NotNull(updatedSpeaker);
             Assert.Equal("Keynote Speaker", updatedSpeaker.Role);
-            Assert.Equal("Updated bio", updatedSpeaker.Biography);
+            Assert.Equal("Updated bio", updatedSpeaker.Subject);
 
             var deleted = await EventsRepository.DeleteSpeakerAsync(updatedSpeaker);
             Assert.True(deleted);
