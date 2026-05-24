@@ -14,6 +14,7 @@ using LIMTIC.WebAPI.Models.Events.AddSpeaker;
 using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.Contact;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -125,6 +126,11 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<HttpResponseMessage> ResetPassword(this HttpClient client, ResetPasswordRequest request)
         {
             return await client.PostAsJsonAsync("api/auth/resetPassword", request);
+        }
+
+        public static async Task<HttpResponseMessage> SendContactMessage(this HttpClient client, SendContactMessageRequest request)
+        {
+            return await client.PostAsJsonAsync("api/contact/send", request);
         }
 
         public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
