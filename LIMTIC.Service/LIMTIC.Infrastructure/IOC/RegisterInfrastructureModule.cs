@@ -25,6 +25,9 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            // Register data protection for encrypting sensitive settings
+            services.AddDataProtection();
+
             // configure refresh token settings
             services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
 
@@ -58,6 +61,7 @@ namespace LIMTIC.Infrastructure.IOC
             // Register infrastructure services
             services.AddHttpContextAccessor();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ISettingsRepository, SettingsRepository>();
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();

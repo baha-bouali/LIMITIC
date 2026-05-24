@@ -49,6 +49,8 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<JournalArticleEntity> JournalArticles { get; set; }
         public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
 
+        public DbSet<LIMTIC.Domain.Entities.Settings.LabSettings> LabSettings { get; set; }
+
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
             var currentUserId = _currentUserService.UserId;
@@ -92,6 +94,9 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
 
             modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
+
+            // LabSettings configuration
+            modelBuilder.ApplyConfiguration(new LIMTIC.Infrastructure.Data.Configurations.Settings.LabSettingsConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

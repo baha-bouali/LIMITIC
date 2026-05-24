@@ -53,12 +53,15 @@ namespace LIMTIC.UnitTests.Base
 
             ServiceProvider = services.BuildServiceProvider();
             DbContext = ServiceProvider.GetRequiredService<AppDbContext>();
+            // Ensure in-memory database is created so model seeds (HasData) are applied
+            DbContext.Database.EnsureCreated();
         }
 
         private sealed class FakeEmailService : IEmailService
         {
             public Task SendOTPEmailAsync(OTPEmailModel model) => Task.CompletedTask;
             public Task SendContactEmailAsync(ContactEmailModel model) => Task.CompletedTask;
+            public Task<bool> TestSmtpAsync(string testEmail) => Task.FromResult(true);
         }
 
         public void Dispose()
