@@ -69,6 +69,7 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddScoped<IInternationalConferenceRepository, InternationalConferenceRepository>();
             services.AddScoped<IJournalArticleRepository, JournalArticleRepository>();
             services.AddScoped<INationalConferenceRepository, NationalConferenceRepository>();
+            services.AddScoped<ITechnicalReportRepository, TechnicalReportRepository>();
 
             return services;
         }
