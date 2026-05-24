@@ -25,6 +25,9 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddDbContext<AppDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
+            // Register data protection for encrypting sensitive settings
+            services.AddDataProtection();
+
             // configure refresh token settings
             services.Configure<RefreshTokenSettings>(configuration.GetSection("RefreshToken"));
 
@@ -58,14 +61,22 @@ namespace LIMTIC.Infrastructure.IOC
             // Register infrastructure services
             services.AddHttpContextAccessor();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ISettingsRepository, SettingsRepository>();
             services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IEventsRepository, EventsRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();
             services.AddSingleton<ITemplateRenderer, TemplateRenderer>();
             services.AddScoped<IEmailService, EmailService>();
+
+            // profile repositories
+            services.AddScoped<IResearcherRepository, ResearcherRepository>();
+            services.AddScoped<IPhDStudentRepository, PhDStudentRepository>();
+            services.AddScoped<IMasterianRepository, MasterianRepository>();
+            services.AddScoped<IResearchAxisRepository, ResearchAxisRepository>();
 
             return services;
         }

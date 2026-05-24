@@ -91,7 +91,7 @@ namespace LIMTIC.Application.Services.Auth
             var loginLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGIN, ResourceType.User);
             await _auditLogsRepository.AddLog(loginLog);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
         }
 
         public async Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
@@ -111,7 +111,7 @@ namespace LIMTIC.Application.Services.Auth
             var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(validateLog);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, token.User!.Id, token.User!.Email));
         }
 
         public async Task Logout(string? refreshToken)

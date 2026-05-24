@@ -2,7 +2,9 @@
 {
     public record LoginCommandResponse(
         string AccessToken,
-        string RefreshToken)
+        string RefreshToken,
+        Guid UserId,
+        string Email)
     {
     }
 }

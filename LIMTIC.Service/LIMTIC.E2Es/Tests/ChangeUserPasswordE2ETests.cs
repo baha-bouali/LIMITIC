@@ -32,7 +32,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Smith",
                 Email = "alice.smith@example.com",
                 Password = "OldPassword1!",
-                Role = UserRole.Admin,
                 IsActive = true,
             };
 

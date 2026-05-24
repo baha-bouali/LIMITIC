@@ -30,11 +30,8 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Events
                    .IsRequired()
                    .HasMaxLength(100);
 
-            builder.Property(s => s.Biography)
+            builder.Property(s => s.Subject)
                    .HasMaxLength(2000);
-
-            builder.Property(s => s.Photo)
-                   .HasMaxLength(500);
 
             builder.HasOne(s => s.Event)
                    .WithMany(e => e.Speakers)
