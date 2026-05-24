@@ -1,11 +1,13 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.Application.DTOs.Events;
 using LIMTIC.WebAPI;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
+using LIMTIC.WebAPI.Models.Events.GetEvents;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
@@ -124,6 +126,48 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
         {
             return await client.PostAsync("api/auth/refreshToken", null);
+        }
+
+        public static async Task<GetEventsResponse?> GetEvents(this HttpClient client, string? status = null, string? type = null, int page = 1, int limit = 20, string? q = null)
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(status))
+                queryParams.Add($"status={Uri.EscapeDataString(status)}");
+            if (!string.IsNullOrWhiteSpace(type))
+                queryParams.Add($"type={Uri.EscapeDataString(type)}");
+            if (page > 0)
+                queryParams.Add($"page={page}");
+            if (limit > 0)
+                queryParams.Add($"limit={limit}");
+            if (!string.IsNullOrWhiteSpace(q))
+                queryParams.Add($"q={Uri.EscapeDataString(q)}");
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            var response = await client.GetAsync($"api/events/{queryString}");
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<GetEventsResponse>();
+            return null;
+        }
+
+        public static async Task<HttpResponseMessage> GetEventsFullHttpResponse(this HttpClient client, string? status = null, string? type = null, int page = 1, int limit = 20, string? q = null)
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(status))
+                queryParams.Add($"status={Uri.EscapeDataString(status)}");
+            if (!string.IsNullOrWhiteSpace(type))
+                queryParams.Add($"type={Uri.EscapeDataString(type)}");
+            if (page > 0)
+                queryParams.Add($"page={page}");
+            if (limit > 0)
+                queryParams.Add($"limit={limit}");
+            if (!string.IsNullOrWhiteSpace(q))
+                queryParams.Add($"q={Uri.EscapeDataString(q)}");
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            return await client.GetAsync($"api/events/{queryString}");
         }
     }
 }
