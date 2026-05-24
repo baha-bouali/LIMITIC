@@ -9,29 +9,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.API.Controllers.Dashboard
 {
-    /// <summary>
-    /// Unified authenticated publication endpoints for ALL roles.
-    ///
-    /// Blueprint §5 — Route: /api/v1/publications
-    ///
-    /// This controller consolidates what was previously split across:
-    ///   ResearcherPublicationsController   (/dashboard/researcher/publications)
-    ///   PhDStudentPublicationsController   (/dashboard/phd-student/publications)
-    ///   SuperAdminPublicationsController   (/dashboard/superadmin/publications)
-    ///
-    /// Those files are now obsolete and should be removed from the project.
-    ///
-    /// Authorization rules (enforced inline, not via role attributes, because
-    /// many endpoints are shared across roles with different behaviour):
-    ///   GET    — any authenticated user; scope=all is admin/superadmin only
-    ///   POST   — any authenticated user
-    ///   PUT    — author (Draft/Rejected only) OR Admin/SuperAdmin
-    ///   DELETE — author (Draft only) OR Admin/SuperAdmin
-    ///   /pdf   — author OR Admin/SuperAdmin
-    ///   /submit   — Researcher, PhD student, Master student (author only)
-    ///   /validate — Admin, SuperAdmin
-    ///   /reject   — Admin, SuperAdmin
-    /// </summary>
     [ApiController]
     [Route("api/v1/publications")]
     [Authorize]
@@ -48,10 +25,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             _currentUserService = currentUserService;
         }
 
-        // ── GET /api/v1/publications ───────────────────────────────────────────
-        // Blueprint: scope=mine (default) | all (admin only)
-        // Response shape: same as public list plus status, visibility,
-        //                 submittedBy, validatedBy, rejectionReason.
         [HttpGet]
         public async Task<IActionResult> GetPublications(
             [FromQuery] string scope = "mine",
@@ -122,17 +95,12 @@ namespace LIMTIC.API.Controllers.Dashboard
                     doi = p.Doi,
                     axe = new { id = p.ResearchAxisId, title = p.ResearchAxisName },
                     submittedBy = p.UserFullName,
-                    rejectionReason = (string?)null   // extend once field is added to entity
+                    rejectionReason = (string?)null
                 }),
                 pagination = new { total, page, limit, totalPages }
             });
         }
 
-        // ── POST /api/v1/publications ──────────────────────────────────────────
-        // Blueprint workflow per role:
-        //   Researcher          → create + submit + approve  (published directly)
-        //   Admin / SuperAdmin  → create + submit + approve  (published directly)
-        //   PhD / Master student → create + submit           (goes to approval queue)
         [HttpPost]
         public async Task<IActionResult> CreatePublication(
             [FromBody] CreatePublicationRequest request,
@@ -143,7 +111,6 @@ namespace LIMTIC.API.Controllers.Dashboard
 
             var created = await _publicationService.CreateAsync(entity, ct);
 
-            // All roles submit; only privileged roles skip the approval queue.
             await _publicationService.SubmitAsync(created.Id, ct);
 
             bool canPublishDirectly =
@@ -168,8 +135,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             });
         }
 
-        // ── GET /api/v1/publications/{id} ──────────────────────────────────────
-        // Blueprint: authenticated — author OR admin.
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetPublication(Guid id, CancellationToken ct = default)
         {
@@ -205,7 +170,6 @@ namespace LIMTIC.API.Controllers.Dashboard
                 axe = new { id = p.ResearchAxisId, title = p.ResearchAxisName },
                 submittedBy = p.UserFullName,
                 rejectionReason = (string?)null,
-                // Journal-specific
                 journalName = p.JournalArticle?.JournalName,
                 volume = p.JournalArticle?.Volume,
                 number = p.JournalArticle?.Number,
@@ -225,8 +189,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             });
         }
 
-        // ── PUT /api/v1/publications/{id} ──────────────────────────────────────
-        // Blueprint: author (Draft/Rejected only) · Admin · SuperAdmin
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> UpdatePublication(
             Guid id,
@@ -247,7 +209,6 @@ namespace LIMTIC.API.Controllers.Dashboard
                     message = "Vous n'êtes pas propriétaire de cette publication."
                 });
 
-            // Non-admin authors can only edit Draft or Rejected publications.
             if (!isAdmin &&
                 existing.Status is not (PublicationStatus.Draft or PublicationStatus.Rejected))
                 return StatusCode(403, new
@@ -261,9 +222,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             return Ok(new { message = "Publication mise à jour avec succès" });
         }
 
-        // ── DELETE /api/v1/publications/{id} ───────────────────────────────────
-        // Blueprint: author (Draft only) · Admin · SuperAdmin
-        // Soft delete by default; AuditLog triggers downstream.
         [HttpDelete("{id:guid}")]
         public async Task<IActionResult> DeletePublication(Guid id, CancellationToken ct = default)
         {
@@ -281,7 +239,6 @@ namespace LIMTIC.API.Controllers.Dashboard
                     message = "Vous n'êtes pas propriétaire de cette publication."
                 });
 
-            // Non-admin authors may only delete their own Drafts.
             if (!isAdmin && existing.Status != PublicationStatus.Draft)
                 return StatusCode(403, new
                 {
@@ -293,9 +250,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             return Ok(new { message = "Publication supprimée avec succès" });
         }
 
-        // ── POST /api/v1/publications/{id}/pdf ─────────────────────────────────
-        // Blueprint §5 / §12: author or admin; body carries the pre-signed S3 URL
-        // (presigned-URL flow — client uploads to S3 then confirms here).
         [HttpPost("{id:guid}/pdf")]
         public async Task<IActionResult> AddPdf(
             Guid id,
@@ -320,7 +274,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             return Ok(new { message = "PDF uploadé avec succès", pdfUrl = request.PdfUrl });
         }
 
-        // ── DELETE /api/v1/publications/{id}/pdf ───────────────────────────────
         [HttpDelete("{id:guid}/pdf")]
         public async Task<IActionResult> RemovePdf(
             Guid id,
@@ -345,10 +298,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             return Ok(new { message = "PDF supprimé" });
         }
 
-        // ── POST /api/v1/publications/{id}/submit ──────────────────────────────
-        // Blueprint: DOCTORANT · MASTERIEN (author only)
-        // Researcher-created publications are published directly on creation
-        // so this endpoint is only for student roles re-submitting a rejected draft.
         [HttpPost("{id:guid}/submit")]
         public async Task<IActionResult> SubmitPublication(Guid id, CancellationToken ct = default)
         {
@@ -372,9 +321,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             });
         }
 
-        // ── POST /api/v1/publications/{id}/validate ────────────────────────────
-        // Blueprint §5: ADMIN · SUPER_ADMIN — moves SOUMIS → PUBLIE.
-        // Triggers PUBLICATION_VALIDATED notification to all authors.
         [HttpPost("{id:guid}/validate")]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> ValidatePublication(Guid id, CancellationToken ct = default)
@@ -389,9 +335,6 @@ namespace LIMTIC.API.Controllers.Dashboard
             });
         }
 
-        // ── POST /api/v1/publications/{id}/reject ──────────────────────────────
-        // Blueprint §5: ADMIN · SUPER_ADMIN — moves SOUMIS → REJETE.
-        // Triggers PUBLICATION_REJECTED notification carrying the reason.
         [HttpPost("{id:guid}/reject")]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> RejectPublication(
