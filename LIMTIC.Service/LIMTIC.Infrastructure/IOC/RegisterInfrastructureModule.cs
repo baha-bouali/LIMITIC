@@ -71,6 +71,12 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddSingleton<ITemplateRenderer, TemplateRenderer>();
             services.AddScoped<IEmailService, EmailService>();
 
+            // profile repositories
+            services.AddScoped<IResearcherRepository, ResearcherRepository>();
+            services.AddScoped<IPhDStudentRepository, PhDStudentRepository>();
+            services.AddScoped<IMasterianRepository, MasterianRepository>();
+            services.AddScoped<IResearchAxisRepository, ResearchAxisRepository>();
+
             return services;
         }
     }

@@ -434,6 +434,11 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAtUtc");
+                    b.Property<string>("Color")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -444,9 +449,18 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Description");
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("Themes")
+                        .IsRequired();
+                    b.Property<Guid?>("ResponsibleId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Themes")
                         .IsRequired()
@@ -460,6 +474,9 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ResearchAxes");
+                    b.HasIndex("ResponsibleId");
+
+                    b.ToTable("ResearchAxes");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
@@ -468,21 +485,22 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("OTPTokenExpiry")
+                    b.Property<DateTime?>("OTPTokenExpiry");
+                    b.Property<DateTime>("OTPTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("OTPTokenHash")
                         .IsRequired()
                         .HasColumnType("text");             
 
-                    b.Property<string>("Themes")
-                        .IsRequired()
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResetPasswordTokenHash")
                         .HasColumnType("text");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
@@ -593,10 +611,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SupervisorId")
+                    b.Property<Guid?>("SupervisorId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
@@ -620,14 +635,10 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<int>("EnrollmentYear")
                         .HasColumnType("integer");
 
-                    b.Property<string>("PhotoUrl")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("SupervisorId")
+                    b.Property<Guid?>("SupervisorId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("ThesisSubject")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -666,9 +677,6 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Photo")
                         .HasColumnType("text");
 
                     b.Property<string>("Rank")
@@ -741,6 +749,36 @@ namespace LIMTIC.Infrastructure.Migrations
 
                             t.HasCheckConstraint("CK_User_LastName_NotEmpty", "LTRIM(RTRIM(\"LastName\")) <> ''");
                         });
+                });
+
+            modelBuilder.Entity("PhDStudentEntityResearchAxisEntity", b =>
+                {
+                    b.Property<Guid>("PhDStudentsId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ResearchAxesId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("PhDStudentsId", "ResearchAxesId");
+
+                    b.HasIndex("ResearchAxesId");
+
+                    b.ToTable("PhDStudentEntityResearchAxisEntity");
+                });
+
+            modelBuilder.Entity("ResearchAxisEntityResearcherEntity", b =>
+                {
+                    b.Property<Guid>("ResearchAxesId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ResearchersId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("ResearchAxesId", "ResearchersId");
+
+                    b.HasIndex("ResearchersId");
+
+                    b.ToTable("ResearchAxisEntityResearcherEntity");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>
@@ -862,6 +900,27 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Responsible")
+                        .WithMany()
+                        .HasForeignKey("ResponsibleId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Responsible");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
@@ -873,8 +932,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
                         .WithMany()
                         .HasForeignKey("SupervisorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Supervisor");
 
@@ -892,8 +950,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
                         .WithMany()
                         .HasForeignKey("SupervisorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Supervisor");
 
@@ -909,6 +966,36 @@ namespace LIMTIC.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PhDStudentEntityResearchAxisEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.PhDStudentEntity", null)
+                        .WithMany()
+                        .HasForeignKey("PhDStudentsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ResearchAxesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ResearchAxisEntityResearcherEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ResearchAxesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", null)
+                        .WithMany()
+                        .HasForeignKey("ResearchersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>

@@ -218,7 +218,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "User",
                 Email = email,
                 Password = password,
-                Role = UserRole.Admin,
                 IsActive = true
             }, token);
         }

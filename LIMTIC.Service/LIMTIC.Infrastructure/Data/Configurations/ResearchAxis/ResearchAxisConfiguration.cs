@@ -27,6 +27,16 @@ namespace LIMTIC.Infrastructure.Data.Configurations.ResearchAxis
                            (a, b) => a.SequenceEqual(b),
                            c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                            c => c.ToArray()));
+
+            builder.Property(a => a.Color)
+                   .HasMaxLength(50)
+                   .IsRequired(false);
+
+            builder.HasOne(a => a.Responsible)
+                   .WithMany()
+                   .HasForeignKey(a => a.ResponsibleId)
+                   .OnDelete(DeleteBehavior.SetNull)
+                   .IsRequired(false);
         }
     }
 }

@@ -28,20 +28,19 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            var user = new CreateUserRequest
+            var createUserRequest = new CreateUserRequest
             {
                 FirstName = "John",
                 LastName = "Doe",
                 Email = "John.Doe@example.com",
                 Password = "password",
-                Role = UserRole.Admin,
                 IsActive = true
             };
 
-            var addResponse = await Client.AddUser(user, superAdminAccessToken);
+            var addResponse = await Client.AddUser(createUserRequest, superAdminAccessToken);
             Assert.NotNull(addResponse);
 
-            var loginRequest = new LoginRequest(user.Email, user.Password);
+            var loginRequest = new LoginRequest(createUserRequest.Email, createUserRequest.Password);
 
             var authResponse = await Client.AuthenticateUser(loginRequest);
             Assert.NotNull(authResponse);
@@ -59,7 +58,7 @@ namespace LIMTIC.E2Es.Tests
             // 4. Send a POST request to the API endpoint to refresh the access token using the refresh token
             // 5. Assert that the response isn't null and contains a new access token
 
-            // 1. Authenticate a user and obtain an access token and refresh token
+            // 1. Authenticate a user and obtain a access token and refresh token
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
             // 2. Wait for the access token to expire (simulate this by setting a short expiration time in the test environment)
