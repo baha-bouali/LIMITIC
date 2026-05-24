@@ -47,7 +47,7 @@ namespace LIMTIC.WebAPI.Controllers
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
-            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
+            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken, UserId = result.Data!.UserId, Email = result.Data!.Email });
         }
 
         [HttpPost("refreshToken")]
@@ -59,7 +59,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.IsFailure)
                 return Unauthorized(new LoginResponse { Message = result.Message });
 
-            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken });
+            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken, UserId = result.Data!.UserId, Email = result.Data!.Email });
         }
 
         [HttpPost("logout")]

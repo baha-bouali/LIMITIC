@@ -1,9 +1,19 @@
 ﻿using System.Reflection;
 using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Auth;
+using LIMTIC.Application.Abstractions.Events;
+using LIMTIC.Application.Abstractions.Contacts;
+using LIMTIC.Application.Abstractions.Settings;
+using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Services.Auth;
+using LIMTIC.Application.Services.Events;
+using LIMTIC.Application.Services.Contacts;
+using LIMTIC.Application.Services.Profiles;
+using LIMTIC.Application.Services.ResearchAxis;
 using LIMTIC.Application.Services.UserManagement;
+using LIMTIC.Application.Services.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.Application.IOC
@@ -16,6 +26,17 @@ namespace LIMTIC.Application.IOC
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IUsersManagementService, UsersManagementService>();
+            services.AddScoped<IEventsService, EventsService>();
+            services.AddScoped<ISettingsService, SettingsService>();
+            services.AddScoped<IContactService, ContactService>();
+
+            // Profile services
+            services.AddScoped<IResearcherProfileService, ResearcherProfileService>();
+            services.AddScoped<IPhDStudentProfileService, PhDStudentProfileService>();
+            services.AddScoped<IMasterianProfileService, MasterianProfileService>();
+
+            // Research axis service
+            services.AddScoped<IResearchAxisService, ResearchAxisService>();
 
             return services;
         }

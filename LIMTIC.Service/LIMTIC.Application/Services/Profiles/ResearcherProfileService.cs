@@ -1,0 +1,123 @@
+using FluentValidation;
+using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Profiles;
+using LIMTIC.Application.Contracts.Commands.Profiles;
+using LIMTIC.Application.DTOs;
+using LIMTIC.Application.DTOs.Profiles;
+using LIMTIC.Application.Helpers;
+using LIMTIC.Application.Mappers.ProfileMapper;
+using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Enums;
+
+namespace LIMTIC.Application.Services.Profiles
+{
+    public class ResearcherProfileService : IResearcherProfileService
+    {
+        private readonly IResearcherRepository _researcherRepository;
+        private readonly IResearchAxisRepository _researchAxisRepository;
+        private readonly IUserRepository _userRepository;
+        private readonly IProfileMapper _profileMapper;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IValidator<UpdateResearcherProfileCommand> _updateValidator;
+
+        public ResearcherProfileService(
+            IResearcherRepository researcherRepository,
+            IResearchAxisRepository researchAxisRepository,
+            IUserRepository userRepository,
+            IProfileMapper profileMapper,
+            ICurrentUserService currentUserService,
+            IValidator<UpdateResearcherProfileCommand> updateValidator)
+        {
+            _researcherRepository = researcherRepository;
+            _researchAxisRepository = researchAxisRepository;
+            _userRepository = userRepository;
+            _profileMapper = profileMapper;
+            _currentUserService = currentUserService;
+            _updateValidator = updateValidator;
+        }
+
+        public async Task<Result<ResearcherProfileDto>> GetByUserIdAsync(Guid userId)
+        {
+            var researcher = await _researcherRepository.GetByUserIdAsync(userId);
+            if (researcher is null)
+                return Result<ResearcherProfileDto>.FailureResult("Researcher profile not found");
+
+            return Result<ResearcherProfileDto>.SuccessResult(_profileMapper.MapToResearcherProfileDto(researcher));
+        }
+
+        public async Task<Result<ResearcherProfileCommandResponse>> UpdateAsync(UpdateResearcherProfileCommand command)
+        {
+            var validationResult = _updateValidator.Validate(command);
+            if (!validationResult.IsValid)
+                return Result<ResearcherProfileCommandResponse>.ValidationFailureResult(
+                    ValidationHelper.ParseValidationErrors(validationResult));
+
+            // Authorization: only admin or the researcher themselves
+            var currentUserId = _currentUserService.UserId;
+            var currentRole = _currentUserService.Role;
+            var isAdmin = currentRole is UserRole.SuperAdmin or UserRole.Admin;
+
+            if (!isAdmin && currentUserId != command.UserId)
+                return Result<ResearcherProfileCommandResponse>.FailureResult("You are not authorized to update this profile");
+
+            var researcher = await _researcherRepository.GetByUserIdAsync(command.UserId);
+            if (researcher is null)
+                return Result<ResearcherProfileCommandResponse>.FailureResult("Researcher profile not found");
+
+            // Update scalar fields
+            researcher.Rank = command.Rank.Trim();
+            researcher.Specialty = command.Specialty.Trim();
+            researcher.Office = command.Office.Trim();
+            researcher.PhoneNumber = command.PhoneNumber.Trim();
+            researcher.Biography = command.Biography?.Trim();
+            researcher.Orcid = command.Orcid?.Trim();
+            researcher.GoogleScholar = command.GoogleScholar?.Trim();
+            researcher.ResearchGate = command.ResearchGate?.Trim();
+            researcher.LinkedIn = command.LinkedIn?.Trim();
+
+            // Update research axes if provided
+            if (command.ResearchAxisIds is not null)
+            {
+                researcher.ResearchAxes.Clear();
+                if (command.ResearchAxisIds.Count > 0)
+                {
+                    var axes = await _researchAxisRepository.GetByIdsAsync(command.ResearchAxisIds);
+                    foreach (var axis in axes)
+                        researcher.ResearchAxes.Add(axis);
+                }
+            }
+
+            var saved = await _researcherRepository.UpdateAsync(researcher);
+            if (!saved)
+                return Result<ResearcherProfileCommandResponse>.FailureResult("Failed to update researcher profile");
+
+            return Result<ResearcherProfileCommandResponse>.SuccessResult(new ResearcherProfileCommandResponse
+            {
+                Profile = _profileMapper.MapToResearcherProfileDto(researcher)
+            });
+        }
+
+        public async Task<Result<bool>> DeleteAsync(Guid userId)
+        {
+            var researcher = await _researcherRepository.GetByUserIdAsync(userId);
+            if (researcher is null)
+                return Result<bool>.FailureResult("Researcher profile not found");
+
+            var deleted = await _researcherRepository.DeleteAsync(researcher);
+            if (!deleted)
+                return Result<bool>.FailureResult("Failed to delete researcher profile");
+
+            // Reset user role back to Visitor
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user is not null)
+            {
+                user.Role = UserRole.Visitor;
+                var updated = await _userRepository.UpdateUserAsync(user);
+                if (!updated)
+                    return Result<bool>.FailureResult("Failed to reset user role");
+            }
+
+            return Result<bool>.SuccessResult(true);
+        }
+    }
+}

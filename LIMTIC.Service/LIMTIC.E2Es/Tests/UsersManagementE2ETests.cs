@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Enums;
+﻿using System.Net;
+using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
@@ -30,7 +31,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Doe",
                 Email = "john.doe@example.com",
                 Password = "password",
-                Role = UserRole.Admin,
                 IsActive = true
             };
 
@@ -70,7 +70,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Doe",
                 Email = "john.doe12@example.com",
                 Password = "password",
-                Role = UserRole.Researcher,
                 IsActive = false
             };
 
@@ -100,6 +99,144 @@ namespace LIMTIC.E2Es.Tests
             var inactiveUser = await Client.GetUserById(createdUser.Id, superAdminAccessToken);
             Assert.NotNull(inactiveUser);
             Assert.False(inactiveUser.User.IsActive);
+        }
+
+        // ── GET USERS LIST ────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetUsers_NoFilters_Returns200WithList()
+        {
+            var token = await LoginAsSuperAdmin();
+
+            await Client.AddUser(new CreateUserRequest
+            {
+                FirstName = "List", LastName = "UserA",
+                Email = "e2e.list.a@example.com",
+                Password = "password", IsActive = true
+            }, token);
+
+            var result = await Client.GetUsers(token);
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.True(result.Total >= 1);
+            Assert.True(result.Items.Count >= 1);
+            Assert.NotEmpty(result.Counts);
+        }
+
+        [Fact]
+        public async Task GetUsers_FilterByRole_ReturnsOnlyMatchingUsers()
+        {
+            var token = await LoginAsSuperAdmin();
+
+            var result = await Client.GetUsers(token, role: UserRole.SuperAdmin);
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.All(result.Items, u => Assert.Equal(UserRole.SuperAdmin, u.Role));
+        }
+
+        [Fact]
+        public async Task GetUsers_FilterByActiveStatus_ReturnsOnlyActiveUsers()
+        {
+            var token = await LoginAsSuperAdmin();
+
+            await Client.AddUser(new CreateUserRequest
+            {
+                FirstName = "Active", LastName = "StatusTest",
+                Email = "e2e.status.active@example.com",
+                Password = "password", IsActive = true
+            }, token);
+
+            var result = await Client.GetUsers(token, status: "active");
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.All(result.Items, u => Assert.True(u.IsActive));
+        }
+
+        [Fact]
+        public async Task GetUsers_FilterByInactiveStatus_ReturnsOnlyInactiveUsers()
+        {
+            var token = await LoginAsSuperAdmin();
+
+            await Client.AddUser(new CreateUserRequest
+            {
+                FirstName = "Inactive", LastName = "StatusTest",
+                Email = "e2e.status.inactive@example.com",
+                Password = "password", IsActive = false
+            }, token);
+
+            var result = await Client.GetUsers(token, status: "inactive");
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.All(result.Items, u => Assert.False(u.IsActive));
+        }
+
+        [Fact]
+        public async Task GetUsers_SearchByName_ReturnsMatchingUsers()
+        {
+            var token = await LoginAsSuperAdmin();
+            var unique = "Zxuniqqe2e";
+
+            await Client.AddUser(new CreateUserRequest
+            {
+                FirstName = unique, LastName = "SearchTest",
+                Email = "e2e.search.name@example.com",
+                Password = "password", IsActive = true
+            }, token);
+
+            var result = await Client.GetUsers(token, q: unique);
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.True(result.Items.Count >= 1);
+            Assert.All(result.Items, u =>
+                Assert.True(
+                    u.FirstName.Contains(unique, StringComparison.OrdinalIgnoreCase) ||
+                    u.LastName.Contains(unique, StringComparison.OrdinalIgnoreCase) ||
+                    u.Email.Contains(unique, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        [Fact]
+        public async Task GetUsers_Pagination_ReturnsCorrectPageAndLimit()
+        {
+            var token = await LoginAsSuperAdmin();
+
+            var result = await Client.GetUsers(token, page: 1, limit: 2);
+
+            Assert.NotNull(result);
+            Assert.True(result!.Success);
+            Assert.True(result.Items.Count <= 2);
+            Assert.Equal(1, result.Page);
+            Assert.Equal(2, result.Limit);
+        }
+
+        [Fact]
+        public async Task GetUsers_NonAdmin_Returns403()
+        {
+            var adminToken = await LoginAsSuperAdmin();
+
+            await Client.AddUser(new CreateUserRequest
+            {
+                FirstName = "Auth", LastName = "Test",
+                Email = "e2e.getusers.visitor@example.com",
+                Password = "password", IsActive = true
+            }, adminToken);
+
+            var visitorToken = await Client.AuthenticateUser(
+                new WebAPI.Models.Auth.Login.LoginRequest("e2e.getusers.visitor@example.com", "password"));
+
+            var response = await Client.GetUsersFullResponse(visitorToken?.AccessToken ?? "");
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetUsers_Unauthenticated_Returns401()
+        {
+            var response = await Client.GetUsersFullResponse("invalid-token");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
     }
 }
