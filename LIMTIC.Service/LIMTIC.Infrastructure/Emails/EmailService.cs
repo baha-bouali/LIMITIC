@@ -34,6 +34,19 @@ namespace LIMTIC.Infrastructure.Emails
             return Deliver(model.ToEmail, "Your LIMTIC Password Reset Code", body);
         }
 
+        public async Task<bool> TestSmtpAsync(string testEmail)
+        {
+            try
+            {
+                await Deliver(testEmail, "LIMTIC SMTP Test", $"This is a test message from {_settings.SenderName}");
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         // ─── How to add a new email ────────────────────────────────────────────
         // 1. Create a model in Application/Emails/Models/
         // 2. Create a template in Infrastructure/Emails/Templates/

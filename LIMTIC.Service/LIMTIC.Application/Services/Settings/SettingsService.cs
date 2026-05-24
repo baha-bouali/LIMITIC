@@ -9,13 +9,13 @@ namespace LIMTIC.Application.Services.Settings
     public class SettingsService : ISettingsService
     {
         private readonly ISettingsRepository _settingsRepository;
-        private readonly ISmtpService _smtpService;
+        private readonly IEmailService _emailService;
         private readonly Microsoft.AspNetCore.DataProtection.IDataProtector _protector;
 
-        public SettingsService(ISettingsRepository settingsRepository, ISmtpService smtpService, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider dataProtectionProvider)
+        public SettingsService(ISettingsRepository settingsRepository, IEmailService emailService, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider dataProtectionProvider)
         {
             _settingsRepository = settingsRepository;
-            _smtpService = smtpService;
+            _emailService = emailService;
             _protector = dataProtectionProvider.CreateProtector("smtp-password");
         }
 
@@ -63,6 +63,12 @@ namespace LIMTIC.Application.Services.Settings
             settings.LogoUrl = dto.Identity.LogoUrl;
 
             // SMTP - only update password if provided
+            // Note: Do NOT use the one-way `IPasswordHasher` (BCrypt) for SMTP credentials.
+            // The PasswordHasher implementation is intentionally one-way (bcrypt) and does
+            // not allow recovering the original password. SMTP clients require the
+            // plaintext password when connecting, so we must store the credential using
+            // reversible protection. We use `IDataProtector` to encrypt/decrypt the
+            // SMTP password at rest instead of the application password hasher.
             settings.SmtpHost = dto.Smtp.Host;
             settings.SmtpPort = dto.Smtp.Port;
             settings.SmtpUsername = dto.Smtp.Username;
@@ -88,7 +94,7 @@ namespace LIMTIC.Application.Services.Settings
 
         public async Task<Result<bool>> TestSmtpAsync(string testEmail)
         {
-            var ok = await _smtpService.TestSmtpAsync(testEmail);
+            var ok = await _emailService.TestSmtpAsync(testEmail);
             return ok ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("SMTP_CONNECTION_FAILED");
         }
     }
