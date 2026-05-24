@@ -16,7 +16,6 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<NationalConferenceEntity?> GetByPublicationIdAsync(Guid publicationId, CancellationToken ct = default)
         {
-            // Its Id serves as a primary key constraint representing the parent PublicationId 
             return await _context.NationalConferences
                 .FirstOrDefaultAsync(nc => nc.Id == publicationId, ct);
         }

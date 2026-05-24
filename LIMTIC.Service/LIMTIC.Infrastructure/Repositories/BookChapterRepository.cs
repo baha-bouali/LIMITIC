@@ -16,8 +16,6 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<BookChapterEntity?> GetByPublicationIdAsync(Guid publicationId, CancellationToken ct = default)
         {
-            // Note: because the Id of the specific entities is mapped as a ForeignKey to the parent PublicationId 
-            // in your EF configuration, looking up by Id == publicationId is correct.
             return await _context.BookChapters
                 .FirstOrDefaultAsync(b => b.Id == publicationId, ct);
         }

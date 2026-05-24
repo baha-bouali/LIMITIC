@@ -18,8 +18,6 @@ namespace LIMTIC.Infrastructure.Repositories
         {
             return await _dbContext.TechnicalReports
                 .FirstOrDefaultAsync(tr => tr.Id == publicationId, ct); 
-                // Note: If PublicationId is a separate property on TechnicalReportEntity (e.g. inheritance or foreign key), 
-                // adjust `tr.Id == publicationId` to `tr.PublicationId == publicationId` accordingly.
         }
 
         public async Task AddAsync(TechnicalReportEntity entity, CancellationToken ct = default)

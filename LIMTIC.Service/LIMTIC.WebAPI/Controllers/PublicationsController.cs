@@ -9,8 +9,6 @@ namespace LIMTIC.API.Controllers
     /// <summary>
     /// Public-facing publication endpoints (no auth required).
     /// Backs PublicationsPage and PublicationDetailPage.
-    ///
-    /// Blueprint §4.4 — Route: /api/v1/public/publications
     /// </summary>
     [ApiController]
     [Route("api/v1/public/publications")]
@@ -24,9 +22,6 @@ namespace LIMTIC.API.Controllers
             _publicationService = publicationService;
         }
 
-        // ── GET /api/v1/public/publications ────────────────────────────────────
-        // Always scoped to status=Published & visibility=Public.
-        // Blueprint response: { data, stats, pagination }
         [HttpGet]
         public async Task<IActionResult> GetPublications(
             [FromQuery] int page = 1,
@@ -82,9 +77,6 @@ namespace LIMTIC.API.Controllers
             });
         }
 
-        // ── GET /api/v1/public/publications/recent ─────────────────────────────
-        // Declared before {id:guid} to avoid route ambiguity.
-        // Blueprint §4.1 / §14.1 — used by HomePage Publications Récentes.
         [HttpGet("recent")]
         public async Task<IActionResult> GetRecentPublications(
             [FromQuery] int limit = 3,
@@ -106,9 +98,7 @@ namespace LIMTIC.API.Controllers
                 coreRanking = p.CoreRanking?.ToString()
             }));
         }
-
-        // ── GET /api/v1/public/publications/{id} ───────────────────────────────
-        // Blueprint §4.4 — used by PublicationDetailPage.
+        
         [HttpGet("{id:guid}")]
         public async Task<IActionResult> GetPublication(Guid id, CancellationToken ct = default)
         {
@@ -121,9 +111,6 @@ namespace LIMTIC.API.Controllers
 
             return Ok(BuildPublicationDetail(p));
         }
-
-        // ─── Helpers ──────────────────────────────────────────────────────────
-
         private static object BuildPublicationDetail(PublicationDto p) => new
         {
             id = p.Id,

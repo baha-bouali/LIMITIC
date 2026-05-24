@@ -16,8 +16,6 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<InternationalConferenceEntity?> GetByPublicationIdAsync(Guid publicationId, CancellationToken ct = default)
         {
-            // The Id of the specific entity acts as a primary key constraint corresponding 
-            // to the parent PublicationId, based on your Entity Framework configurations.
             return await _context.InternationalConferences
                 .FirstOrDefaultAsync(ic => ic.Id == publicationId, ct);
         }

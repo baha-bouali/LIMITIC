@@ -16,8 +16,6 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<JournalArticleEntity?> GetByPublicationIdAsync(Guid publicationId, CancellationToken ct = default)
         {
-            // Just like the other specific type tables, its Id serves as a primary key constraint 
-            // representing the parent PublicationId 
             return await _context.JournalArticles
                 .FirstOrDefaultAsync(ja => ja.Id == publicationId, ct);
         }

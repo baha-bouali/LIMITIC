@@ -23,7 +23,6 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<PublicationEntity?> GetByIdWithDetailsAsync(Guid id, CancellationToken ct = default)
         {
-            // For a single entity, we LEFT JOIN everything so it fully materializes regardless of type
             return await _context.Publications
                 .Include(p => p.User)
                 .Include(p => p.ResearchAxis)
@@ -89,8 +88,6 @@ namespace LIMTIC.Infrastructure.Repositories
                 .Include(p => p.ResearchAxis)
                 .AsQueryable();
 
-            // Only INCLUDE the specific publication table if the user filters by type
-            // Otherwise, we include the minimum required mapping (the ones requested in your controllers like Quartiles).
             if (type.HasValue)
             {
                 query = query.Where(p => p.Type == type.Value);
@@ -116,9 +113,6 @@ namespace LIMTIC.Infrastructure.Repositories
             }
             else 
             {
-                // If NO type is specified, we must eager-load Journal and Conferences 
-                // because your Controller endpoints map fields like: `quartile = p.JournalArticle?.Ranking`
-                // If you don't include them, those navigational properties will be null.
                 query = query
                     .Include(p => p.JournalArticle)
                     .Include(p => p.InternationalConference);
