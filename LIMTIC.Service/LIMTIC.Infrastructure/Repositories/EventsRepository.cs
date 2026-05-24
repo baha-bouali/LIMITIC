@@ -1,5 +1,6 @@
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Events;
+using LIMTIC.Domain.Enums;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,12 @@ namespace LIMTIC.Infrastructure.Repositories
             var query = _context.Events.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(type))
-                query = query.Where(e => e.Type.ToString().ToLower() == type.ToLower());
+            {
+                if (Enum.TryParse<EventType>(type, ignoreCase: true, out var parsedType))
+                    query = query.Where(e => e.Type == parsedType);
+                else
+                    query = query.Where(_ => false);
+            }
 
             if (!string.IsNullOrWhiteSpace(q))
             {
@@ -51,7 +57,12 @@ namespace LIMTIC.Infrastructure.Repositories
             var query = _context.Events.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(type))
-                query = query.Where(e => e.Type.ToString().ToLower() == type.ToLower());
+            {
+                if (Enum.TryParse<EventType>(type, ignoreCase: true, out var parsedType))
+                    query = query.Where(e => e.Type == parsedType);
+                else
+                    query = query.Where(_ => false);
+            }
 
             if (!string.IsNullOrWhiteSpace(q))
             {
