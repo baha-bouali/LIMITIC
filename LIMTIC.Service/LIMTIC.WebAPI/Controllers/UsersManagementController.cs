@@ -1,9 +1,12 @@
 ﻿using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.GetUser;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -50,6 +53,35 @@ namespace LIMTIC.WebAPI.Controllers
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
+            }
+        }
+
+        [HttpPut("updateRole/{userId}")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> UpdateUserRole(Guid userId, UpdateUserRoleRequest request)
+        {
+            var command = new UpdateUserRoleCommand
+            {
+                UserId = userId,
+                Role = request.Role,
+                Rank = request.Rank,
+                Specialty = request.Specialty,
+                Office = request.Office,
+                PhoneNumber = request.PhoneNumber,
+                ResearchAxisIds = request.ResearchAxisIds,
+                EnrollmentYear = request.EnrollmentYear,
+                Cohort = request.Cohort,
+                DissertationSubject = request.DissertationSubject
+            };
+
+            var result = await _usersManagementService.UpdateUserRoleAsync(command);
+            if (result.Success)
+            {
+                return Ok(new BaseResponse { Success = true });
+            }
+            else
+            {
+                return BadRequest(new BaseResponse { Success = false, Message = result.Message, ValidationErrors = result.ValidationErrors });
             }
         }
 

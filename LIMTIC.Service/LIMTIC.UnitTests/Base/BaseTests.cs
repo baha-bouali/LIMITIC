@@ -1,6 +1,5 @@
 ﻿using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.IOC;
-using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
@@ -16,7 +15,10 @@ namespace LIMTIC.UnitTests.Base
         protected readonly ServiceProvider ServiceProvider;
         protected readonly AppDbContext DbContext;
         protected IUserRepository UserRepository => ServiceProvider.GetRequiredService<IUserRepository>();
-        protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
+        protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<IUsersManagementService>();
+        protected IMasterianRepository MasterianRepository => ServiceProvider.GetRequiredService<IMasterianRepository>();
+        protected IResearcherRepository ResearcherRepository => ServiceProvider.GetRequiredService<IResearcherRepository>();
+        protected IPhDStudentRepository PhDStudentRepository => ServiceProvider.GetRequiredService<IPhDStudentRepository>();
         protected IResetPasswordRepository ResetPasswordRepository => ServiceProvider.GetRequiredService<IResetPasswordRepository>();
         protected IRefreshTokenRepository RefreshTokenRepository => ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
 
@@ -32,6 +34,7 @@ namespace LIMTIC.UnitTests.Base
             // Register infrastructure and application modules
             services.AddInfrastructure(configuration);
             services.AddApplication();
+            services.AddMappers();
             services.AddWebApi();
 
             // Remove previous AppDbContext registration if present

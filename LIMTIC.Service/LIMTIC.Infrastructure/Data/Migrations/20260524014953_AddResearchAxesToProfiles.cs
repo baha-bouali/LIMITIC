@@ -11,13 +11,6 @@ namespace LIMTIC.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ResetPasswords_User_UserId",
-                table: "ResetPasswords");
-
-            migrationBuilder.DropTable(
-                name: "User");
-
             migrationBuilder.AlterColumn<string>(
                 name: "ThesisSubject",
                 table: "PhDStudents",
@@ -99,23 +92,11 @@ namespace LIMTIC.Infrastructure.Migrations
                 name: "IX_ResearchAxisEntityResearcherEntity_ResearchersId",
                 table: "ResearchAxisEntityResearcherEntity",
                 column: "ResearchersId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ResetPasswords_Users_UserId",
-                table: "ResetPasswords",
-                column: "UserId",
-                principalTable: "Users",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_ResetPasswords_Users_UserId",
-                table: "ResetPasswords");
-
             migrationBuilder.DropTable(
                 name: "PhDStudentEntityResearchAxisEntity");
 
@@ -151,25 +132,6 @@ namespace LIMTIC.Infrastructure.Migrations
                 oldClrType: typeof(Guid),
                 oldType: "uuid",
                 oldNullable: true);
-
-            migrationBuilder.CreateTable(
-                name: "User",
-                columns: table => new
-                {
-                    TempId1 = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.UniqueConstraint("AK_User_TempId1", x => x.TempId1);
-                });
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ResetPasswords_User_UserId",
-                table: "ResetPasswords",
-                column: "UserId",
-                principalTable: "User",
-                principalColumn: "TempId1",
-                onDelete: ReferentialAction.Cascade);
         }
     }
 }

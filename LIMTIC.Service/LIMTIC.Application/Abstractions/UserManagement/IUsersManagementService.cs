@@ -1,6 +1,7 @@
 ﻿using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs;
 
 namespace LIMTIC.Application.Abstractions.UserManagement
@@ -14,5 +15,6 @@ namespace LIMTIC.Application.Abstractions.UserManagement
        
         public Task<Result<bool>> ActivateUserAsync(Guid userId);
         public Task<Result<bool>> DeactivateUserAsync(Guid userId);
+        public Task<Result<bool>> UpdateUserRoleAsync(UpdateUserRoleCommand command);
     }
 }
