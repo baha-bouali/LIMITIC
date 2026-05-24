@@ -6,15 +6,34 @@ import { Card, CardContent } from '../../components/ui/Card';
 import { Mail, Phone, MapPin, Linkedin, Twitter } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useSendContactMessageMutation } from '../../api/contactsApi';
 
 export default function ContactPage() {
   const { t } = useLanguage();
+  const [sendContactMessage, { isLoading }] = useSendContactMessageMutation();
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success(t('contact.messageSent'));
-    setFormData({ name: '', email: '', subject: '', message: '' });
+
+    try {
+      const response = await sendContactMessage({
+        fullName: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      }).unwrap();
+
+      toast.success(response.message ?? t('contact.messageSent'));
+      setFormData({ name: '', email: '', subject: '', message: '' });
+    } catch (error) {
+      const errorMessage =
+        typeof error === 'object' && error !== null && 'data' in error
+          ? ((error as { data?: { message?: string } }).data?.message ?? t('common.error'))
+          : t('common.error');
+
+      toast.error(errorMessage);
+    }
   };
 
   return (
@@ -49,7 +68,9 @@ export default function ContactPage() {
                 <label className="block text-sm font-medium mb-2">{t('contact.message')} *</label>
                 <textarea required value={formData.message} onChange={(e) => setFormData({...formData, message: e.target.value})} rows={6} className="w-full px-4 py-3 border border-surface-border rounded-[var(--radius-input)] focus:ring-2 focus:ring-accent-blue focus:border-transparent resize-none" />
               </div>
-              <Button type="submit" className="w-full">{t('contact.send')}</Button>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? t('common.loading') || 'Sending...' : t('contact.send')}
+              </Button>
             </form>
           </div>
 
