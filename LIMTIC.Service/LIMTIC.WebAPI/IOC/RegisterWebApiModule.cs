@@ -1,4 +1,5 @@
 ﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Interfaces.Services;
 using LIMTIC.WebAPI.Services;
 
 namespace LIMTIC.WebAPI.IOC

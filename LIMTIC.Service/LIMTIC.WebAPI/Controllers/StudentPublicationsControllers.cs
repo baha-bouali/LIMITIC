@@ -13,17 +13,17 @@ namespace LIMTIC.API.Controllers.Dashboard
 
     /// <summary>
     /// Doctorant: CRUD on own publications + submit action.
-    /// Lab publications (all published, including private) → PhdStudentLabPublicationsController.
+    /// Lab publications (all published, including private) → PhDStudentLabPublicationsController.
     /// </summary>
     [ApiController]
     [Route("api/v1/dashboard/phd-student/publications")]
-    [Authorize(Roles = "PhdStudent")]
-    public class PhdStudentPublicationsController : ControllerBase
+    [Authorize(Roles = "PhDStudent")]
+    public class PhDStudentPublicationsController : ControllerBase
     {
         private readonly IPublicationService _publicationService;
         private readonly ICurrentUserService _currentUserService;
 
-        public PhdStudentPublicationsController(
+        public PhDStudentPublicationsController(
             IPublicationService publicationService,
             ICurrentUserService currentUserService)
         {
@@ -167,7 +167,7 @@ namespace LIMTIC.API.Controllers.Dashboard
         [HttpPost("{id:guid}/pdf")]
         public async Task<IActionResult> AddPdf(
             Guid id,
-            [FromBody] PdfRequest request,
+            [FromBody] StudentPdfRequest request,
             CancellationToken ct = default)
         {
             var existing = await _publicationService.GetByIdAsync(id, ct);
@@ -185,7 +185,7 @@ namespace LIMTIC.API.Controllers.Dashboard
         [HttpDelete("{id:guid}/pdf")]
         public async Task<IActionResult> RemovePdf(
             Guid id,
-            [FromBody] PdfRequest request,
+            [FromBody] StudentPdfRequest request,
             CancellationToken ct = default)
         {
             var existing = await _publicationService.GetByIdAsync(id, ct);
@@ -199,7 +199,7 @@ namespace LIMTIC.API.Controllers.Dashboard
             return Ok(new { message = "PDF supprimé" });
         }
 
-        public record PdfRequest(string PdfUrl);
+        public record StudentPdfRequest(string PdfUrl);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -209,12 +209,12 @@ namespace LIMTIC.API.Controllers.Dashboard
 
     [ApiController]
     [Route("api/v1/dashboard/phd-student/all-publications")]
-    [Authorize(Roles = "PhdStudent")]
-    public class PhdStudentLabPublicationsController : ControllerBase
+    [Authorize(Roles = "PhDStudent")]
+    public class PhDStudentLabPublicationsController : ControllerBase
     {
         private readonly IPublicationService _publicationService;
 
-        public PhdStudentLabPublicationsController(IPublicationService publicationService)
+        public PhDStudentLabPublicationsController(IPublicationService publicationService)
         {
             _publicationService = publicationService;
         }

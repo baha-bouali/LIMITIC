@@ -169,7 +169,7 @@ namespace LIMTIC.WebAPI.Controllers
         [HttpPost("{id:guid}/pdf")]
         public async Task<IActionResult> AddPdf(
             Guid id,
-            [FromBody] PdfRequest request,
+            [FromBody] ResearcherPdfRequest request,
             CancellationToken ct = default)
         {
             var existing = await _publicationService.GetByIdAsync(id, ct);
@@ -187,7 +187,7 @@ namespace LIMTIC.WebAPI.Controllers
         [HttpDelete("{id:guid}/pdf")]
         public async Task<IActionResult> RemovePdf(
             Guid id,
-            [FromBody] PdfRequest request,
+            [FromBody] ResearcherPdfRequest request,
             CancellationToken ct = default)
         {
             var existing = await _publicationService.GetByIdAsync(id, ct);
@@ -203,6 +203,6 @@ namespace LIMTIC.WebAPI.Controllers
 
         // ─── Request DTOs ─────────────────────────────────────────────────────
 
-        public record PdfRequest(string PdfUrl);
+        public record ResearcherPdfRequest(string PdfUrl);
     }
 }

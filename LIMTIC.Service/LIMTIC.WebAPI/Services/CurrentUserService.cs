@@ -1,6 +1,5 @@
-﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Domain.Enums;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using LIMTIC.Application.Interfaces.Services;
 
 namespace LIMTIC.WebAPI.Services
 {
@@ -17,8 +16,10 @@ namespace LIMTIC.WebAPI.Services
             _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
                 ? userId : Guid.Empty;
 
-        public UserRole? Role => Enum.TryParse<UserRole>(
-            _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value, out var userRole)
-                ? userRole : null;
+        public string? Role => 
+            _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;
+
+        public bool IsAuthenticated => 
+            _httpContextAccessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
     }
 }
