@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Shared;
+﻿using LIMTIC.Domain.Entities.ResearchAxis;
+using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.Users
 {
@@ -16,5 +17,7 @@ namespace LIMTIC.Domain.Entities.Users
         public string? GoogleScholar { get; set; }
         public string? ResearchGate { get; set; }
         public string? LinkedIn { get; set; }
+
+        public ICollection<ResearchAxisEntity> ResearchAxes { get; set; } = [];
     }
 }

@@ -1,5 +1,6 @@
 ﻿using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.Publications;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.ResearchAxis
@@ -12,5 +13,7 @@ namespace LIMTIC.Domain.Entities.ResearchAxis
 
         public ICollection<PublicationEntity> Publications { get; set; } = [];
         public ICollection<EventEntity> Events { get; set; } = [];
+        public ICollection<ResearcherEntity> Researchers { get; set; } = [];
+        public ICollection<PhDStudentEntity> PhDStudents { get; set; } = [];
     }
 }

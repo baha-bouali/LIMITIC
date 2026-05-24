@@ -1,6 +1,4 @@
-﻿using LIMTIC.Domain.Enums;
-
-namespace LIMTIC.Application.Contracts.Commands.CreateUser
+﻿namespace LIMTIC.Application.Contracts.Commands.CreateUser
 {
     public class CreateUserCommand
     {
@@ -8,7 +6,6 @@ namespace LIMTIC.Application.Contracts.Commands.CreateUser
         public string LastName { get; set; }
         public string Email { get; set; }
         public string Password { get; set; }
-        public UserRole Role { get; set; }
         public bool IsActive { get; set; }
     }
 }

@@ -47,7 +47,7 @@ namespace LIMTIC.Application.Services.UserManagement
                 lastName: command.LastName,
                 passwordHash: _passwordHasher.HashPassword(command.Password),
                 isActive: command.IsActive,
-                role: command.Role);
+                role: UserRole.Visitor);
 
             var result = await _userRepository.AddUserAsync(user);
             return result ? Result<CreateUserCommandResponse>.SuccessResult(new CreateUserCommandResponse
