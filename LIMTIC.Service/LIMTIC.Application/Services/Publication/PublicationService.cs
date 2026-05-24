@@ -3,7 +3,7 @@ using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
 
-namespace LIMTIC.Application.Services
+namespace LIMTIC.Application.Services.Publication
 {
     public class PublicationService : IPublicationService
     {
@@ -213,7 +213,7 @@ namespace LIMTIC.Application.Services
 
             if (publication.Status != PublicationStatus.Submitted)
                 throw new InvalidOperationException(
-                    $"Only Submitted publications can be approved. Current status: '{publication.Status}'.");
+                    $"Only SOUMIS publications can be approved. Current status: '{publication.Status}'.");
 
             publication.Status = PublicationStatus.Published;
 
@@ -233,7 +233,7 @@ namespace LIMTIC.Application.Services
 
             if (publication.Status != PublicationStatus.Submitted)
                 throw new InvalidOperationException(
-                    $"Only Submitted publications can be rejected. Current status: '{publication.Status}'.");
+                    $"Only SOUMIS publications can be rejected. Current status: '{publication.Status}'.");
 
             publication.Status = PublicationStatus.Rejected;
             // Persist the rejection reason if your entity / audit log supports it.

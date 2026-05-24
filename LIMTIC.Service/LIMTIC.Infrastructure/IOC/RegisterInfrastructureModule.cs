@@ -64,6 +64,11 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();
             services.AddSingleton<ITemplateRenderer, TemplateRenderer>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IPublicationRepository, PublicationRepository>();
+            services.AddScoped<IBookChapterRepository, BookChapterRepository>(); 
+            services.AddScoped<IInternationalConferenceRepository, InternationalConferenceRepository>();
+            services.AddScoped<IJournalArticleRepository, JournalArticleRepository>();
+            services.AddScoped<INationalConferenceRepository, NationalConferenceRepository>();
 
             return services;
         }
