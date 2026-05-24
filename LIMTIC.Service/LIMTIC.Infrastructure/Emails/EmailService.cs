@@ -26,6 +26,12 @@ namespace LIMTIC.Infrastructure.Emails
             return Deliver(model.ToEmail, "Your LIMTIC Password Reset Code", body);
         }
 
+        public Task SendContactEmailAsync(ContactEmailModel model)
+        {
+            var body = _renderer.Render("ContactEmail", model);
+            return Deliver(model.ToEmail, $"[Contact] {model.Subject}", body);
+        }
+
         // ─── How to add a new email ────────────────────────────────────────────
         // 1. Create a model in Application/Emails/Models/
         // 2. Create a template in Infrastructure/Emails/Templates/
