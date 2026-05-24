@@ -1,11 +1,44 @@
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Badge } from '../../components/ui/Badge';
-import { Mail, Phone, ExternalLink } from 'lucide-react';
+import { Mail, Phone, ExternalLink, Loader2 } from 'lucide-react';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useGetResearcherProfileQuery } from '../../api/profilesApi';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 export default function ResearcherPage() {
+  const { id } = useParams<{ id: string }>();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('bio');
+
+  const { data: researcher, isLoading, isError } = useGetResearcherProfileQuery(id || '', {
+    skip: !id,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-background flex flex-col">
+        <PublicNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="animate-spin text-accent-blue" size={48} />
+        </div>
+        <PublicFooter />
+      </div>
+    );
+  }
+
+  if (isError || !researcher) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-background flex flex-col">
+        <PublicNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-xl text-red-500">{t('common.error') || 'Error loading profile data.'}</div>
+        </div>
+        <PublicFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-background">
@@ -16,25 +49,49 @@ export default function ResearcherPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              <div className="w-48 h-48 rounded-full bg-navy text-white flex items-center justify-center text-6xl font-bold mx-auto border-4 border-accent-blue">A</div>
+              <div className="w-48 h-48 rounded-full bg-navy text-white flex items-center justify-center text-6xl font-bold mx-auto border-4 border-accent-blue">
+                {researcher.firstName.charAt(0)}{researcher.lastName.charAt(0)}
+              </div>
               <div className="text-center">
-                <h2 className="text-2xl font-bold text-navy dark:text-white">Dr. Ahmed Ben Salem</h2>
-                <Badge variant="info" className="mt-2">Chercheur</Badge>
-                <Badge variant="default" className="mt-2">Intelligence Artificielle</Badge>
+                <h2 className="text-2xl font-bold text-navy dark:text-white">
+                  {researcher.rank ? `${researcher.rank} ` : ''}{researcher.firstName} {researcher.lastName}
+                </h2>
+                <Badge variant="info" className="mt-2 text-white">{t('role.researcher') || 'Chercheur'}</Badge>
+                {researcher.specialty && (
+                  <Badge variant="default" className="mt-2 ml-2">{researcher.specialty}</Badge>
+                )}
               </div>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 text-sm">
                   <Mail size={16} className="text-accent-blue" />
-                  <span>ahmed.bensalem@isi.utm.tn</span>
+                  <a href={`mailto:${researcher.email}`} className="hover:underline text-text-secondary hover:text-accent-blue dark:text-text-secondary dark:hover:text-white break-all">{researcher.email}</a>
                 </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Phone size={16} className="text-accent-blue" />
-                  <span>+216 71 123 456</span>
-                </div>
+                {researcher.phoneNumber && (
+                  <div className="flex items-center gap-3 text-sm text-text-secondary">
+                    <Phone size={16} className="text-accent-blue" />
+                    <span>{researcher.phoneNumber}</span>
+                  </div>
+                )}
+                {researcher.office && (
+                  <div className="flex items-center gap-3 text-sm text-text-secondary">
+                    <div className="w-4 flex justify-center">-</div>
+                    <span>Bureau: {researcher.office}</span>
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <a href="#" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">ORCID</a>
-                <a href="#" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">Scholar</a>
+              <div className="flex gap-2 flex-wrap">
+                {researcher.orcid && (
+                  <a href={researcher.orcid} target="_blank" rel="noreferrer" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">ORCID</a>
+                )}
+                {researcher.googleScholar && (
+                  <a href={researcher.googleScholar} target="_blank" rel="noreferrer" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">Scholar</a>
+                )}
+                {researcher.researchGate && (
+                  <a href={researcher.researchGate} target="_blank" rel="noreferrer" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">ResearchGate</a>
+                )}
+                {researcher.linkedIn && (
+                  <a href={researcher.linkedIn} target="_blank" rel="noreferrer" className="flex-1 text-center px-4 py-2 border border-accent-blue text-accent-blue rounded-lg hover:bg-accent-blue hover:text-white transition-colors text-sm">LinkedIn</a>
+                )}
               </div>
             </div>
           </div>
@@ -47,7 +104,7 @@ export default function ResearcherPage() {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`py-3 px-2 border-b-2 transition-colors capitalize ${
-                      activeTab === tab ? 'border-accent-blue text-accent-blue font-medium' : 'border-transparent text-text-secondary'
+                      activeTab === tab ? 'border-accent-blue text-accent-blue font-medium' : 'border-transparent text-text-secondary hover:text-text-primary dark:hover:text-white'
                     }`}
                   >
                     {tab === 'bio' ? 'Biographie' : tab === 'publications' ? 'Publications' : 'Encadrements'}
@@ -58,41 +115,24 @@ export default function ResearcherPage() {
 
             {activeTab === 'bio' && (
               <div className="prose max-w-none">
-                <p className="text-text-secondary leading-relaxed">
-                  Dr. Ahmed Ben Salem est professeur en informatique spécialisé dans l'intelligence artificielle et l'apprentissage automatique.
-                  Ses recherches portent principalement sur les applications de l'IA dans le domaine médical et la vision par ordinateur.
-                  Il a publié plus de 50 articles dans des revues et conférences internationales de premier rang.
+                <p className="text-text-secondary leading-relaxed whitespace-pre-wrap">
+                  {researcher.biography || t('common.noData') || 'Aucune biographie disponible.'}
                 </p>
               </div>
             )}
 
             {activeTab === 'publications' && (
               <div className="space-y-4">
-                <div className="p-4 border border-surface-border rounded-lg">
-                  <div className="flex items-start gap-4">
-                    <div className="text-2xl font-bold text-navy dark:text-white">2026</div>
-                    <div>
-                      <Badge variant="q1" className="mb-2">Q1 ★</Badge>
-                      <h4 className="font-bold text-navy dark:text-white mb-1">Deep Learning for Medical Imaging</h4>
-                      <p className="text-sm text-text-secondary">A. Ben Salem, F. Gharbi, et al.</p>
-                      <p className="text-sm text-text-secondary italic">IEEE Transactions on Medical Imaging</p>
-                    </div>
-                  </div>
+                <div className="text-center py-12 text-text-secondary">
+                  {t('common.noData') || 'Aucune publication disponible.'}
                 </div>
               </div>
             )}
 
             {activeTab === 'encadrements' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 border border-surface-border rounded-lg">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 rounded-full bg-teal text-white flex items-center justify-center font-bold">S</div>
-                    <div>
-                      <div className="font-semibold">Sarah Trabelsi</div>
-                      <Badge variant="success" className="text-xs">En cours</Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-text-secondary">Apprentissage profond pour le diagnostic médical</p>
+              <div className="space-y-4">
+                <div className="text-center py-12 text-text-secondary">
+                  {t('common.noData') || 'Aucun encadrement disponible.'}
                 </div>
               </div>
             )}

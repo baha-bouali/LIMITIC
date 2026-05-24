@@ -59,12 +59,15 @@ export const profilesApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getResearcherProfile: builder.query<ResearcherProfileDto, string>({
       query: (userId) => ({ url: `profiles/researchers/${userId}`, method: 'GET' }),
+      transformResponse: (response: any) => response.profile ?? response,
     }),
     getPhDStudentProfile: builder.query<PhDStudentProfileDto, string>({
       query: (userId) => ({ url: `profiles/phd-students/${userId}`, method: 'GET' }),
+      transformResponse: (response: any) => response.profile ?? response,
     }),
     getMasterianProfile: builder.query<MasterianProfileDto, string>({
       query: (userId) => ({ url: `profiles/masterians/${userId}`, method: 'GET' }),
+      transformResponse: (response: any) => response.profile ?? response,
     }),
   }),
   overrideExisting: false,

@@ -37,7 +37,7 @@ namespace LIMTIC.WebAPI.Controllers
         /// Query params: role, status (active|inactive), q (search firstName/lastName/email), page, limit
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetUsers(
             [FromQuery] UserRole? role,
             [FromQuery] string? status,
@@ -73,6 +73,27 @@ namespace LIMTIC.WebAPI.Controllers
                 Items   = result.Data.Items,
                 Total   = result.Data.Total,
                 Counts  = counts,
+                Page    = result.Data.Page,
+                Limit   = result.Data.Limit
+            });
+        }
+
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicUsers(
+            [FromQuery] UserRole? role,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 100)
+        {
+            // Only fetch active team members for public route
+            var result = await _usersManagementService.GetUsersAsync(role, true, null, page, limit);
+            
+            return Ok(new GetUsersResponse
+            {
+                Success = true,
+                Items   = result.Data!.Items,
+                Total   = result.Data.Total,
+                Counts  = new Dictionary<string, int>(),
                 Page    = result.Data.Page,
                 Limit   = result.Data.Limit
             });

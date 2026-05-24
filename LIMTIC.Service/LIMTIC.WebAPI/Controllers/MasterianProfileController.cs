@@ -23,7 +23,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpGet("{userId:guid}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetProfile(Guid userId)
         {
             var result = await _masterianProfileService.GetByUserIdAsync(userId);

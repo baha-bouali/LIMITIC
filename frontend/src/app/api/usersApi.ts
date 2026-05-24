@@ -78,6 +78,12 @@ export const usersApi = api.injectEndpoints({
       providesTags: ['User'],
     }),
 
+    getPublicUsers: builder.query<UserDto[], GetUsersParams | void>({
+      query: (params) => ({ url: 'users/public', method: 'GET', params: params ?? undefined }),
+      transformResponse: (response: GetUsersResponse) => response.items,
+      providesTags: ['User'],
+    }),
+
     addUser: builder.mutation<UserDto | null, CreateUserRequest>({
       query: (body) => ({ url: 'users/addUser', method: 'POST', body }),
       transformResponse: (response: CreateUserResponse) => response.user ?? null,
@@ -120,6 +126,7 @@ export const {
   useGetUserByIdQuery,
   useLazyGetUserByIdQuery,
   useGetUsersQuery,
+  useGetPublicUsersQuery,
   useAddUserMutation,
   useUpdateUserRoleMutation,
   useActivateUserMutation,

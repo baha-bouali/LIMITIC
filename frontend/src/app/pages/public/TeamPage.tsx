@@ -4,8 +4,9 @@ import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Card, CardContent } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { Mail, ExternalLink } from 'lucide-react';
+import { Mail, Loader2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useGetPublicUsersQuery, UserDto } from '../../api/usersApi';
 
 export default function TeamPage() {
   const { t } = useLanguage();
@@ -69,38 +70,24 @@ export default function TeamPage() {
 
 function ChercheursList() {
   const { t } = useLanguage();
-  const chercheurs = [
-    { id: '1', name: 'Ahmed Ben Salem', grade: t('role.researcher'), specialty: 'Intelligence Artificielle', email: 'ahmed.bensalem@isi.utm.tn' },
-    { id: '2', name: 'Fatma Gharbi', grade: t('role.researcher'), specialty: 'Systèmes Distribués', email: 'fatma.gharbi@isi.utm.tn' },
-    { id: '3', name: 'Mohamed Mezghani', grade: t('role.researcher'), specialty: 'Sécurité Informatique', email: 'mohamed.mezghani@isi.utm.tn' },
-  ];
+  const { data: chercheurs = [], isLoading, isError } = useGetPublicUsersQuery({ role: 3, status: 'active', limit: 100 });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent-blue" size={32} /></div>;
+  }
+
+  if (isError) {
+    return <div className="text-center py-12 text-red-500">{t('common.error') || 'Error loading data'}</div>;
+  }
+
+  if (chercheurs.length === 0) {
+    return <div className="text-center py-12 text-text-secondary">{t('common.noData') || 'No researchers found'}</div>;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {chercheurs.map((chercheur) => (
-        <Card key={chercheur.id} className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 space-y-4">
-            <div className="w-24 h-24 rounded-xl bg-navy text-white flex items-center justify-center text-3xl font-bold mx-auto">
-              {chercheur.name.charAt(0)}
-            </div>
-            <div className="text-center">
-              <h3 className="text-lg font-bold text-navy dark:text-white">{chercheur.name}</h3>
-              <Badge variant="info" className="mt-2">{chercheur.grade}</Badge>
-            </div>
-            <div className="text-center">
-              <Badge variant="default">{chercheur.specialty}</Badge>
-            </div>
-            <div className="pt-4 border-t border-surface-border">
-              <a href={`mailto:${chercheur.email}`} className="flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent-blue">
-                <Mail size={16} />
-                {t('team.email')}
-              </a>
-            </div>
-            <Link to={`/chercheurs/${chercheur.id}`} className="block text-center text-accent-blue hover:underline">
-              {t('team.viewProfile')} →
-            </Link>
-          </CardContent>
-        </Card>
+        <UserCard key={chercheur.id} user={chercheur} role="chercheur" />
       ))}
     </div>
   );
@@ -108,29 +95,24 @@ function ChercheursList() {
 
 function DoctorantsList() {
   const { t } = useLanguage();
-  const doctorants = [
-    { name: 'Sarah Trabelsi', thesis: 'Apprentissage profond pour le diagnostic médical', director: 'Dr. Ahmed Ben Salem', year: '2024' },
-    { name: 'Karim Jebali', thesis: 'Blockchain pour la sécurisation des données IoT', director: 'Dr. Mohamed Mezghani', year: '2023' },
-  ];
+  const { data: doctorants = [], isLoading, isError } = useGetPublicUsersQuery({ role: 4, status: 'active', limit: 100 });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-teal" size={32} /></div>;
+  }
+
+  if (isError) {
+    return <div className="text-center py-12 text-red-500">{t('common.error') || 'Error loading data'}</div>;
+  }
+
+  if (doctorants.length === 0) {
+    return <div className="text-center py-12 text-text-secondary">{t('common.noData') || 'No PhD students found'}</div>;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {doctorants.map((doc, idx) => (
-        <Card key={idx} className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 space-y-4">
-            <div className="w-20 h-20 rounded-full bg-teal text-white flex items-center justify-center text-2xl font-bold mx-auto">
-              {doc.name.charAt(0)}
-            </div>
-            <div className="text-center">
-              <h3 className="text-base font-bold text-navy dark:text-white">{doc.name}</h3>
-            </div>
-            <p className="text-sm text-text-secondary line-clamp-2">{doc.thesis}</p>
-            <div className="text-xs text-text-secondary">
-              <div>{t('team.director')}: <span className="text-accent-blue">{doc.director}</span></div>
-              <div>{t('team.year')}: {doc.year}</div>
-            </div>
-          </CardContent>
-        </Card>
+      {doctorants.map((doc) => (
+        <UserCard key={doc.id} user={doc} role="doctorant" />
       ))}
     </div>
   );
@@ -138,30 +120,59 @@ function DoctorantsList() {
 
 function MasteriensList() {
   const { t } = useLanguage();
-  const masteriens = [
-    { name: 'Ines Hamdi', subject: 'Système de recommandation basé sur l\'IA', supervisor: 'Dr. Ahmed Ben Salem', year: '2025-2026' },
-    { name: 'Youssef Dali', subject: 'Application mobile de gestion de santé', supervisor: 'Dr. Fatma Gharbi', year: '2025-2026' },
-  ];
+  const { data: masteriens = [], isLoading, isError } = useGetPublicUsersQuery({ role: 5, status: 'active', limit: 100 });
+
+  if (isLoading) {
+    return <div className="flex justify-center py-12"><Loader2 className="animate-spin text-accent-blue" size={32} /></div>;
+  }
+
+  if (isError) {
+    return <div className="text-center py-12 text-red-500">{t('common.error') || 'Error loading data'}</div>;
+  }
+
+  if (masteriens.length === 0) {
+    return <div className="text-center py-12 text-text-secondary">{t('common.noData') || 'No Master students found'}</div>;
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {masteriens.map((master, idx) => (
-        <Card key={idx} className="hover:shadow-lg transition-shadow">
-          <CardContent className="p-6 space-y-4">
-            <div className="w-20 h-20 rounded-full bg-accent-blue text-white flex items-center justify-center text-2xl font-bold mx-auto">
-              {master.name.charAt(0)}
-            </div>
-            <div className="text-center">
-              <h3 className="text-base font-bold text-navy dark:text-white">{master.name}</h3>
-            </div>
-            <p className="text-sm text-text-secondary dark:text-text-secondary line-clamp-2">{master.subject}</p>
-            <div className="text-xs text-text-secondary dark:text-text-secondary">
-              <div>{t('team.supervisor')}: <span className="text-accent-blue">{master.supervisor}</span></div>
-              <div>{t('team.promotion')}: {master.year}</div>
-            </div>
-          </CardContent>
-        </Card>
+      {masteriens.map((master) => (
+        <UserCard key={master.id} user={master} role="masterien" />
       ))}
     </div>
+  );
+}
+
+function UserCard({ user, role }: { user: UserDto; role: 'chercheur' | 'doctorant' | 'masterien' }) {
+  const { t } = useLanguage();
+
+  // Frontend-only: do not fetch role-specific profiles from backend on public page.
+  // Render only the public user fields returned by /api/users/public to avoid hitting
+  // endpoints that may require additional DB schema or authorization.
+  return (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardContent className="p-6 space-y-4">
+        <div className="w-24 h-24 rounded-full bg-navy text-white flex items-center justify-center text-3xl font-bold mx-auto">
+          {((user.firstName ?? '') || '').charAt(0)}{((user.lastName ?? '') || '').charAt(0)}
+        </div>
+        <div className="text-center">
+          <h3 className="text-lg font-bold text-navy dark:text-white">{user.firstName} {user.lastName}</h3>
+          {role === 'chercheur' && <Badge variant="info" className="mt-2">{t('role.researcher')}</Badge>}
+          {role === 'doctorant' && <Badge variant="info" className="mt-2">{t('role.phd') || 'Doctorant'}</Badge>}
+          {role === 'masterien' && <Badge variant="info" className="mt-2">{t('role.master') || 'Masterien'}</Badge>}
+        </div>
+
+        <div className="pt-4 border-t border-surface-border">
+          <a href={`mailto:${user.email}`} className="flex items-center justify-center gap-2 text-sm text-text-secondary hover:text-accent-blue">
+            <Mail size={16} />
+            {t('team.email')}
+          </a>
+        </div>
+
+        <Link to={role === 'chercheur' ? `/chercheurs/${user.id}` : role === 'doctorant' ? `/doctorants/${user.id}` : `/masteriens/${user.id}`} className="block text-center text-accent-blue hover:underline">
+          {t('team.viewProfile')} →
+        </Link>
+      </CardContent>
+    </Card>
   );
 }
