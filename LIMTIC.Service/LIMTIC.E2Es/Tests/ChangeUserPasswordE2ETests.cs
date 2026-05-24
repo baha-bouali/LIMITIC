@@ -1,5 +1,4 @@
-﻿using LIMTIC.Domain.Enums;
-using LIMTIC.E2Es.Base;
+﻿using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
@@ -32,7 +31,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Smith",
                 Email = "alice.smith@example.com",
                 Password = "OldPassword1!",
-                Role = UserRole.Admin,
                 IsActive = true,
             };
 

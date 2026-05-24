@@ -10,7 +10,6 @@ using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Application.Interfaces.Services;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.RefreshToken;
@@ -85,7 +84,7 @@ namespace LIMTIC.Application.Services.Auth
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
         }
 
         public async Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
@@ -102,7 +101,7 @@ namespace LIMTIC.Application.Services.Auth
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, token.User!.Id, token.User!.Email));
         }
 
         public async Task Logout(string? refreshToken)

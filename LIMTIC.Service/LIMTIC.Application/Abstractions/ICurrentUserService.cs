@@ -1,4 +1,6 @@
-﻿namespace LIMTIC.Application.Interfaces.Services
+﻿using LIMTIC.Domain.Enums;
+
+namespace LIMTIC.Application.Abstractions
 {
     /// <summary>
     /// Abstracts the identity of the authenticated user making the current request.
@@ -12,8 +14,5 @@
 
         /// <summary>The role of the currently authenticated user (from the 'role' claim).</summary>
         string? Role { get; }
-
-        /// <summary>True when the request carries a valid authenticated identity.</summary>
-        bool IsAuthenticated { get; }
     }
 }

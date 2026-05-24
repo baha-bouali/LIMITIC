@@ -1,4 +1,6 @@
-﻿using LIMTIC.Application.Interfaces.Services;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Domain.Entities.Contacts;
+
 using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Entities.RefreshToken;
@@ -6,6 +8,7 @@ using LIMTIC.Domain.Entities.ResearchAxis;
 using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Shared;
+using LIMTIC.Infrastructure.Data.Configurations.Contacts;
 using LIMTIC.Infrastructure.Data.Configurations.Events;
 using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
@@ -27,6 +30,7 @@ namespace LIMTIC.Infrastructure.Data
             _currentUserService = currentUserService;
         }
 
+        public DbSet<ContactEntity> Contacts { get; set; }
         public DbSet<RefreshTokenEntity> RefreshTokens { get; set; }
         public DbSet<UserEntity> Users { get; set; }
         public DbSet<ResearcherEntity> Researchers { get; set; }
@@ -45,6 +49,8 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<TechnicalReportEntity> TechnicalReports { get; set; }
         public DbSet<JournalArticleEntity> JournalArticles { get; set; }
         public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
+
+        public DbSet<LIMTIC.Domain.Entities.Settings.LabSettings> LabSettings { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -67,6 +73,7 @@ namespace LIMTIC.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new ContactConfiguration());
             modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
 
             modelBuilder.ApplyConfiguration(new UserConfiguration());
@@ -88,6 +95,9 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new JournalArticleConfiguration());
 
             modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
+
+            // LabSettings configuration
+            modelBuilder.ApplyConfiguration(new LIMTIC.Infrastructure.Data.Configurations.Settings.LabSettingsConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

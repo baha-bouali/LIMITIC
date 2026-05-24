@@ -19,6 +19,7 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Users
             builder.HasOne(e => e.Supervisor)
                 .WithMany()
                 .HasForeignKey(e => e.SupervisorId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
         }
     }

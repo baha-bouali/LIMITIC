@@ -1,9 +1,13 @@
-﻿using LIMTIC.Application.Abstractions.UserManagement;
+﻿using LIMTIC.Application.Abstractions.Email;
+using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Profiles;
+using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.IOC;
-using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
+using LIMTIC.UnitTests.Helpers;
 using LIMTIC.WebAPI.IOC;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -16,9 +20,18 @@ namespace LIMTIC.UnitTests.Base
         protected readonly ServiceProvider ServiceProvider;
         protected readonly AppDbContext DbContext;
         protected IUserRepository UserRepository => ServiceProvider.GetRequiredService<IUserRepository>();
-        protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
+        protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<IUsersManagementService>();
+        protected IMasterianRepository MasterianRepository => ServiceProvider.GetRequiredService<IMasterianRepository>();
+        protected IResearcherRepository ResearcherRepository => ServiceProvider.GetRequiredService<IResearcherRepository>();
+        protected IPhDStudentRepository PhDStudentRepository => ServiceProvider.GetRequiredService<IPhDStudentRepository>();
         protected IResetPasswordRepository ResetPasswordRepository => ServiceProvider.GetRequiredService<IResetPasswordRepository>();
         protected IRefreshTokenRepository RefreshTokenRepository => ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
+        protected IResearcherProfileService ResearcherProfileService => ServiceProvider.GetRequiredService<IResearcherProfileService>();
+        protected IPhDStudentProfileService PhDStudentProfileService => ServiceProvider.GetRequiredService<IPhDStudentProfileService>();
+        protected IMasterianProfileService MasterianProfileService => ServiceProvider.GetRequiredService<IMasterianProfileService>();
+        protected IResearchAxisService ResearchAxisService => ServiceProvider.GetRequiredService<IResearchAxisService>();
+        protected IResearchAxisRepository ResearchAxisRepository => ServiceProvider.GetRequiredService<IResearchAxisRepository>();
+        protected IEventsRepository EventsRepository => ServiceProvider.GetRequiredService<IEventsRepository>();
 
         protected BaseTests()
         {
@@ -32,7 +45,17 @@ namespace LIMTIC.UnitTests.Base
             // Register infrastructure and application modules
             services.AddInfrastructure(configuration);
             services.AddApplication();
+            services.AddMappers();
             services.AddWebApi();
+
+            var emailDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailService));
+            if (emailDescriptor != null)
+                services.Remove(emailDescriptor);
+            services.AddScoped<IEmailService, FakeEmailService>();
+
+            // Override ICurrentUserService with a test stub that acts as SuperAdmin
+            // so profile service authorization checks pass in unit tests
+            services.AddScoped<ICurrentUserService, TestCurrentUserService>();
 
             // Remove previous AppDbContext registration if present
             var descriptor = services.FirstOrDefault(
@@ -46,6 +69,15 @@ namespace LIMTIC.UnitTests.Base
 
             ServiceProvider = services.BuildServiceProvider();
             DbContext = ServiceProvider.GetRequiredService<AppDbContext>();
+            // Ensure in-memory database is created so model seeds (HasData) are applied
+            DbContext.Database.EnsureCreated();
+        }
+
+        private sealed class FakeEmailService : IEmailService
+        {
+            public Task SendOTPEmailAsync(OTPEmailModel model) => Task.CompletedTask;
+            public Task SendContactEmailAsync(ContactEmailModel model) => Task.CompletedTask;
+            public Task<bool> TestSmtpAsync(string testEmail) => Task.FromResult(true);
         }
 
         public void Dispose()

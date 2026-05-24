@@ -1,14 +1,12 @@
 
 
+import Settings from '@features/settings/Settings'
+
 function App() {
-
-
   return (
-    <>
-      <section id="center">
-        <div className="hero">hellppp</div>
-      </section>
-    </>
+    <div>
+      <Settings />
+    </div>
   )
 }
 

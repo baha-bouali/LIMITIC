@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Contact Message</title>
+</head>
+<body style="margin:0; padding:0; font-family:Arial,sans-serif; background-color:#f4f4f4;">
+  <table role="presentation" style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td style="padding:30px 0; text-align:center;">
+        <table role="presentation" style="width:600px; margin:0 auto; background:#fff; border-radius:12px; box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#0ea5e9,#2563eb); padding:28px; text-align:center;">
+              <h1 style="margin:0; color:#fff; font-size:24px;">LIMTIC: Contact</h1>
+              <p style="margin:8px 0 0; color:rgba(255,255,255,0.85); font-size:13px;">New message sent from the contact form</p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:28px; color:#1f2937; font-size:14px; line-height:1.6;">
+              <p style="margin:0 0 16px;"><strong>Full name:</strong> {{FullName}}</p>
+              <p style="margin:0 0 16px;"><strong>Email:</strong> {{SenderEmail}}</p>
+              <p style="margin:0 0 16px;"><strong>Subject:</strong> {{Subject}}</p>
+              <p style="margin:0 0 16px;"><strong>Sent date (UTC):</strong> {{SentAt}}</p>
+
+              <div style="margin-top:20px; padding:16px; border:1px solid #e5e7eb; border-radius:8px; background:#f9fafb; white-space:pre-wrap;">
+                <strong>Message:</strong><br>
+                {{Message}}
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#f8f9fa; padding:16px 28px; text-align:center; border-top:1px solid #eee; color:#9ca3af; font-size:12px;">
+              This is an automated email sent by the LIMTIC backend.<br>
+              © {{CurrentYear}} LIMTIC. All rights reserved.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

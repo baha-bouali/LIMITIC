@@ -1,4 +1,5 @@
-﻿using LIMTIC.Domain.Shared;
+﻿using LIMTIC.Domain.Entities.ResearchAxis;
+using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.Users
 {
@@ -6,11 +7,12 @@ namespace LIMTIC.Domain.Entities.Users
     {
         public UserEntity User { get; set; }
 
-        public string ThesisSubject { get; set; }
+        public string? ThesisSubject { get; set; }
         public int EnrollmentYear { get; set; }
-        public string? PhotoUrl { get; set; }
 
-        public Guid SupervisorId { get; set; }
-        public ResearcherEntity Supervisor { get; set; }
+        public Guid? SupervisorId { get; set; }
+        public ResearcherEntity? Supervisor { get; set; }
+
+        public ICollection<ResearchAxisEntity> ResearchAxes { get; set; } = [];
     }
 }

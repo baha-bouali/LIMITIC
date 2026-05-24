@@ -47,7 +47,34 @@ namespace LIMTIC.E2Es.Base
             using var scope = Factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             db.Database.Migrate();
+            ResetDatabase(db);
             SeedAdminUser(db);
+        }
+
+        private static void ResetDatabase(AppDbContext db)
+        {
+            // Ensure each E2E test starts with a clean database state.
+            // xUnit creates a new test class instance per test, but the Postgres container is shared.
+            db.Database.ExecuteSqlRaw(
+                """
+                TRUNCATE TABLE
+                    public."RefreshTokens",
+                    public."ResetPasswords",
+                    public."Speakers",
+                    public."Events",
+                    public."ResearchAxes",
+                    public."Researchers",
+                    public."PhDStudents",
+                    public."Masterians",
+                    public."BookChapters",
+                    public."InternationalConferences",
+                    public."NationalConferences",
+                    public."TechnicalReports",
+                    public."JournalArticles",
+                    public."Publications",
+                    public."Users"
+                RESTART IDENTITY CASCADE;
+                """);
         }
 
         private void SeedAdminUser(AppDbContext db)
