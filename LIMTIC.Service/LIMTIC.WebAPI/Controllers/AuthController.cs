@@ -37,11 +37,16 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.IsFailure)
                 return BadRequest(new LoginResponse { Message = result.Message, ValidationErrors = result.ValidationErrors });
 
+            // SameSite=None is required when the frontend and API have different origins or
+            // different schemes (http vs https) in development. Chrome 89+ treats http://localhost
+            // and https://localhost as cross-site (schemeful same-site), so Strict blocks the
+            // cookie. None allows it to be sent in cross-origin requests; Secure ensures it is
+            // only ever transmitted over HTTPS.
             Response.Cookies.Append("refreshToken", result.Data!.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
-                SameSite = SameSiteMode.Strict,
+                SameSite = SameSiteMode.None,
                 Path = "/",
                 Expires = DateTime.UtcNow.AddDays(_refreshTokenSettings.ExpireInDays)
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
@@ -51,6 +56,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("refreshToken")]
+        [AllowAnonymous] // must be accessible even when the access token in the header is expired
         public async Task<IActionResult> RefreshToken()
         {
             Request.Cookies.TryGetValue("refreshToken", out string? refreshToken);
@@ -70,12 +76,14 @@ namespace LIMTIC.WebAPI.Controllers
 
             await _authService.Logout(refreshToken);
 
+            // SameSite must match the attribute used when the cookie was set so the browser
+            // recognises the deletion Set-Cookie as targeting the same cookie.
             Response.Cookies.Delete("refreshToken", new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
                 Path = "/",
-                SameSite = SameSiteMode.Strict
+                SameSite = SameSiteMode.None
             });
 
             return Ok(new BaseResponse { Success = true });

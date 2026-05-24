@@ -1,1 +1,1 @@
-export { api, apiBaseUrl, baseQuery } from "./baseApi";
+export { api, apiBaseUrl, rawBaseQuery } from "./baseApi";

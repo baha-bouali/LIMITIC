@@ -19,6 +19,8 @@ export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  // Must be declared here — hooks cannot appear after conditional returns
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const notifMenuRef = useRef<HTMLDivElement>(null);
   const { user, logout, isReady } = useAuth();
@@ -47,8 +49,6 @@ export default function DashboardLayout() {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
-  const [logoutLoading, setLogoutLoading] = useState(false);
 
   const handleLogout = async () => {
     setShowProfileMenu(false);
