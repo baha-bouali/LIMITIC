@@ -5,5 +5,6 @@ namespace LIMTIC.Application.Abstractions.Email
     public interface IEmailService
     {
         Task SendOTPEmailAsync(OTPEmailModel model);
+        Task SendContactEmailAsync(ContactEmailModel model);
     }
 }
