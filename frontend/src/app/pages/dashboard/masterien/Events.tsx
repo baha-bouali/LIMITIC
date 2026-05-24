@@ -4,11 +4,19 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { PhotoGallery } from '../../../components/shared/PhotoGallery';
-import { Calendar, MapPin, Clock, Users, ExternalLink, X, Eye, Info } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, ExternalLink, X, Eye, Info, Mail, Briefcase } from 'lucide-react';
 import { clsx } from 'clsx';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SEMINAIRE' | 'CONFERENCE' | 'WORKSHOP' | 'SOUTENANCE' | 'JOURNEE_PORTES_OUVERTES';
+
+interface Speaker {
+  name: string;
+  email: string;
+  institution: string;
+  role: string;
+  subject: string;
+}
 
 interface LabEvent {
   id: string;
@@ -19,18 +27,80 @@ interface LabEvent {
   endDate?: string;
   location: string;
   description: string;
-  speakers?: string[];
+  speakers?: Speaker[];
   capacity?: number;
   registered?: number;
   photos?: string[];
 }
 
 const events: LabEvent[] = [
-  { id: '1', title: 'Séminaire IA & Santé Numérique', type: 'SEMINAIRE', status: 'A_VENIR', date: '26 Mai 2026', location: 'Salle de conférence A, LIMTIC', description: 'Présentation des avancées récentes en intelligence artificielle appliquée à la santé numérique, avec focus sur les modèles de diagnostic assisté par IA.', speakers: ['Dr. Ahmed Ben Salem', 'Prof. Marie Dubois'], capacity: 60, registered: 42 },
-  { id: '2', title: 'Workshop Blockchain & Sécurité', type: 'WORKSHOP', status: 'A_VENIR', date: '02 Juin 2026', location: 'Laboratoire informatique B', description: 'Atelier pratique sur l\'application des technologies blockchain pour la sécurisation des données de santé.', speakers: ['Dr. Fatma Gharbi', 'Mohamed Najjar'], capacity: 25, registered: 18 },
-  { id: '3', title: 'Soutenance de thèse — Sarah Trabelsi', type: 'SOUTENANCE', status: 'A_VENIR', date: '15 Juin 2026', location: 'Amphithéâtre principal', description: 'Soutenance de la thèse de doctorat de Sarah Trabelsi : "Deep Learning pour le diagnostic médical assisté par IA".', speakers: ['Sarah Trabelsi'] },
-  { id: '4', title: 'Journée Portes Ouvertes LIMTIC 2026', type: 'JOURNEE_PORTES_OUVERTES', status: 'A_VENIR', date: '10 Juillet 2026', location: 'Campus LIMTIC', description: 'Journée de présentation des axes de recherche et des travaux des chercheurs et doctorants du laboratoire.', capacity: 200, registered: 87 },
-  { id: '5', title: 'Conférence TALN 2026', type: 'CONFERENCE', status: 'EN_COURS', date: '20 Mai 2026', endDate: '23 Mai 2026', location: 'Centre de congrès, Tunis', description: 'Participation du laboratoire LIMTIC à la conférence internationale sur le Traitement Automatique du Langage Naturel.', speakers: ['Dr. Ahmed Ben Salem', 'Dr. Mohamed Mezghani'] },
+  {
+    id: '1',
+    title: 'Séminaire IA & Santé Numérique',
+    type: 'SEMINAIRE',
+    status: 'A_VENIR',
+    date: '26 Mai 2026',
+    location: 'Salle de conférence A, LIMTIC',
+    description: 'Présentation des avancées récentes en intelligence artificielle appliquée à la santé numérique, avec focus sur les modèles de diagnostic assisté par IA.',
+    speakers: [
+      { name: 'Dr. Ahmed Ben Salem', email: 'ahmed.bensalem@limtic.tn', institution: 'LIMTIC, ISI', role: 'Conférencier principal', subject: 'IA pour le diagnostic médical' },
+      { name: 'Prof. Marie Dubois', email: 'marie.dubois@univ.fr', institution: 'Université Paris-Saclay', role: 'Experte invitée', subject: 'Éthique de l\'IA en santé' }
+    ],
+    capacity: 60,
+    registered: 42
+  },
+  {
+    id: '2',
+    title: 'Workshop Blockchain & Sécurité',
+    type: 'WORKSHOP',
+    status: 'A_VENIR',
+    date: '02 Juin 2026',
+    location: 'Laboratoire informatique B',
+    description: 'Atelier pratique sur l\'application des technologies blockchain pour la sécurisation des données de santé.',
+    speakers: [
+      { name: 'Dr. Fatma Gharbi', email: 'fatma.gharbi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Formatrice', subject: 'Blockchain et sécurité' },
+      { name: 'Mohamed Najjar', email: 'mohamed.najjar@limtic.tn', institution: 'LIMTIC, ISI', role: 'Co-formateur', subject: 'Applications pratiques' }
+    ],
+    capacity: 25,
+    registered: 18
+  },
+  {
+    id: '3',
+    title: 'Soutenance de thèse — Sarah Trabelsi',
+    type: 'SOUTENANCE',
+    status: 'A_VENIR',
+    date: '15 Juin 2026',
+    location: 'Amphithéâtre principal',
+    description: 'Soutenance de la thèse de doctorat de Sarah Trabelsi : "Deep Learning pour le diagnostic médical assisté par IA".',
+    speakers: [
+      { name: 'Sarah Trabelsi', email: 'sarah.trabelsi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Doctorante', subject: 'Deep Learning pour le diagnostic médical assisté par IA' }
+    ]
+  },
+  {
+    id: '4',
+    title: 'Journée Portes Ouvertes LIMTIC 2026',
+    type: 'JOURNEE_PORTES_OUVERTES',
+    status: 'A_VENIR',
+    date: '10 Juillet 2026',
+    location: 'Campus LIMTIC',
+    description: 'Journée de présentation des axes de recherche et des travaux des chercheurs et doctorants du laboratoire.',
+    capacity: 200,
+    registered: 87
+  },
+  {
+    id: '5',
+    title: 'Conférence TALN 2026',
+    type: 'CONFERENCE',
+    status: 'EN_COURS',
+    date: '20 Mai 2026',
+    endDate: '23 Mai 2026',
+    location: 'Centre de congrès, Tunis',
+    description: 'Participation du laboratoire LIMTIC à la conférence internationale sur le Traitement Automatique du Langage Naturel.',
+    speakers: [
+      { name: 'Dr. Ahmed Ben Salem', email: 'ahmed.bensalem@limtic.tn', institution: 'LIMTIC, ISI', role: 'Présentateur', subject: 'Traitement du langage naturel en arabe' },
+      { name: 'Dr. Mohamed Mezghani', email: 'mohamed.mezghani@limtic.tn', institution: 'LIMTIC, ISI', role: 'Présentateur', subject: 'Modèles de traduction automatique' }
+    ]
+  },
   {
     id: '6',
     title: 'Séminaire IoT & Réseaux Intelligents',
@@ -39,7 +109,10 @@ const events: LabEvent[] = [
     date: '15 Avril 2026',
     location: 'Salle de conférence A, LIMTIC',
     description: 'Présentation des travaux de recherche sur l\'Internet des Objets et les architectures réseau intelligentes.',
-    speakers: ['Dr. Mohamed Mezghani', 'Karim Slimi'],
+    speakers: [
+      { name: 'Dr. Mohamed Mezghani', email: 'mohamed.mezghani@limtic.tn', institution: 'LIMTIC, ISI', role: 'Conférencier', subject: 'IoT et réseaux intelligents' },
+      { name: 'Karim Slimi', email: 'karim.slimi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Présentateur', subject: 'Architectures réseau' }
+    ],
     photos: [
       'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop',
       'https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=800&auto=format&fit=crop',
@@ -54,7 +127,9 @@ const events: LabEvent[] = [
     date: '28 Mars 2026',
     location: 'Laboratoire informatique A',
     description: 'Formation sur les nouvelles menaces cybernétiques et les stratégies de défense avancées.',
-    speakers: ['Dr. Fatma Gharbi'],
+    speakers: [
+      { name: 'Dr. Fatma Gharbi', email: 'fatma.gharbi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Formatrice', subject: 'Cybersécurité et menaces avancées' }
+    ],
     capacity: 20,
     registered: 20,
     photos: [
@@ -127,7 +202,7 @@ export default function MasterienEvents() {
         {[
           { label: 'À venir', count: events.filter(e => e.status === 'A_VENIR').length, color: 'bg-accent-blue/10 text-accent-blue' },
           { label: 'En cours', count: events.filter(e => e.status === 'EN_COURS').length, color: 'bg-success/10 text-success' },
-          { label: 'Passés', count: events.filter(e => e.status === 'PASSE').length, color: 'bg-light-gray dark:bg-muted text-text-secondary' },
+          { label: 'Passés', count: events.filter(e => e.status === 'PASSE').length, color: 'bg-light-gray text-text-secondary' },
         ].map(s => (
           <Card key={s.label}>
             <CardContent className="p-4 flex items-center gap-3">
@@ -205,13 +280,31 @@ export default function MasterienEvents() {
                 </div>
 
                 {detailEvent.speakers && detailEvent.speakers.length > 0 && (
-                  <div className="flex items-start gap-3 p-4 bg-light-gray dark:bg-muted rounded-lg">
-                    <Users size={18} className="text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-medium text-text-muted mb-0.5">Intervenants</div>
-                      <div className="font-medium text-navy dark:text-white">
-                        {detailEvent.speakers.join(', ')}
-                      </div>
+                  <div>
+                    <div className="text-sm font-medium text-navy dark:text-white mb-3">Intervenants</div>
+                    <div className="space-y-3">
+                      {detailEvent.speakers.map((speaker, idx) => (
+                        <div key={idx} className="p-4 bg-light-gray dark:bg-muted rounded-lg">
+                          <div className="font-medium text-navy dark:text-white mb-2">{speaker.name}</div>
+                          <div className="space-y-1 text-sm text-text-secondary">
+                            <div className="flex items-center gap-2">
+                              <Mail size={14} className="flex-shrink-0 text-accent-blue" />
+                              <span>{speaker.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Briefcase size={14} className="flex-shrink-0 text-teal" />
+                              <span>{speaker.institution}</span>
+                            </div>
+                            <div className="flex items-start gap-2 mt-2">
+                              <Users size={14} className="flex-shrink-0 text-warning mt-0.5" />
+                              <div>
+                                <div className="font-medium text-navy dark:text-white text-xs">{speaker.role}</div>
+                                <div className="text-xs italic">{speaker.subject}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -264,7 +357,7 @@ function EventCard({ event, onViewDetails }: { event: LabEvent; onViewDetails: (
           {event.speakers && event.speakers.length > 0 && (
             <div className="flex items-center gap-2">
               <Users size={14} className="text-warning flex-shrink-0" />
-              <span className="line-clamp-1">{event.speakers.join(', ')}</span>
+              <span className="line-clamp-1">{event.speakers.map(s => s.name).join(', ')}</span>
             </div>
           )}
         </div>

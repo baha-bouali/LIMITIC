@@ -4,6 +4,7 @@ import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Camera, Save, Eye, EyeOff, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
+import { useChangePasswordMutation } from '../../../api/usersApi';
 
 export default function AdminProfile() {
   const [profile, setProfile] = useState({
@@ -18,6 +19,7 @@ export default function AdminProfile() {
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
+  const [changePassword] = useChangePasswordMutation();
 
   async function handleSaveProfile() {
     setSaving(true);
@@ -40,10 +42,19 @@ export default function AdminProfile() {
       return;
     }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    setSaving(false);
-    setPasswords({ current: '', newPass: '', confirm: '' });
-    toast.success('Mot de passe modifié avec succès');
+    try {
+      await changePassword({
+        email: profile.email,
+        oldPassword: passwords.current,
+        newPassword: passwords.newPass,
+      }).unwrap();
+      setPasswords({ current: '', newPass: '', confirm: '' });
+      toast.success('Mot de passe modifié avec succès');
+    } catch {
+      toast.error('Impossible de modifier le mot de passe');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (

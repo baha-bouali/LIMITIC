@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Camera, Save, Eye, EyeOff, User } from 'lucide-react';
 import { toast } from 'sonner';
+import { useChangePasswordMutation } from '../../api/usersApi';
 
 interface ProfileFormProps {
   role: 'SUPER_ADMIN' | 'ADMIN' | 'CHERCHEUR' | 'DOCTORANT' | 'MASTERIEN' | 'VISITOR';
@@ -38,6 +39,7 @@ export function ProfileForm({ role, initialData }: ProfileFormProps) {
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
+  const [changePassword] = useChangePasswordMutation();
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -77,10 +79,19 @@ export function ProfileForm({ role, initialData }: ProfileFormProps) {
       return;
     }
     setSaving(true);
-    await new Promise(r => setTimeout(r, 600));
-    setSaving(false);
-    setPasswords({ current: '', newPass: '', confirm: '' });
-    toast.success('Mot de passe modifié avec succès');
+    try {
+      await changePassword({
+        email: profile.email,
+        oldPassword: passwords.current,
+        newPassword: passwords.newPass,
+      }).unwrap();
+      setPasswords({ current: '', newPass: '', confirm: '' });
+      toast.success('Mot de passe modifié avec succès');
+    } catch {
+      toast.error('Impossible de modifier le mot de passe');
+    } finally {
+      setSaving(false);
+    }
   }
 
   const getRoleBadge = () => {

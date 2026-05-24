@@ -55,7 +55,7 @@ function normalizeRole(value: unknown, email?: string): UserRole {
   if (source.includes('masterien')) return 'MASTERIEN';
   if (source.includes('visitor')) return 'VISITOR';
 
-  return 'CHERCHEUR';
+  return 'SUPER_ADMIN';
 }
 
 export function getAccessToken() {

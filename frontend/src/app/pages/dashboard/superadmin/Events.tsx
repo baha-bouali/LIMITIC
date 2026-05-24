@@ -5,12 +5,20 @@ import { Button } from '../../../components/ui/Button';
 import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
 import { PhotoGallery } from '../../../components/shared/PhotoGallery';
-import { Calendar, MapPin, Users, Image, Pencil, Trash2, X, Upload, Plus, Eye } from 'lucide-react';
+import { Calendar, MapPin, Users, Image, Pencil, Trash2, X, Upload, Plus, Eye, Mail, Briefcase } from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SÉMINAIRE' | 'ATELIER' | 'CONFÉRENCE' | 'JOURNÉE D\'ÉTUDE';
+
+interface Speaker {
+  name: string;
+  email: string;
+  institution: string;
+  role: string;
+  subject: string;
+}
 
 interface Event {
   id: string;
@@ -21,14 +29,13 @@ interface Event {
   location: string;
   status: EventStatus;
   description: string;
-  speakers: number;
+  speakers: Speaker[];
   photoCount: number;
   hasPhotos: boolean;
   photos?: string[];
-  speakerNames?: string[];
 }
 
-export default function SuperAdminEvents() {
+export default function AdminEvents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -46,7 +53,10 @@ export default function SuperAdminEvents() {
       location: 'Amphithéâtre A, ISI',
       status: 'A_VENIR',
       description: 'Exploration des applications de l\'IA dans le domaine de la santé avec des experts internationaux.',
-      speakers: 5,
+      speakers: [
+        { name: 'Dr. Ahmed Ben Salem', email: 'ahmed.bensalem@limtic.tn', institution: 'LIMTIC, ISI', role: 'Conférencier principal', subject: 'IA pour le diagnostic médical' },
+        { name: 'Prof. Marie Dubois', email: 'marie.dubois@univ.fr', institution: 'Université Paris-Saclay', role: 'Experte invitée', subject: 'Éthique de l\'IA en santé' }
+      ],
       photoCount: 0,
       hasPhotos: false
     },
@@ -59,7 +69,9 @@ export default function SuperAdminEvents() {
       location: 'Salle B12, ISI',
       status: 'A_VENIR',
       description: 'Atelier pratique pour les débutants en apprentissage profond.',
-      speakers: 2,
+      speakers: [
+        { name: 'Dr. Fatma Gharbi', email: 'fatma.gharbi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Formatrice', subject: 'Réseaux de neurones profonds' }
+      ],
       photoCount: 0,
       hasPhotos: false
     },
@@ -71,7 +83,10 @@ export default function SuperAdminEvents() {
       location: 'Campus Universitaire',
       status: 'A_VENIR',
       description: 'Journée de présentation des travaux de recherche du laboratoire.',
-      speakers: 12,
+      speakers: [
+        { name: 'Dr. Mohamed Mezghani', email: 'mohamed.mezghani@limtic.tn', institution: 'LIMTIC, ISI', role: 'Modérateur', subject: 'Table ronde: Défis et perspectives' },
+        { name: 'Dr. Karim Jebali', email: 'karim.jebali@limtic.tn', institution: 'LIMTIC, ISI', role: 'Présentateur', subject: 'IoT et réseaux intelligents' }
+      ],
       photoCount: 0,
       hasPhotos: false
     },
@@ -84,10 +99,12 @@ export default function SuperAdminEvents() {
       location: 'Amphithéâtre B, ISI',
       status: 'PASSE',
       description: 'Séminaire sur les applications de la blockchain en sécurité informatique.',
-      speakers: 4,
+      speakers: [
+        { name: 'Dr. Mohamed Mezghani', email: 'mohamed.mezghani@limtic.tn', institution: 'LIMTIC, ISI', role: 'Conférencier', subject: 'Blockchain et cybersécurité' },
+        { name: 'Prof. Sarah Trabelsi', email: 'sarah.trabelsi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Panéliste', subject: 'Applications décentralisées' }
+      ],
       photoCount: 25,
       hasPhotos: true,
-      speakerNames: ['Dr. Mohamed Mezghani', 'Prof. Sarah Trabelsi', 'Dr. Ahmed Ben Salem', 'Karim Slimi'],
       photos: [
         'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop',
         'https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=800&auto=format&fit=crop',
@@ -103,10 +120,12 @@ export default function SuperAdminEvents() {
       location: 'Salle C5, ISI',
       status: 'PASSE',
       description: 'Formation pratique sur les outils de Big Data.',
-      speakers: 3,
+      speakers: [
+        { name: 'Dr. Fatma Gharbi', email: 'fatma.gharbi@limtic.tn', institution: 'LIMTIC, ISI', role: 'Formatrice', subject: 'Hadoop et Spark' },
+        { name: 'Mohamed Najjar', email: 'mohamed.najjar@limtic.tn', institution: 'LIMTIC, ISI', role: 'Assistant formateur', subject: 'Analytics en temps réel' }
+      ],
       photoCount: 18,
       hasPhotos: true,
-      speakerNames: ['Dr. Fatma Gharbi', 'Mohamed Najjar', 'Dr. Sami Ben Ali'],
       photos: [
         'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&auto=format&fit=crop',
         'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop',
@@ -249,7 +268,7 @@ export default function SuperAdminEvents() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Users size={16} className="flex-shrink-0 text-accent-blue" />
-                    <span>{event.speakers} intervenant{event.speakers > 1 ? 's' : ''}</span>
+                    <span>{event.speakers.length} intervenant{event.speakers.length > 1 ? 's' : ''}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -334,14 +353,32 @@ export default function SuperAdminEvents() {
                   </div>
                 </div>
 
-                {detailEvent.speakerNames && detailEvent.speakerNames.length > 0 && (
-                  <div className="flex items-start gap-3 p-4 bg-light-gray dark:bg-muted rounded-lg">
-                    <Users size={18} className="text-warning flex-shrink-0 mt-0.5" />
-                    <div>
-                      <div className="text-xs font-medium text-text-muted mb-0.5">Intervenants</div>
-                      <div className="font-medium text-navy dark:text-white">
-                        {detailEvent.speakerNames.join(', ')}
-                      </div>
+                {detailEvent.speakers && detailEvent.speakers.length > 0 && (
+                  <div>
+                    <div className="text-sm font-medium text-navy dark:text-white mb-3">Intervenants</div>
+                    <div className="space-y-3">
+                      {detailEvent.speakers.map((speaker, idx) => (
+                        <div key={idx} className="p-4 bg-light-gray dark:bg-muted rounded-lg">
+                          <div className="font-medium text-navy dark:text-white mb-2">{speaker.name}</div>
+                          <div className="space-y-1 text-sm text-text-secondary">
+                            <div className="flex items-center gap-2">
+                              <Mail size={14} className="flex-shrink-0 text-accent-blue" />
+                              <span>{speaker.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Briefcase size={14} className="flex-shrink-0 text-teal" />
+                              <span>{speaker.institution}</span>
+                            </div>
+                            <div className="flex items-start gap-2 mt-2">
+                              <Users size={14} className="flex-shrink-0 text-warning mt-0.5" />
+                              <div>
+                                <div className="font-medium text-navy dark:text-white text-xs">{speaker.role}</div>
+                                <div className="text-xs italic">{speaker.subject}</div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -400,16 +437,22 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
     location: event?.location || '',
     description: event?.description || '',
     status: event?.status || 'A_VENIR' as EventStatus,
-    speakers: [] as { name: string; affiliation: string; talk: string }[],
+    speakers: event?.speakers || [] as Speaker[],
     photos: [] as File[],
   });
 
-  const [currentSpeaker, setCurrentSpeaker] = useState({ name: '', affiliation: '', talk: '' });
+  const [currentSpeaker, setCurrentSpeaker] = useState<Speaker>({
+    name: '',
+    email: '',
+    institution: '',
+    role: '',
+    subject: ''
+  });
 
   const handleAddSpeaker = () => {
-    if (currentSpeaker.name.trim() && currentSpeaker.affiliation.trim()) {
+    if (currentSpeaker.name.trim() && currentSpeaker.email.trim() && currentSpeaker.institution.trim()) {
       setFormData({ ...formData, speakers: [...formData.speakers, currentSpeaker] });
-      setCurrentSpeaker({ name: '', affiliation: '', talk: '' });
+      setCurrentSpeaker({ name: '', email: '', institution: '', role: '', subject: '' });
     }
   };
 
@@ -541,24 +584,38 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
                 value={currentSpeaker.name}
                 onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, name: e.target.value })}
                 className="w-full px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
-                placeholder="Nom de l'intervenant"
+                placeholder="Nom complet (ex: Dr. Karim Jebali)"
+              />
+              <input
+                type="email"
+                value={currentSpeaker.email}
+                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, email: e.target.value })}
+                className="w-full px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
+                placeholder="Email (ex: karim.jebali@limtic.tn)"
               />
               <input
                 type="text"
-                value={currentSpeaker.affiliation}
-                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, affiliation: e.target.value })}
+                value={currentSpeaker.institution}
+                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, institution: e.target.value })}
                 className="w-full px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
-                placeholder="Affiliation (ex: LIMTIC, ISI)"
+                placeholder="Institution (ex: LIMTIC, ISI)"
               />
               <input
                 type="text"
-                value={currentSpeaker.talk}
-                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, talk: e.target.value })}
+                value={currentSpeaker.role}
+                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, role: e.target.value })}
                 className="w-full px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
-                placeholder="Sujet de présentation (optionnel)"
+                placeholder="Rôle (ex: Modérateur, Conférencier)"
+              />
+              <input
+                type="text"
+                value={currentSpeaker.subject}
+                onChange={(e) => setCurrentSpeaker({ ...currentSpeaker, subject: e.target.value })}
+                className="w-full px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
+                placeholder="Sujet (ex: Table ronde: Défis et perspectives)"
               />
               <Button onClick={handleAddSpeaker} type="button" className="w-full">
-                <Users size={16} />
+                <Plus size={16} />
                 Ajouter l'intervenant
               </Button>
             </div>
@@ -567,19 +624,36 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
               <div className="space-y-2">
                 <div className="text-sm font-medium mb-2">{formData.speakers.length} intervenant(s)</div>
                 {formData.speakers.map((speaker, idx) => (
-                  <div key={idx} className="p-3 bg-light-gray dark:bg-input-background rounded-lg flex items-start justify-between">
-                    <div className="flex-1">
+                  <div key={idx} className="p-3 bg-light-gray dark:bg-input-background rounded-lg">
+                    <div className="flex items-start justify-between mb-2">
                       <div className="font-medium text-navy dark:text-white">{speaker.name}</div>
-                      <div className="text-sm text-text-secondary">{speaker.affiliation}</div>
-                      {speaker.talk && <div className="text-xs text-text-muted mt-1 italic">{speaker.talk}</div>}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSpeaker(idx)}
+                        className="p-1 hover:bg-error/10 rounded text-error"
+                      >
+                        <X size={16} />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSpeaker(idx)}
-                      className="p-1 hover:bg-error/10 rounded text-error"
-                    >
-                      <X size={16} />
-                    </button>
+                    <div className="text-sm text-text-secondary space-y-1">
+                      <div className="flex items-center gap-2">
+                        <Mail size={12} className="flex-shrink-0" />
+                        <span>{speaker.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Briefcase size={12} className="flex-shrink-0" />
+                        <span>{speaker.institution}</span>
+                      </div>
+                      {speaker.role && (
+                        <div className="flex items-center gap-2">
+                          <Users size={12} className="flex-shrink-0" />
+                          <span className="font-medium">{speaker.role}</span>
+                        </div>
+                      )}
+                      {speaker.subject && (
+                        <div className="text-xs italic mt-1">{speaker.subject}</div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

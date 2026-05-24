@@ -3,7 +3,7 @@ import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Badge } from '../../components/ui/Badge';
 import { Card, CardContent } from '../../components/ui/Card';
 import { PhotoGallery } from '../../components/shared/PhotoGallery';
-import { Calendar, MapPin, Users, Download } from 'lucide-react';
+import { Calendar, MapPin, Users, Download, Mail, Briefcase } from 'lucide-react';
 
 export default function EventDetailPage() {
   // Mock event data - would come from route params/API in real app
@@ -21,9 +21,9 @@ export default function EventDetailPage() {
   ];
 
   const speakers = [
-    { name: 'Dr. Ahmed Ben Salem', affiliation: 'LIMTIC, ISI', role: 'Conférencier principal', talk: 'Deep Learning pour le diagnostic médical' },
-    { name: 'Prof. Marie Dubois', affiliation: 'Hôpital Charles Nicolle', role: 'Conférencière', talk: 'Applications cliniques de l\'IA' },
-    { name: 'Dr. Karim Jebali', affiliation: 'LIMTIC, ISI', role: 'Modérateur', talk: 'Table ronde: Défis et perspectives' },
+    { name: 'Dr. Ahmed Ben Salem', email: 'ahmed.bensalem@limtic.tn', institution: 'LIMTIC, ISI', role: 'Conférencier principal', subject: 'Deep Learning pour le diagnostic médical' },
+    { name: 'Prof. Marie Dubois', email: 'marie.dubois@hopital.tn', institution: 'Hôpital Charles Nicolle', role: 'Conférencière', subject: 'Applications cliniques de l\'IA' },
+    { name: 'Dr. Karim Jebali', email: 'karim.jebali@limtic.tn', institution: 'LIMTIC, ISI', role: 'Modérateur', subject: 'Table ronde: Défis et perspectives' },
   ];
 
   return (
@@ -114,9 +114,18 @@ export default function EventDetailPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-navy dark:text-white">{speaker.name}</h4>
-                          <p className="text-sm text-text-secondary">{speaker.affiliation}</p>
+                          <div className="space-y-1 mt-2">
+                            <div className="flex items-center gap-2 text-sm text-text-secondary">
+                              <Mail size={14} className="flex-shrink-0 text-accent-blue" />
+                              <span className="truncate">{speaker.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-text-secondary">
+                              <Briefcase size={14} className="flex-shrink-0 text-teal" />
+                              <span>{speaker.institution}</span>
+                            </div>
+                          </div>
                           <Badge variant="info" className="mt-2 text-xs">{speaker.role}</Badge>
-                          <p className="text-sm text-text-secondary mt-2 italic">{speaker.talk}</p>
+                          <p className="text-sm text-text-secondary mt-2 italic">{speaker.subject}</p>
                         </div>
                       </div>
                     </CardContent>
