@@ -15,6 +15,7 @@ namespace LIMTIC.Infrastructure.Repositories
             return await _dbContext.PhDStudents
                 .Include(p => p.User)
                 .Include(p => p.Supervisor)
+                    .ThenInclude(s => s.User)
                 .Include(p => p.ResearchAxes)
                 .FirstOrDefaultAsync(p => p.Id == userId);
         }

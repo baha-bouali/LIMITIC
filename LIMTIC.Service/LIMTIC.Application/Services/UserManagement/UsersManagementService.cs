@@ -138,6 +138,9 @@ namespace LIMTIC.Application.Services.UserManagement
             if (user == null)
                 return Result<bool>.FailureResult("User not found");
 
+            // Delete existing profile entry (if any) before assigning the new role
+            await DeleteExistingProfileAsync(user.Id, user.Role);
+
             switch (command.Role)
             {
                 case UserRole.SuperAdmin:
@@ -148,7 +151,6 @@ namespace LIMTIC.Application.Services.UserManagement
                     return Result<bool>.SuccessResult(true);
 
                 case UserRole.Researcher:
-                    // require researcher fields
                     if (string.IsNullOrWhiteSpace(command.Rank) || string.IsNullOrWhiteSpace(command.Specialty)
                         || string.IsNullOrWhiteSpace(command.Office) || string.IsNullOrWhiteSpace(command.PhoneNumber))
                         return Result<bool>.FailureResult("Missing required researcher fields");
@@ -219,6 +221,36 @@ namespace LIMTIC.Application.Services.UserManagement
 
                 default:
                     return Result<bool>.FailureResult("Unsupported role");
+            }
+        }
+
+        /// <summary>
+        /// Deletes the profile entity that corresponds to the user's current role, if one exists.
+        /// Called before assigning a new role to ensure no stale profile rows remain.
+        /// </summary>
+        private async Task DeleteExistingProfileAsync(Guid userId, UserRole currentRole)
+        {
+            switch (currentRole)
+            {
+                case UserRole.Researcher:
+                    var researcher = await _researcherRepository.GetByUserIdAsync(userId);
+                    if (researcher != null)
+                        await _researcherRepository.DeleteAsync(researcher);
+                    break;
+
+                case UserRole.PhDStudent:
+                    var phd = await _phdStudentRepository.GetByUserIdAsync(userId);
+                    if (phd != null)
+                        await _phdStudentRepository.DeleteAsync(phd);
+                    break;
+
+                case UserRole.Masterian:
+                    var masterian = await _masterianRepository.GetByUserIdAsync(userId);
+                    if (masterian != null)
+                        await _masterianRepository.DeleteAsync(masterian);
+                    break;
+
+                // Admin, SuperAdmin, Visitor have no profile table entry — nothing to delete
             }
         }
     }

@@ -15,6 +15,7 @@ namespace LIMTIC.Infrastructure.Repositories
             return await _dbContext.Masterians
                 .Include(m => m.User)
                 .Include(m => m.Supervisor)
+                    .ThenInclude(s => s.User)
                 .FirstOrDefaultAsync(m => m.Id == userId);
         }
 
