@@ -9,6 +9,6 @@ export const api = createApi({
     // Get the token from the auth slice
     },
   }),
-  tagTypes: ['Auth'],// Add more tag 
+  tagTypes: ['Auth', 'Settings'],
   endpoints: () => ({}),
 })

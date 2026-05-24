@@ -22,6 +22,49 @@ namespace LIMTIC.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Contacts.ContactEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("SentAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SentAtUtc")
+                        .HasDatabaseName("IX_Contacts_SentAtUtc");
+
+                    b.ToTable("Contacts");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -83,10 +126,6 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Biography")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -116,14 +155,14 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Photo")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Subject")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.HasKey("Id");
 
@@ -395,6 +434,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime>("CreatedAtUtc")
                     b.Property<string>("Color")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -405,10 +445,20 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Description");
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Themes")
+                        .IsRequired()
                     b.Property<Guid?>("ResponsibleId")
                         .HasColumnType("uuid");
 
@@ -423,6 +473,7 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("ResearchAxes");
                     b.HasIndex("ResponsibleId");
 
                     b.ToTable("ResearchAxes");
@@ -434,12 +485,13 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("OTPTokenExpiry")
                     b.Property<DateTime>("OTPTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("OTPTokenHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text");             
 
                     b.Property<DateTime?>("ResetPasswordTokenExpiry")
                         .HasColumnType("timestamp with time zone");
@@ -452,6 +504,93 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.ToTable("ResearchAxes");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Settings.LabSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LabName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LabSlogan")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SmtpHost")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("SmtpPasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("SmtpUseTls")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SmtpUsername")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LabSettings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Address = "",
+                            ContactEmail = "",
+                            CreatedAtUtc = new DateTime(2026, 5, 24, 0, 22, 22, 106, DateTimeKind.Utc).AddTicks(4560),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            LabName = "LIMTIC Lab",
+                            LabSlogan = "",
+                            Phone = "",
+                            SmtpHost = "",
+                            SmtpPasswordHash = "",
+                            SmtpPort = 25,
+                            SmtpUseTls = false,
+                            SmtpUsername = ""
+                        });
+                });
                     b.HasIndex("UserId");
 
                     b.ToTable("ResetPasswords");
@@ -750,6 +889,17 @@ namespace LIMTIC.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_RefreshToken_User");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
