@@ -434,7 +434,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
+                    b.Property<DateTime>("CreatedAtUtc");
                     b.Property<string>("Color")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -449,7 +449,7 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
+                    b.Property<string>("Description");
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
@@ -458,7 +458,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Themes")
-                        .IsRequired()
+                        .IsRequired();
                     b.Property<Guid?>("ResponsibleId")
                         .HasColumnType("uuid");
 
@@ -485,7 +485,7 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("OTPTokenExpiry")
+                    b.Property<DateTime?>("OTPTokenExpiry");
                     b.Property<DateTime>("OTPTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
@@ -590,10 +590,6 @@ namespace LIMTIC.Infrastructure.Migrations
                             SmtpUseTls = false,
                             SmtpUsername = ""
                         });
-                });
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ResetPasswords");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
