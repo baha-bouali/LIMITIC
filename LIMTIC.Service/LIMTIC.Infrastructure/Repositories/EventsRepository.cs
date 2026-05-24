@@ -79,5 +79,53 @@ namespace LIMTIC.Infrastructure.Repositories
 
             return events.Count;
         }
+
+        public async Task<EventEntity?> GetEventByIdAsync(Guid eventId)
+        {
+            return await _context.Events
+                .Include(e => e.Speakers)
+                .FirstOrDefaultAsync(e => e.Id == eventId);
+        }
+
+        public async Task<bool> AddEventAsync(EventEntity eventEntity)
+        {
+            _context.Events.Add(eventEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateEventAsync(EventEntity eventEntity)
+        {
+            _context.Events.Update(eventEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteEventAsync(EventEntity eventEntity)
+        {
+            _context.Events.Remove(eventEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<SpeakerEntity?> GetSpeakerByIdAsync(Guid eventId, Guid speakerId)
+        {
+            return await _context.Speakers.FirstOrDefaultAsync(s => s.EventId == eventId && s.Id == speakerId);
+        }
+
+        public async Task<bool> AddSpeakerAsync(SpeakerEntity speakerEntity)
+        {
+            _context.Speakers.Add(speakerEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> UpdateSpeakerAsync(SpeakerEntity speakerEntity)
+        {
+            _context.Speakers.Update(speakerEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
+
+        public async Task<bool> DeleteSpeakerAsync(SpeakerEntity speakerEntity)
+        {
+            _context.Speakers.Remove(speakerEntity);
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

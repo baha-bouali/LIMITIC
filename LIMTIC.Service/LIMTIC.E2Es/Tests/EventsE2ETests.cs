@@ -6,6 +6,10 @@ using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
+using LIMTIC.WebAPI.Models.Events.AddSpeaker;
+using LIMTIC.WebAPI.Models.Events.CreateEvent;
+using LIMTIC.WebAPI.Models.Events.UpdateEvent;
+using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.E2Es.Tests
@@ -95,6 +99,27 @@ namespace LIMTIC.E2Es.Tests
 
             db.Events.AddRange(upcomingEvent, ongoingEvent, pastEvent);
             db.SaveChanges();
+        }
+
+        private Guid SeedResearchAxis()
+        {
+            using var scope = Factory.Services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var researchAxis = new ResearchAxisEntity
+            {
+                Id = Guid.NewGuid(),
+                Title = "Advanced AI",
+                Description = "Advanced AI research axis",
+                Themes = new[] { "NLP", "Vision" },
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            db.ResearchAxes.Add(researchAxis);
+            db.SaveChanges();
+
+            return researchAxis.Id;
         }
 
         [Fact]
@@ -367,6 +392,142 @@ namespace LIMTIC.E2Es.Tests
                 Assert.True(evt.Title.Contains("AI", StringComparison.OrdinalIgnoreCase) ||
                            evt.Description.Contains("AI", StringComparison.OrdinalIgnoreCase));
             });
+        }
+
+        [Fact]
+        public async Task CreateUpdateDeleteEventE2ETest()
+        {
+            var accessToken = await LoginAsSuperAdmin();
+            Assert.NotNull(accessToken);
+
+            var researchAxisId = SeedResearchAxis();
+
+            var createRequest = new CreateEventRequest
+            {
+                Type = "Conference",
+                Title = "AI and Health",
+                StartDate = DateTime.UtcNow.AddDays(7),
+                EndDate = DateTime.UtcNow.AddDays(8),
+                Location = "IST Amphitheater",
+                Description = "Conference on AI in healthcare",
+                Program = "Opening and talks",
+                ResearchAxisId = researchAxisId,
+                Speakers = new List<CreateEventSpeakerRequest>
+                {
+                    new()
+                    {
+                        FirstName = "Nora",
+                        LastName = "Hamdi",
+                        Email = "nora.hamdi@test.com",
+                        Institution = "INSAT",
+                        Role = "Speaker",
+                        Biography = "AI researcher"
+                    }
+                }
+            };
+
+            var createResponse = await Client.CreateEvent(createRequest, accessToken);
+            Assert.NotNull(createResponse);
+            Assert.True(createResponse.Success);
+            Assert.NotNull(createResponse.Event);
+            Assert.Equal("AI and Health", createResponse.Event.Title);
+
+            var eventId = Guid.Parse(createResponse.Event.Id);
+
+            var updateRequest = new UpdateEventRequest
+            {
+                Type = "Seminar",
+                Title = "AI and Health - Updated",
+                StartDate = DateTime.UtcNow.AddDays(10),
+                EndDate = DateTime.UtcNow.AddDays(11),
+                Location = "Main Hall",
+                Description = "Updated description",
+                Program = "Updated program",
+                ResearchAxisId = researchAxisId
+            };
+
+            var updateResponse = await Client.UpdateEvent(eventId, updateRequest, accessToken);
+            Assert.NotNull(updateResponse);
+            Assert.True(updateResponse.Success);
+            Assert.NotNull(updateResponse.Event);
+            Assert.Equal("AI and Health - Updated", updateResponse.Event.Title);
+            Assert.Equal("Seminar", updateResponse.Event.Type);
+
+            var deleteResponse = await Client.DeleteEvent(eventId, accessToken);
+            Assert.NotNull(deleteResponse);
+            Assert.True(deleteResponse.Success);
+
+            var eventsAfterDelete = await Client.GetEvents(q: "AI and Health - Updated");
+            Assert.NotNull(eventsAfterDelete);
+            Assert.True(eventsAfterDelete.Success);
+            Assert.DoesNotContain(eventsAfterDelete.Items, e => e.Id == eventId.ToString());
+        }
+
+        [Fact]
+        public async Task AddUpdateDeleteSpeakerE2ETest()
+        {
+            var accessToken = await LoginAsSuperAdmin();
+            Assert.NotNull(accessToken);
+
+            var researchAxisId = SeedResearchAxis();
+            var createEventResponse = await Client.CreateEvent(new CreateEventRequest
+            {
+                Type = "Workshop",
+                Title = "Speaker Operations Event",
+                StartDate = DateTime.UtcNow.AddDays(4),
+                EndDate = DateTime.UtcNow.AddDays(5),
+                Location = "Lab 1",
+                Description = "Event for speaker CRUD",
+                ResearchAxisId = researchAxisId
+            }, accessToken);
+
+            Assert.NotNull(createEventResponse);
+            Assert.True(createEventResponse.Success);
+            Assert.NotNull(createEventResponse.Event);
+
+            var eventId = Guid.Parse(createEventResponse.Event.Id);
+
+            var addSpeakerResponse = await Client.AddSpeaker(eventId, new AddSpeakerRequest
+            {
+                FirstName = "Amine",
+                LastName = "Ben Ali",
+                Email = "amine.benali@test.com",
+                Institution = "ENIT",
+                Role = "Lecturer",
+                Biography = "Initial biography"
+            }, accessToken);
+
+            Assert.NotNull(addSpeakerResponse);
+            Assert.True(addSpeakerResponse.Success);
+            Assert.NotNull(addSpeakerResponse.Speaker);
+            Assert.Equal("Amine", addSpeakerResponse.Speaker.FirstName);
+
+            var speakerId = Guid.Parse(addSpeakerResponse.Speaker.Id);
+
+            var updateSpeakerResponse = await Client.UpdateSpeaker(eventId, speakerId, new UpdateSpeakerRequest
+            {
+                FirstName = "Amine",
+                LastName = "Ben Ali",
+                Email = "amine.benali@test.com",
+                Institution = "ENIT",
+                Role = "Keynote",
+                Biography = "Updated biography"
+            }, accessToken);
+
+            Assert.NotNull(updateSpeakerResponse);
+            Assert.True(updateSpeakerResponse.Success);
+            Assert.NotNull(updateSpeakerResponse.Speaker);
+            Assert.Equal("Keynote", updateSpeakerResponse.Speaker.Role);
+
+            var deleteSpeakerResponse = await Client.DeleteSpeaker(eventId, speakerId, accessToken);
+            Assert.NotNull(deleteSpeakerResponse);
+            Assert.True(deleteSpeakerResponse.Success);
+
+            var eventsResponse = await Client.GetEvents(q: "Speaker Operations Event");
+            Assert.NotNull(eventsResponse);
+            Assert.True(eventsResponse.Success);
+            var targetEvent = eventsResponse.Items.Single(e => e.Id == eventId.ToString());
+            Assert.DoesNotContain(targetEvent.Speakers, s => s.Id == speakerId.ToString());
         }
     }
 }

@@ -1,15 +1,14 @@
-namespace LIMTIC.Application.DTOs.Events
+namespace LIMTIC.WebAPI.Models.Events.UpdateEvent
 {
-    public class EventDto
+    public class UpdateEventRequest
     {
-        public string Id { get; set; }
         public string Type { get; set; }
         public string Title { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string Location { get; set; }
-        public string Status { get; set; }
         public string Description { get; set; }
-        public List<SpeakerDto>? Speakers { get; set; } = new();
+        public string? Program { get; set; }
+        public Guid ResearchAxisId { get; set; }
     }
 }

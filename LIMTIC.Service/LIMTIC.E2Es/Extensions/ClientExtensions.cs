@@ -8,6 +8,10 @@ using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using LIMTIC.WebAPI.Models.Events.GetEvents;
+using LIMTIC.WebAPI.Models.Events.CreateEvent;
+using LIMTIC.WebAPI.Models.Events.UpdateEvent;
+using LIMTIC.WebAPI.Models.Events.AddSpeaker;
+using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
@@ -168,6 +172,66 @@ namespace LIMTIC.E2Es.Extensions
 
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
             return await client.GetAsync($"api/events/{queryString}");
+        }
+
+        public static async Task<CreateEventResponse?> CreateEvent(this HttpClient client, CreateEventRequest requestBody, string accessToken)
+        {
+            var request = CreateRequest("api/events/", HttpMethod.Post, accessToken);
+            request.Content = JsonContent.Create(requestBody);
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<CreateEventResponse>();
+            return null;
+        }
+
+        public static async Task<UpdateEventResponse?> UpdateEvent(this HttpClient client, Guid eventId, UpdateEventRequest requestBody, string accessToken)
+        {
+            var request = CreateRequest($"api/events/{eventId}", HttpMethod.Put, accessToken);
+            request.Content = JsonContent.Create(requestBody);
+            var response = await client.SendAsync(request);
+
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<UpdateEventResponse>();
+            return null;
+        }
+
+        public static async Task<BaseResponse?> DeleteEvent(this HttpClient client, Guid eventId, string accessToken)
+        {
+            var request = CreateRequest($"api/events/{eventId}", HttpMethod.Delete, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+            return null;
+        }
+
+        public static async Task<AddSpeakerResponse?> AddSpeaker(this HttpClient client, Guid eventId, AddSpeakerRequest requestBody, string accessToken)
+        {
+            var request = CreateRequest($"api/events/{eventId}/speakers", HttpMethod.Post, accessToken);
+            request.Content = JsonContent.Create(requestBody);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<AddSpeakerResponse>();
+            return null;
+        }
+
+        public static async Task<UpdateSpeakerResponse?> UpdateSpeaker(this HttpClient client, Guid eventId, Guid speakerId, UpdateSpeakerRequest requestBody, string accessToken)
+        {
+            var request = CreateRequest($"api/events/{eventId}/speakers/{speakerId}", HttpMethod.Put, accessToken);
+            request.Content = JsonContent.Create(requestBody);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<UpdateSpeakerResponse>();
+            return null;
+        }
+
+        public static async Task<BaseResponse?> DeleteSpeaker(this HttpClient client, Guid eventId, Guid speakerId, string accessToken)
+        {
+            var request = CreateRequest($"api/events/{eventId}/speakers/{speakerId}", HttpMethod.Delete, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+            return null;
         }
     }
 }

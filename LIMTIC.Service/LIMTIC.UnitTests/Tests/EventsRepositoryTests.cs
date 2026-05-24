@@ -222,5 +222,129 @@ namespace LIMTIC.UnitTests.Tests
             var secondPageIds = secondPage.Select(e => e.Id).ToList();
             Assert.Empty(firstPageIds.Intersect(secondPageIds));
         }
+
+        [Fact]
+        public async Task EventCrudAsyncWorksCorrectly()
+        {
+            var researchAxis = new ResearchAxisEntity
+            {
+                Id = Guid.NewGuid(),
+                Title = "Systems",
+                Description = "Systems research",
+                Themes = new[] { "Distributed Systems" },
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            DbContext.ResearchAxes.Add(researchAxis);
+            await DbContext.SaveChangesAsync();
+
+            var eventId = Guid.NewGuid();
+            var eventEntity = new EventEntity
+            {
+                Id = eventId,
+                Title = "Initial Event",
+                Type = EventType.Seminar,
+                StartDate = DateTime.UtcNow.AddDays(1),
+                EndDate = DateTime.UtcNow.AddDays(2),
+                Location = "Tunis",
+                Description = "Initial description",
+                ResearchAxisId = researchAxis.Id,
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            var created = await EventsRepository.AddEventAsync(eventEntity);
+            Assert.True(created);
+
+            var storedEvent = await EventsRepository.GetEventByIdAsync(eventId);
+            Assert.NotNull(storedEvent);
+            Assert.Equal("Initial Event", storedEvent.Title);
+
+            storedEvent.Title = "Updated Event";
+            storedEvent.Description = "Updated description";
+            var updated = await EventsRepository.UpdateEventAsync(storedEvent);
+            Assert.True(updated);
+
+            var updatedEvent = await EventsRepository.GetEventByIdAsync(eventId);
+            Assert.NotNull(updatedEvent);
+            Assert.Equal("Updated Event", updatedEvent.Title);
+            Assert.Equal("Updated description", updatedEvent.Description);
+
+            var deleted = await EventsRepository.DeleteEventAsync(updatedEvent);
+            Assert.True(deleted);
+
+            var deletedEvent = await EventsRepository.GetEventByIdAsync(eventId);
+            Assert.Null(deletedEvent);
+        }
+
+        [Fact]
+        public async Task SpeakerCrudAsyncWorksCorrectly()
+        {
+            var researchAxis = new ResearchAxisEntity
+            {
+                Id = Guid.NewGuid(),
+                Title = "AI",
+                Description = "AI research",
+                Themes = new[] { "ML" },
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            DbContext.ResearchAxes.Add(researchAxis);
+
+            var eventId = Guid.NewGuid();
+            var eventEntity = new EventEntity
+            {
+                Id = eventId,
+                Title = "Speaker Event",
+                Type = EventType.Conference,
+                StartDate = DateTime.UtcNow.AddDays(10),
+                EndDate = DateTime.UtcNow.AddDays(12),
+                Location = "Sousse",
+                Description = "Speaker test event",
+                ResearchAxisId = researchAxis.Id,
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+            DbContext.Events.Add(eventEntity);
+            await DbContext.SaveChangesAsync();
+
+            var speakerId = Guid.NewGuid();
+            var speaker = new SpeakerEntity
+            {
+                Id = speakerId,
+                EventId = eventId,
+                FirstName = "Jane",
+                LastName = "Doe",
+                Email = "jane.doe@test.com",
+                Institution = "INSAT",
+                Role = "Speaker",
+                Biography = "Initial bio",
+                CreatedBy = Guid.NewGuid(),
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            var created = await EventsRepository.AddSpeakerAsync(speaker);
+            Assert.True(created);
+
+            var storedSpeaker = await EventsRepository.GetSpeakerByIdAsync(eventId, speakerId);
+            Assert.NotNull(storedSpeaker);
+            Assert.Equal("Jane", storedSpeaker.FirstName);
+
+            storedSpeaker.Role = "Keynote Speaker";
+            storedSpeaker.Biography = "Updated bio";
+            var updated = await EventsRepository.UpdateSpeakerAsync(storedSpeaker);
+            Assert.True(updated);
+
+            var updatedSpeaker = await EventsRepository.GetSpeakerByIdAsync(eventId, speakerId);
+            Assert.NotNull(updatedSpeaker);
+            Assert.Equal("Keynote Speaker", updatedSpeaker.Role);
+            Assert.Equal("Updated bio", updatedSpeaker.Biography);
+
+            var deleted = await EventsRepository.DeleteSpeakerAsync(updatedSpeaker);
+            Assert.True(deleted);
+
+            var deletedSpeaker = await EventsRepository.GetSpeakerByIdAsync(eventId, speakerId);
+            Assert.Null(deletedSpeaker);
+        }
     }
 }
