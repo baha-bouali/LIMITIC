@@ -61,6 +61,7 @@ namespace LIMTIC.UnitTests.Base
         {
             public Task SendOTPEmailAsync(OTPEmailModel model) => Task.CompletedTask;
             public Task SendContactEmailAsync(ContactEmailModel model) => Task.CompletedTask;
+            public Task<bool> TestSmtpAsync(string testEmail) => Task.FromResult(true);
         }
 
         public void Dispose()
