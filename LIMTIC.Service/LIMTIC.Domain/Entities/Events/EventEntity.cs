@@ -24,6 +24,6 @@ namespace LIMTIC.Domain.Entities.Events
         public Guid ResearchAxisId { get; set; }
         public ResearchAxisEntity ResearchAxis { get; set; }
 
-        public ICollection<SpeakerEntity> Speakers { get; set; } = [];
+        public ICollection<SpeakerEntity>? Speakers { get; set; } = [];
     }
 }

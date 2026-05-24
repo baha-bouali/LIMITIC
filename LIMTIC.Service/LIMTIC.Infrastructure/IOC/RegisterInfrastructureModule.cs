@@ -64,6 +64,7 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddScoped<ISettingsRepository, SettingsRepository>();
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+            services.AddScoped<IEventsRepository, EventsRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();

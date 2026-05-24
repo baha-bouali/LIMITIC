@@ -21,6 +21,7 @@ namespace LIMTIC.UnitTests.Base
         protected IUsersManagementService UsersManagementService => ServiceProvider.GetRequiredService<UsersManagementService>();
         protected IResetPasswordRepository ResetPasswordRepository => ServiceProvider.GetRequiredService<IResetPasswordRepository>();
         protected IRefreshTokenRepository RefreshTokenRepository => ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
+        protected IEventsRepository EventsRepository => ServiceProvider.GetRequiredService<IEventsRepository>();
 
         protected BaseTests()
         {

@@ -1,14 +1,11 @@
-﻿using LIMTIC.Domain.Shared;
-
-namespace LIMTIC.Domain.Entities.Events
+namespace LIMTIC.Application.Contracts.Commands.Events
 {
-    public class SpeakerEntity : BaseEntity
+    public class UpdateSpeakerCommand
     {
         public Guid EventId { get; set; }
-        public EventEntity Event { get; set; }
-
-        public string LastName { get; set; }
+        public Guid SpeakerId { get; set; }
         public string FirstName { get; set; }
+        public string LastName { get; set; }
         public string Email { get; set; }
         public string? Institution { get; set; }
         public string? Role { get; set; }
