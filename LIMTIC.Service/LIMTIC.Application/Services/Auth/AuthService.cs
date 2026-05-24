@@ -84,7 +84,7 @@ namespace LIMTIC.Application.Services.Auth
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
         }
 
         public async Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
@@ -101,7 +101,7 @@ namespace LIMTIC.Application.Services.Auth
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken));
+            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, token.User!.Id, token.User!.Email));
         }
 
         public async Task Logout(string? refreshToken)

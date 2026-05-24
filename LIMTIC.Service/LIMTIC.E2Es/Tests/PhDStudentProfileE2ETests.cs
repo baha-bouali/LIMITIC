@@ -90,8 +90,7 @@ namespace LIMTIC.E2Es.Tests
             var updateRequest = new UpdatePhDStudentProfileRequest
             {
                 EnrollmentYear = 2023,
-                ThesisSubject = "Federated Learning",
-                PhotoUrl = "https://photo.test/phd.jpg"
+                ThesisSubject = "Federated Learning"
             };
 
             var response = await Client.UpdatePhDStudentProfile(userId, updateRequest, token);

@@ -79,8 +79,7 @@ namespace LIMTIC.UnitTests.Tests
             {
                 UserId = user.Id,
                 Cohort = "2025",
-                DissertationSubject = "Edge Computing Security",
-                PhotoUrl = "https://photo.test/masterian.jpg"
+                DissertationSubject = "Edge Computing Security"
             };
 
             var result = await MasterianProfileService.UpdateAsync(command);

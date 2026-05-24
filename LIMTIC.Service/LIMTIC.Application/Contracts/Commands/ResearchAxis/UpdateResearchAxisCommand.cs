@@ -1,6 +1,6 @@
-namespace LIMTIC.Application.DTOs.Profiles
+namespace LIMTIC.Application.Contracts.Commands.ResearchAxis
 {
-    public class ResearchAxisDto
+    public class UpdateResearchAxisCommand
     {
         public Guid Id { get; set; }
         public string Title { get; set; }

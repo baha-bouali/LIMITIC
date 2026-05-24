@@ -1,10 +1,12 @@
 ﻿using System.Reflection;
 using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Auth;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Services.Auth;
 using LIMTIC.Application.Services.Profiles;
+using LIMTIC.Application.Services.ResearchAxis;
 using LIMTIC.Application.Services.UserManagement;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +25,9 @@ namespace LIMTIC.Application.IOC
             services.AddScoped<IResearcherProfileService, ResearcherProfileService>();
             services.AddScoped<IPhDStudentProfileService, PhDStudentProfileService>();
             services.AddScoped<IMasterianProfileService, MasterianProfileService>();
+
+            // Research axis service
+            services.AddScoped<IResearchAxisService, ResearchAxisService>();
 
             return services;
         }

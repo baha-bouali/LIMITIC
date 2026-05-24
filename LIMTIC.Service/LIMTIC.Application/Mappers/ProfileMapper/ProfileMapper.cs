@@ -9,18 +9,20 @@ namespace LIMTIC.Application.Mappers.ProfileMapper
         {
             return new ResearcherProfileDto
             {
+                // UserDto base fields
                 Id = researcher.Id,
                 Email = researcher.User.Email,
                 FirstName = researcher.User.FirstName,
                 LastName = researcher.User.LastName,
                 Role = researcher.User.Role,
                 IsActive = researcher.User.IsActive,
+                AvatarBlobName = researcher.User.AvatarBlobName,
+                // Researcher-specific fields
                 Rank = researcher.Rank,
                 Specialty = researcher.Specialty,
                 Office = researcher.Office,
                 PhoneNumber = researcher.PhoneNumber,
                 Biography = researcher.Biography,
-                Photo = researcher.Photo,
                 Orcid = researcher.Orcid,
                 GoogleScholar = researcher.GoogleScholar,
                 ResearchGate = researcher.ResearchGate,
@@ -39,15 +41,17 @@ namespace LIMTIC.Application.Mappers.ProfileMapper
 
             return new PhDStudentProfileDto
             {
+                // UserDto base fields
                 Id = phDStudent.Id,
                 Email = phDStudent.User.Email,
                 FirstName = phDStudent.User.FirstName,
                 LastName = phDStudent.User.LastName,
                 Role = phDStudent.User.Role,
                 IsActive = phDStudent.User.IsActive,
+                AvatarBlobName = phDStudent.User.AvatarBlobName,
+                // PhDStudent-specific fields
                 ThesisSubject = phDStudent.ThesisSubject,
                 EnrollmentYear = phDStudent.EnrollmentYear,
-                PhotoUrl = phDStudent.PhotoUrl,
                 SupervisorId = phDStudent.SupervisorId,
                 SupervisorName = supervisorName,
                 ResearchAxes = phDStudent.ResearchAxes
@@ -64,15 +68,17 @@ namespace LIMTIC.Application.Mappers.ProfileMapper
 
             return new MasterianProfileDto
             {
+                // UserDto base fields
                 Id = masterian.Id,
                 Email = masterian.User.Email,
                 FirstName = masterian.User.FirstName,
                 LastName = masterian.User.LastName,
                 Role = masterian.User.Role,
                 IsActive = masterian.User.IsActive,
+                AvatarBlobName = masterian.User.AvatarBlobName,
+                // Masterian-specific fields
                 DissertationSubject = masterian.DissertationSubject,
                 Cohort = masterian.Cohort,
-                PhotoUrl = masterian.PhotoUrl,
                 SupervisorId = masterian.SupervisorId,
                 SupervisorName = supervisorName
             };

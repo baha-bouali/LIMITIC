@@ -55,7 +55,6 @@ namespace LIMTIC.WebAPI.Controllers
                 Office = request.Office,
                 PhoneNumber = request.PhoneNumber,
                 Biography = request.Biography,
-                Photo = request.Photo,
                 Orcid = request.Orcid,
                 GoogleScholar = request.GoogleScholar,
                 ResearchGate = request.ResearchGate,

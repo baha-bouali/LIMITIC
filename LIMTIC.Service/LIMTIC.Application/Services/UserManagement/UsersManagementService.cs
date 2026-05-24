@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
@@ -10,7 +10,6 @@ using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.UserMapper;
 using LIMTIC.Application.Validations;
 using LIMTIC.Domain.Abstractions;
-using LIMTIC.Domain.Entities.ResearchAxis;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 
@@ -92,8 +91,7 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.IsActive = true;
             var result = await _userRepository.UpdateUserAsync(user);
-
-            return result ? Result<bool>.SuccessResult(data: true) : Result<bool>.FailureResult("Failed to activate user");
+            return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
         }
 
         public async Task<Result<bool>> DeactivateUserAsync(Guid userId)
@@ -107,8 +105,7 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.IsActive = false;
             var result = await _userRepository.UpdateUserAsync(user);
-
-            return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
+            return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to deactivate user");
         }
 
         public async Task<Result<string>> ChangeUserPasswordAsync(ChangeUserPasswordCommand command)
@@ -122,13 +119,11 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
             var result = await _userRepository.UpdateUserAsync(user);
-
             return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
         }
 
         public async Task<Result<bool>> UpdateUserRoleAsync(UpdateUserRoleCommand command)
         {
-            // basic validation
             var validator = new UpdateUserRoleCommandValidator();
             var validationResult = validator.Validate(command);
             if (!validationResult.IsValid)
@@ -138,119 +133,149 @@ namespace LIMTIC.Application.Services.UserManagement
             if (user == null)
                 return Result<bool>.FailureResult("User not found");
 
-            // Delete existing profile entry (if any) before assigning the new role
+            // Early return if role hasn't changed
+            if (user.Role == command.Role)
+                return Result<bool>.SuccessResult(true);
+
+            // Delete existing profile entry before assigning the new role
             await DeleteExistingProfileAsync(user.Id, user.Role);
 
-            switch (command.Role)
+            return command.Role switch
             {
-                case UserRole.SuperAdmin:
-                case UserRole.Admin:
-                case UserRole.Visitor:
-                    user.Role = command.Role;
-                    await _userRepository.UpdateUserAsync(user);
-                    return Result<bool>.SuccessResult(true);
+                UserRole.SuperAdmin or UserRole.Admin or UserRole.Visitor =>
+                    await AssignSimpleRoleAsync(user, command.Role),
 
-                case UserRole.Researcher:
-                    if (string.IsNullOrWhiteSpace(command.Rank) || string.IsNullOrWhiteSpace(command.Specialty)
-                        || string.IsNullOrWhiteSpace(command.Office) || string.IsNullOrWhiteSpace(command.PhoneNumber))
-                        return Result<bool>.FailureResult("Missing required researcher fields");
+                UserRole.Researcher =>
+                    await AssignResearcherRoleAsync(user, command),
 
-                    var researcher = new ResearcherEntity
-                    {
-                        Id = user.Id,
-                        Rank = command.Rank!.Trim(),
-                        Specialty = command.Specialty!.Trim(),
-                        Office = command.Office!.Trim(),
-                        PhoneNumber = command.PhoneNumber!.Trim(),
-                        User = user
-                    };
+                UserRole.PhDStudent =>
+                    await AssignPhDStudentRoleAsync(user, command),
 
-                    if (command.ResearchAxisIds != null && command.ResearchAxisIds.Any())
-                    {
-                        var axes = await _researchAxisRepository.GetByIdsAsync(command.ResearchAxisIds);
-                        researcher.ResearchAxes = axes;
-                    }
+                UserRole.Masterian =>
+                    await AssignMasterianRoleAsync(user, command),
 
-                    var addRes = await _researcherRepository.AddAsync(researcher);
-                    if (!addRes)
-                        return Result<bool>.FailureResult("Failed to create researcher profile");
-
-                    user.Role = UserRole.Researcher;
-                    await _userRepository.UpdateUserAsync(user);
-                    return Result<bool>.SuccessResult(true);
-
-                case UserRole.PhDStudent:
-                    if (!command.EnrollmentYear.HasValue)
-                        return Result<bool>.FailureResult("EnrollmentYear is required for PhDStudent role");
-
-                    var phd = new PhDStudentEntity
-                    {
-                        Id = user.Id,
-                        EnrollmentYear = command.EnrollmentYear.Value,
-                        User = user,
-                        ThesisSubject = null
-                    };
-
-                    var addPhd = await _phdStudentRepository.AddAsync(phd);
-                    if (!addPhd)
-                        return Result<bool>.FailureResult("Failed to create PhD student profile");
-
-                    user.Role = UserRole.PhDStudent;
-                    await _userRepository.UpdateUserAsync(user);
-                    return Result<bool>.SuccessResult(true);
-
-                case UserRole.Masterian:
-                    if (string.IsNullOrWhiteSpace(command.Cohort) || string.IsNullOrWhiteSpace(command.DissertationSubject))
-                        return Result<bool>.FailureResult("Cohort and DissertationSubject are required for Masterian role");
-
-                    var master = new MasterianEntity
-                    {
-                        Id = user.Id,
-                        Cohort = command.Cohort!.Trim(),
-                        DissertationSubject = command.DissertationSubject!.Trim(),
-                        User = user
-                    };
-
-                    var addMaster = await _masterianRepository.AddAsync(master);
-                    if (!addMaster)
-                        return Result<bool>.FailureResult("Failed to create Masterian profile");
-
-                    user.Role = UserRole.Masterian;
-                    await _userRepository.UpdateUserAsync(user);
-                    return Result<bool>.SuccessResult(true);
-
-                default:
-                    return Result<bool>.FailureResult("Unsupported role");
-            }
+                _ => Result<bool>.FailureResult("Unsupported role")
+            };
         }
 
-        /// <summary>
-        /// Deletes the profile entity that corresponds to the user's current role, if one exists.
-        /// Called before assigning a new role to ensure no stale profile rows remain.
-        /// </summary>
+        public async Task<Result<string>> UpdateUserAvatarAsync(Guid userId, Stream fileStream, string fileName, string contentType)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null)
+                return Result<string>.FailureResult("User not found");
+
+            // Generate a unique blob name: userId/filename
+            var blobName = $"avatars/{userId}/{Guid.NewGuid()}_{fileName}";
+            user.AvatarBlobName = blobName;
+
+            var updated = await _userRepository.UpdateUserAsync(user);
+            return updated
+                ? Result<string>.SuccessResult(blobName)
+                : Result<string>.FailureResult("Failed to update avatar");
+        }
+
+        // ── Private helpers ──────────────────────────────────────────────────────
+
+        private async Task<Result<bool>> AssignSimpleRoleAsync(UserEntity user, UserRole role)
+        {
+            user.Role = role;
+            var updated = await _userRepository.UpdateUserAsync(user);
+            return updated ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to update user role");
+        }
+
+        private async Task<Result<bool>> AssignResearcherRoleAsync(UserEntity user, UpdateUserRoleCommand command)
+        {
+            if (string.IsNullOrWhiteSpace(command.Rank) || string.IsNullOrWhiteSpace(command.Specialty)
+                || string.IsNullOrWhiteSpace(command.Office) || string.IsNullOrWhiteSpace(command.PhoneNumber))
+                return Result<bool>.FailureResult("Missing required researcher fields");
+
+            var researcher = new ResearcherEntity
+            {
+                Id = user.Id,
+                Rank = command.Rank!.Trim(),
+                Specialty = command.Specialty!.Trim(),
+                Office = command.Office!.Trim(),
+                PhoneNumber = command.PhoneNumber!.Trim(),
+                User = user
+            };
+
+            if (command.ResearchAxisIds != null && command.ResearchAxisIds.Any())
+            {
+                var axes = await _researchAxisRepository.GetByIdsAsync(command.ResearchAxisIds);
+                researcher.ResearchAxes = axes;
+            }
+
+            var added = await _researcherRepository.AddAsync(researcher);
+            if (!added)
+                return Result<bool>.FailureResult("Failed to create researcher profile");
+
+            user.Role = UserRole.Researcher;
+            var updated = await _userRepository.UpdateUserAsync(user);
+            return updated ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to update user role");
+        }
+
+        private async Task<Result<bool>> AssignPhDStudentRoleAsync(UserEntity user, UpdateUserRoleCommand command)
+        {
+            if (!command.EnrollmentYear.HasValue || command.EnrollmentYear.Value <= 0)
+                return Result<bool>.FailureResult("EnrollmentYear is required for PhDStudent role");
+
+            var phd = new PhDStudentEntity
+            {
+                Id = user.Id,
+                EnrollmentYear = command.EnrollmentYear.Value,
+                User = user,
+                ThesisSubject = null
+            };
+
+            var added = await _phdStudentRepository.AddAsync(phd);
+            if (!added)
+                return Result<bool>.FailureResult("Failed to create PhD student profile");
+
+            user.Role = UserRole.PhDStudent;
+            var updated = await _userRepository.UpdateUserAsync(user);
+            return updated ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to update user role");
+        }
+
+        private async Task<Result<bool>> AssignMasterianRoleAsync(UserEntity user, UpdateUserRoleCommand command)
+        {
+            if (string.IsNullOrWhiteSpace(command.Cohort) || string.IsNullOrWhiteSpace(command.DissertationSubject))
+                return Result<bool>.FailureResult("Cohort and DissertationSubject are required for Masterian role");
+
+            var master = new MasterianEntity
+            {
+                Id = user.Id,
+                Cohort = command.Cohort!.Trim(),
+                DissertationSubject = command.DissertationSubject!.Trim(),
+                User = user
+            };
+
+            var added = await _masterianRepository.AddAsync(master);
+            if (!added)
+                return Result<bool>.FailureResult("Failed to create Masterian profile");
+
+            user.Role = UserRole.Masterian;
+            var updated = await _userRepository.UpdateUserAsync(user);
+            return updated ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to update user role");
+        }
+
         private async Task DeleteExistingProfileAsync(Guid userId, UserRole currentRole)
         {
             switch (currentRole)
             {
                 case UserRole.Researcher:
                     var researcher = await _researcherRepository.GetByUserIdAsync(userId);
-                    if (researcher != null)
-                        await _researcherRepository.DeleteAsync(researcher);
+                    if (researcher != null) await _researcherRepository.DeleteAsync(researcher);
                     break;
 
                 case UserRole.PhDStudent:
                     var phd = await _phdStudentRepository.GetByUserIdAsync(userId);
-                    if (phd != null)
-                        await _phdStudentRepository.DeleteAsync(phd);
+                    if (phd != null) await _phdStudentRepository.DeleteAsync(phd);
                     break;
 
                 case UserRole.Masterian:
                     var masterian = await _masterianRepository.GetByUserIdAsync(userId);
-                    if (masterian != null)
-                        await _masterianRepository.DeleteAsync(masterian);
+                    if (masterian != null) await _masterianRepository.DeleteAsync(masterian);
                     break;
-
-                // Admin, SuperAdmin, Visitor have no profile table entry — nothing to delete
             }
         }
     }

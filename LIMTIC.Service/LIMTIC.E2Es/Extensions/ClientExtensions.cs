@@ -7,6 +7,7 @@ using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using LIMTIC.WebAPI.Models.Profiles;
+using LIMTIC.WebAPI.Models.ResearchAxis;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
@@ -234,6 +235,89 @@ namespace LIMTIC.E2Es.Extensions
         public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
         {
             return await client.PostAsync("api/auth/refreshToken", null);
+        }
+
+        // ── Avatar Upload ──────────────────────────────────────────────────────────
+        public static async Task<HttpResponseMessage> UploadAvatar(
+            this HttpClient client, Guid userId, byte[] fileBytes, string fileName, string accessToken)
+        {
+            var req = CreateRequest($"api/users/{userId}/avatar", HttpMethod.Post, accessToken);
+            var form = new MultipartFormDataContent();
+            form.Add(new ByteArrayContent(fileBytes)
+            {
+                Headers = { ContentType = new MediaTypeHeaderValue("image/jpeg") }
+            }, "avatar", fileName);
+            req.Content = form;
+            return await client.SendAsync(req);
+        }
+
+        // ── Research Axes ──────────────────────────────────────────────────────────
+        public static async Task<ResearchAxesListResponse?> GetAllResearchAxes(
+            this HttpClient client, string accessToken)
+        {
+            var req = CreateRequest("api/research-axes", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<ResearchAxesListResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetAllResearchAxesFullResponse(
+            this HttpClient client, string accessToken)
+        {
+            var req = CreateRequest("api/research-axes", HttpMethod.Get, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<ResearchAxisResponse?> GetResearchAxisById(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<ResearchAxisResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetResearchAxisByIdFullResponse(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<ResearchAxisResponse?> CreateResearchAxis(
+            this HttpClient client, CreateResearchAxisRequest request, string accessToken)
+        {
+            var req = CreateRequest("api/research-axes", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(request);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<ResearchAxisResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> CreateResearchAxisFullResponse(
+            this HttpClient client, CreateResearchAxisRequest request, string accessToken)
+        {
+            var req = CreateRequest("api/research-axes", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> UpdateResearchAxis(
+            this HttpClient client, Guid id, UpdateResearchAxisRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Put, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> DeleteResearchAxis(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
         }
     }
 }

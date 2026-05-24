@@ -77,8 +77,7 @@ namespace LIMTIC.UnitTests.Tests
             {
                 UserId = user.Id,
                 EnrollmentYear = 2023,
-                ThesisSubject = "Federated Learning",
-                PhotoUrl = "https://photo.test/phd.jpg"
+                ThesisSubject = "Federated Learning"
             };
 
             var result = await PhDStudentProfileService.UpdateAsync(command);

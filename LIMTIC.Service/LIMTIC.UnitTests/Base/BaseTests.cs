@@ -27,6 +27,8 @@ namespace LIMTIC.UnitTests.Base
         protected IResearcherProfileService ResearcherProfileService => ServiceProvider.GetRequiredService<IResearcherProfileService>();
         protected IPhDStudentProfileService PhDStudentProfileService => ServiceProvider.GetRequiredService<IPhDStudentProfileService>();
         protected IMasterianProfileService MasterianProfileService => ServiceProvider.GetRequiredService<IMasterianProfileService>();
+        protected IResearchAxisService ResearchAxisService => ServiceProvider.GetRequiredService<IResearchAxisService>();
+        protected IResearchAxisRepository ResearchAxisRepository => ServiceProvider.GetRequiredService<IResearchAxisRepository>();
 
         protected BaseTests()
         {

@@ -52,7 +52,6 @@ namespace LIMTIC.WebAPI.Controllers
                 UserId = userId,
                 ThesisSubject = request.ThesisSubject,
                 EnrollmentYear = request.EnrollmentYear,
-                PhotoUrl = request.PhotoUrl,
                 SupervisorId = request.SupervisorId,
                 ResearchAxisIds = request.ResearchAxisIds
             };

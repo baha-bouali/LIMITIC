@@ -78,7 +78,6 @@ namespace LIMTIC.Application.Services.Profiles
             // Update scalar fields
             phDStudent.ThesisSubject = command.ThesisSubject?.Trim();
             phDStudent.EnrollmentYear = command.EnrollmentYear;
-            phDStudent.PhotoUrl = command.PhotoUrl?.Trim();
             phDStudent.SupervisorId = command.SupervisorId;
 
             // Update research axes if provided
@@ -121,7 +120,9 @@ namespace LIMTIC.Application.Services.Profiles
             if (user is not null)
             {
                 user.Role = UserRole.Visitor;
-                await _userRepository.UpdateUserAsync(user);
+                var updated = await _userRepository.UpdateUserAsync(user);
+                if (!updated)
+                    return Result<bool>.FailureResult("Failed to reset user role");
             }
 
             return Result<bool>.SuccessResult(true);

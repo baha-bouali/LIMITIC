@@ -1,8 +1,7 @@
-namespace LIMTIC.Application.DTOs.Profiles
+namespace LIMTIC.WebAPI.Models.ResearchAxis
 {
-    public class ResearchAxisDto
+    public class UpdateResearchAxisRequest
     {
-        public Guid Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public string[] Themes { get; set; } = [];

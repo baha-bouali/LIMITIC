@@ -1,4 +1,5 @@
-﻿using LIMTIC.Application.Abstractions.UserManagement;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
@@ -17,10 +18,14 @@ namespace LIMTIC.WebAPI.Controllers
     public class UsersManagementController : ControllerBase
     {
         private readonly IUsersManagementService _usersManagementService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public UsersManagementController(IUsersManagementService usersManagementService)
+        public UsersManagementController(
+            IUsersManagementService usersManagementService,
+            ICurrentUserService currentUserService)
         {
             _usersManagementService = usersManagementService;
+            _currentUserService = currentUserService;
         }
 
         [HttpPost("addUser/")]
@@ -182,6 +187,27 @@ namespace LIMTIC.WebAPI.Controllers
                     ValidationErrors = result.ValidationErrors
                 });
             }
+        }
+
+        [HttpPost("{userId:guid}/avatar")]
+        [Authorize]
+        public async Task<IActionResult> UploadAvatar(Guid userId, IFormFile avatar)
+        {
+            var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
+            if (!isAdmin && _currentUserService.UserId != userId)
+                return Forbid();
+
+            if (avatar == null || avatar.Length == 0)
+                return BadRequest(new BaseResponse { Success = false, Message = "No file provided" });
+
+            await using var stream = avatar.OpenReadStream();
+            var result = await _usersManagementService.UpdateUserAvatarAsync(
+                userId, stream, avatar.FileName, avatar.ContentType);
+
+            if (result.Success)
+                return Ok(new BaseResponse { Success = true, Message = result.Data });
+
+            return BadRequest(new BaseResponse { Success = false, Message = result.Message });
         }
     }
 }

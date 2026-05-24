@@ -75,7 +75,6 @@ namespace LIMTIC.Application.Services.Profiles
             // Update scalar fields
             masterian.DissertationSubject = command.DissertationSubject.Trim();
             masterian.Cohort = command.Cohort.Trim();
-            masterian.PhotoUrl = command.PhotoUrl?.Trim();
             masterian.SupervisorId = command.SupervisorId;
 
             var saved = await _masterianRepository.UpdateAsync(masterian);
@@ -106,7 +105,9 @@ namespace LIMTIC.Application.Services.Profiles
             if (user is not null)
             {
                 user.Role = UserRole.Visitor;
-                await _userRepository.UpdateUserAsync(user);
+                var updated = await _userRepository.UpdateUserAsync(user);
+                if (!updated)
+                    return Result<bool>.FailureResult("Failed to reset user role");
             }
 
             return Result<bool>.SuccessResult(true);

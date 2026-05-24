@@ -52,7 +52,6 @@ namespace LIMTIC.WebAPI.Controllers
                 UserId = userId,
                 DissertationSubject = request.DissertationSubject,
                 Cohort = request.Cohort,
-                PhotoUrl = request.PhotoUrl,
                 SupervisorId = request.SupervisorId
             };
 

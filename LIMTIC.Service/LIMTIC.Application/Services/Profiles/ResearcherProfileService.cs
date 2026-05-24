@@ -70,7 +70,6 @@ namespace LIMTIC.Application.Services.Profiles
             researcher.Office = command.Office.Trim();
             researcher.PhoneNumber = command.PhoneNumber.Trim();
             researcher.Biography = command.Biography?.Trim();
-            researcher.Photo = command.Photo?.Trim();
             researcher.Orcid = command.Orcid?.Trim();
             researcher.GoogleScholar = command.GoogleScholar?.Trim();
             researcher.ResearchGate = command.ResearchGate?.Trim();
@@ -113,7 +112,9 @@ namespace LIMTIC.Application.Services.Profiles
             if (user is not null)
             {
                 user.Role = UserRole.Visitor;
-                await _userRepository.UpdateUserAsync(user);
+                var updated = await _userRepository.UpdateUserAsync(user);
+                if (!updated)
+                    return Result<bool>.FailureResult("Failed to reset user role");
             }
 
             return Result<bool>.SuccessResult(true);

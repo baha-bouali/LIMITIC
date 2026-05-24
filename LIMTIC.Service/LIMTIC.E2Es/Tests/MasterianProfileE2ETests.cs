@@ -94,8 +94,7 @@ namespace LIMTIC.E2Es.Tests
             var updateRequest = new UpdateMasterianProfileRequest
             {
                 Cohort = "2025",
-                DissertationSubject = "Edge Computing Security",
-                PhotoUrl = "https://photo.test/masterian.jpg"
+                DissertationSubject = "Edge Computing Security"
             };
 
             var response = await Client.UpdateMasterianProfile(userId, updateRequest, token);
