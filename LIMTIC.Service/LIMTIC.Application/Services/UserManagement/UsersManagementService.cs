@@ -123,6 +123,21 @@ namespace LIMTIC.Application.Services.UserManagement
             return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
         }
 
+        public async Task<Result<bool>> DeleteUserAsync(Guid userId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null)
+                return Result<bool>.FailureResult("User not found");
+
+            // Remove the role-specific profile row first to avoid FK violations
+            await DeleteExistingProfileAsync(user.Id, user.Role);
+
+            var deleted = await _userRepository.DeleteUserAsync(userId);
+            return deleted
+                ? Result<bool>.SuccessResult(true)
+                : Result<bool>.FailureResult("Failed to delete user");
+        }
+
         public async Task<Result<bool>> UpdateUserRoleAsync(UpdateUserRoleCommand command)
         {
             var validator = new UpdateUserRoleCommandValidator();

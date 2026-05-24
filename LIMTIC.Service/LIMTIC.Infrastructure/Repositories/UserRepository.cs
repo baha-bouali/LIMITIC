@@ -33,6 +33,14 @@ namespace LIMTIC.Infrastructure.Repositories
             return await _dbContext.SaveChangesAsync() > 0;
         }
 
+        public async Task<bool> DeleteUserAsync(Guid userId)
+        {
+            var user = await _dbContext.Users.FindAsync(userId);
+            if (user == null) return false;
+            _dbContext.Users.Remove(user);
+            return await _dbContext.SaveChangesAsync() > 0;
+        }
+
         public async Task<(List<UserEntity> Items, int Total, Dictionary<UserRole, int> Counts)> GetUsersAsync(
             UserRole? role, bool? isActive, string? search, int page, int limit)
         {

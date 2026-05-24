@@ -100,7 +100,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> AddUser(CreateUserRequest createUserRequest)
         {
             var command = new CreateUserCommand
@@ -162,7 +162,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("activateUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> ActivateUser(Guid userId)
         {
             var result = await _usersManagementService.ActivateUserAsync(userId);
@@ -185,7 +185,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("deactivateUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> DeactivateUser(Guid userId)
         {
             var result = await _usersManagementService.DeactivateUserAsync(userId);
@@ -229,6 +229,19 @@ namespace LIMTIC.WebAPI.Controllers
                     ValidationErrors = result.ValidationErrors
                 });
             }
+        }
+
+        [HttpDelete("{userId:guid}")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var result = await _usersManagementService.DeleteUserAsync(userId);
+            if (result.Success)
+                return Ok(new BaseResponse { Success = true });
+
+            return result.Message == "User not found"
+                ? NotFound(new BaseResponse { Success = false, Message = result.Message })
+                : BadRequest(new BaseResponse { Success = false, Message = result.Message });
         }
 
         [HttpPost("changePassword")]

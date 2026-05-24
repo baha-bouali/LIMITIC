@@ -75,7 +75,11 @@ export const usersApi = api.injectEndpoints({
       // Backend: GET /api/users/ (not /users/getAll)
       query: (params) => ({ url: 'users', method: 'GET', params: params ?? undefined }),
       transformResponse: (response: GetUsersResponse) => response.items,
-      providesTags: ['User'],
+      // Provide both a generic list tag and per-item tags so any invalidation refreshes the list
+      providesTags: (result) =>
+        result
+          ? ['User', ...result.map(u => ({ type: 'User' as const, id: u.id }))]
+          : ['User'],
     }),
 
     getPublicUsers: builder.query<UserDto[], GetUsersParams | void>({
@@ -87,23 +91,31 @@ export const usersApi = api.injectEndpoints({
     addUser: builder.mutation<UserDto | null, CreateUserRequest>({
       query: (body) => ({ url: 'users/addUser', method: 'POST', body }),
       transformResponse: (response: CreateUserResponse) => response.user ?? null,
+      // Invalidate the generic list tag so the users list re-fetches
       invalidatesTags: ['User'],
     }),
 
     updateUserRole: builder.mutation<void, { userId: string; data: UpdateUserRoleRequest }>({
       query: ({ userId, data }) => ({ url: `users/updateRole/${userId}`, method: 'PUT', body: data }),
-      invalidatesTags: (_result, _error, { userId }) => [{ type: 'User', id: userId }],
+      // Invalidate both the specific user and the list
+      invalidatesTags: (_result, _error, { userId }) => ['User', { type: 'User', id: userId }],
     }),
 
     // userId passed as query param — backend simple-type inference binds it from query string
     activateUser: builder.mutation<void, string>({
       query: (userId) => ({ url: `users/activateUser?userId=${userId}`, method: 'POST' }),
-      invalidatesTags: (_result, _error, userId) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_result, _error, userId) => ['User', { type: 'User', id: userId }],
     }),
 
     deactivateUser: builder.mutation<void, string>({
       query: (userId) => ({ url: `users/deactivateUser?userId=${userId}`, method: 'POST' }),
-      invalidatesTags: (_result, _error, userId) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_result, _error, userId) => ['User', { type: 'User', id: userId }],
+    }),
+
+    deleteUser: builder.mutation<void, string>({
+      query: (userId) => ({ url: `users/${userId}`, method: 'DELETE' }),
+      // Invalidate the whole list — the user is gone entirely
+      invalidatesTags: (_result, _error, userId) => ['User', { type: 'User', id: userId }],
     }),
 
     changePassword: builder.mutation<void, { email: string; oldPassword: string; newPassword: string }>({
@@ -116,7 +128,7 @@ export const usersApi = api.injectEndpoints({
         formData.append('avatar', avatar);
         return { url: `users/${userId}/avatar`, method: 'POST', body: formData };
       },
-      invalidatesTags: (_result, _error, { userId }) => [{ type: 'User', id: userId }],
+      invalidatesTags: (_result, _error, { userId }) => ['User', { type: 'User', id: userId }],
     }),
   }),
   overrideExisting: false,
@@ -131,6 +143,7 @@ export const {
   useUpdateUserRoleMutation,
   useActivateUserMutation,
   useDeactivateUserMutation,
+  useDeleteUserMutation,
   useChangePasswordMutation,
   useUploadAvatarMutation,
 } = usersApi;

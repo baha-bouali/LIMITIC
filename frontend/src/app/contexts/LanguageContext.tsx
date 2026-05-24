@@ -363,6 +363,11 @@ const translations = {
     'users.modifyUser': 'Modifier l\'utilisateur',
     'users.specificInfo': 'Modifier les informations spécifiques',
     'users.configureUser': 'Configurer l\'utilisateur',
+    'users.rank': 'Grade académique',
+    'users.rankPlaceholder': 'Ex: Maître de conférences, Professeur...',
+    'users.errorOccurred': 'Une erreur est survenue',
+    'users.invalidYear': 'Année d\'inscription invalide',
+    'users.fillRequiredFields': 'Veuillez remplir tous les champs obligatoires',
 
     // Supervisions (Encadrements)
     'supervision.title': 'Mes Encadrements',
@@ -1018,6 +1023,11 @@ const translations = {
     'users.modifyUser': 'Modify user',
     'users.specificInfo': 'Modify specific information',
     'users.configureUser': 'Configure user',
+    'users.rank': 'Academic rank',
+    'users.rankPlaceholder': 'e.g. Associate Professor, Professor...',
+    'users.errorOccurred': 'An error occurred',
+    'users.invalidYear': 'Invalid enrollment year',
+    'users.fillRequiredFields': 'Please fill in all required fields',
 
     // Supervisions (Encadrements)
     'supervision.title': 'My Supervisions',

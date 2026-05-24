@@ -5,12 +5,36 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
-import { Plus, Pencil, Trash2, ToggleLeft, ToggleRight, Users, ShieldCheck, UserCheck, GraduationCap, BookOpen, UserCircle, Eye, EyeOff } from 'lucide-react';
+import {
+  Plus, Pencil, Trash2, ToggleLeft, ToggleRight,
+  Users, ShieldCheck, UserCheck, GraduationCap, BookOpen, UserCircle,
+  Eye, EyeOff, Loader2,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import { normalizeRole } from '../../../auth/session';
+import type { UserRole } from '../../../auth/session';
+import {
+  useGetUsersQuery,
+  useAddUserMutation,
+  useUpdateUserRoleMutation,
+  useActivateUserMutation,
+  useDeactivateUserMutation,
+  useDeleteUserMutation,
+} from '../../../api/usersApi';
+import type { UpdateUserRoleRequest } from '../../../api/usersApi';
+import {
+  useGetResearchAxesQuery,
+  useLazyGetResearcherProfileQuery,
+  useLazyGetPhDStudentProfileQuery,
+  useLazyGetMasterianProfileQuery,
+  useUpdateResearcherProfileMutation,
+  useUpdatePhDStudentProfileMutation,
+  useUpdateMasterianProfileMutation,
+} from '../../../api/profilesApi';
 
-type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'CHERCHEUR' | 'DOCTORANT' | 'MASTERIEN' | 'VISITOR';
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface AppUser {
   id: string;
@@ -19,32 +43,18 @@ interface AppUser {
   email: string;
   role: UserRole;
   active: boolean;
-  createdAt: string;
-  lastLogin?: string;
-  specialization?: string;
-  researchAxis?: string;
-  academicYear?: string;
-  supervisor?: string;
-  thesisSubject?: string;
-  projectSubject?: string;
-  orcid?: string;
-  googleScholar?: string;
-  researchGate?: string;
-  linkedin?: string;
-  website?: string;
 }
 
-const initialUsers: AppUser[] = [
-  { id: '1', firstName: 'Super', lastName: 'Admin', email: 'superadmin@limtic.tn', role: 'SUPER_ADMIN', active: true, createdAt: '2024-01-10', lastLogin: '2026-05-23' },
-  { id: '2', firstName: 'Karim', lastName: 'Mansouri', email: 'admin@limtic.tn', role: 'ADMIN', active: true, createdAt: '2024-02-15', lastLogin: '2026-05-20' },
-  { id: '3', firstName: 'Ahmed', lastName: 'Ben Salem', email: 'ahmed.bensalem@limtic.tn', role: 'CHERCHEUR', active: true, createdAt: '2023-09-01', lastLogin: '2026-05-22', specialization: 'Intelligence Artificielle', researchAxis: 'IA & Apprentissage Automatique', orcid: '0000-0002-1234-5678' },
-  { id: '4', firstName: 'Fatma', lastName: 'Gharbi', email: 'fatma.gharbi@limtic.tn', role: 'CHERCHEUR', active: true, createdAt: '2023-09-01', lastLogin: '2026-05-21', specialization: 'Sécurité Informatique', researchAxis: 'Cybersécurité & Cryptographie' },
-  { id: '5', firstName: 'Mohamed', lastName: 'Mezghani', email: 'med.mezghani@limtic.tn', role: 'CHERCHEUR', active: true, createdAt: '2023-09-01', lastLogin: '2026-05-18', specialization: 'Réseaux et IoT', researchAxis: 'Systèmes Distribués & IoT' },
-  { id: '6', firstName: 'Sarah', lastName: 'Trabelsi', email: 'sarah.trabelsi@limtic.tn', role: 'DOCTORANT', active: true, createdAt: '2024-09-15', lastLogin: '2026-05-23', specialization: 'Deep Learning Médical', researchAxis: 'IA & Apprentissage Automatique', academicYear: '2024', supervisor: 'Ahmed Ben Salem', thesisSubject: 'Apprentissage profond pour le diagnostic médical' },
-  { id: '7', firstName: 'Mohamed', lastName: 'Najjar', email: 'med.najjar@limtic.tn', role: 'DOCTORANT', active: true, createdAt: '2024-09-15', lastLogin: '2026-05-19', specialization: 'Blockchain Healthcare', researchAxis: 'Cybersécurité & Cryptographie', academicYear: '2023', supervisor: 'Mohamed Mezghani', thesisSubject: 'Blockchain pour la sécurité des données médicales' },
-  { id: '8', firstName: 'Ines', lastName: 'Hamdi', email: 'ines.hamdi@limtic.tn', role: 'MASTERIEN', active: true, createdAt: '2025-09-01', lastLogin: '2026-05-22', specialization: 'Système de recommandation', academicYear: '2025-2026', supervisor: 'Ahmed Ben Salem', projectSubject: 'Système de recommandation basé sur l\'IA' },
-  { id: '9', firstName: 'Karim', lastName: 'Slimi', email: 'karim.slimi@limtic.tn', role: 'MASTERIEN', active: false, createdAt: '2025-09-01', lastLogin: '2026-04-10', specialization: 'IoT Sécurité', academicYear: '2025-2026', projectSubject: 'Sécurisation des réseaux IoT' },
-];
+// ── Constants ──────────────────────────────────────────────────────────────
+
+const ROLE_TO_ENUM: Record<UserRole, number> = {
+  SUPER_ADMIN: 1,
+  ADMIN: 2,
+  CHERCHEUR: 3,
+  DOCTORANT: 4,
+  MASTERIEN: 5,
+  VISITOR: 6,
+};
 
 const roleConfig: Record<UserRole, { label: string; variant: any; icon: ComponentType<{ size?: number; className?: string }> }> = {
   SUPER_ADMIN: { label: 'SuperAdmin', variant: 'default', icon: ShieldCheck },
@@ -55,62 +65,83 @@ const roleConfig: Record<UserRole, { label: string; variant: any; icon: Componen
   VISITOR: { label: 'Visiteur', variant: 'default', icon: UserCircle },
 };
 
-const researchAxes = [
-  'IA & Apprentissage Automatique',
-  'Cybersécurité & Cryptographie',
-  'Systèmes Distribués & IoT',
-  'Blockchain & Technologies Décentralisées',
-];
+const DEFAULT_STEP2_FORM = {
+  role: 'VISITOR' as UserRole,
+  // CHERCHEUR required
+  rank: '',
+  specialty: '',
+  office: '',
+  phoneNumber: '',
+  // CHERCHEUR optional
+  orcid: '',
+  googleScholar: '',
+  researchGate: '',
+  linkedIn: '',
+  // shared: CHERCHEUR + DOCTORANT (single axis selection)
+  researchAxisId: '',
+  // DOCTORANT required
+  enrollmentYear: '',
+  // DOCTORANT + MASTERIEN optional
+  supervisorId: '',
+  // DOCTORANT optional
+  thesisSubject: '',
+  // MASTERIEN required
+  cohort: '',
+  dissertationSubject: '',
+};
+
+// ── Component ──────────────────────────────────────────────────────────────
 
 export default function SuperAdminUsers() {
   const { t } = useLanguage();
-  const [users, setUsers] = useState<AppUser[]>(initialUsers);
+
+  // ── RTK Query hooks ──────────────────────────────────────────────────────
+  const { data: rawUsers, isLoading: usersLoading, isError: usersError } = useGetUsersQuery({ limit: 200 });
+  const { data: researchAxes = [] } = useGetResearchAxesQuery();
+
+  const [addUser] = useAddUserMutation();
+  const [updateUserRole] = useUpdateUserRoleMutation();
+  const [activateUser] = useActivateUserMutation();
+  const [deactivateUser] = useDeactivateUserMutation();
+  const [deleteUser] = useDeleteUserMutation();
+
+  const [triggerResearcherProfile] = useLazyGetResearcherProfileQuery();
+  const [triggerPhDProfile] = useLazyGetPhDStudentProfileQuery();
+  const [triggerMasterianProfile] = useLazyGetMasterianProfileQuery();
+
+  const [updateResearcherProfile] = useUpdateResearcherProfileMutation();
+  const [updatePhDStudentProfile] = useUpdatePhDStudentProfileMutation();
+  const [updateMasterianProfile] = useUpdateMasterianProfileMutation();
+
+  // ── UI state ─────────────────────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
+
   const [showStep1, setShowStep1] = useState(false);
   const [showStep2, setShowStep2] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<AppUser | null>(null);
 
-  // Step 1 form (base user)
+  const [editLoadingId, setEditLoadingId] = useState<string | null>(null);
+  const [step1Loading, setStep1Loading] = useState(false);
+  const [step2Loading, setStep2Loading] = useState(false);
+
   const [step1Form, setStep1Form] = useState({ firstName: '', lastName: '', email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
+  const [step2Form, setStep2Form] = useState({ ...DEFAULT_STEP2_FORM });
 
-  // Step 2 form (role-specific data)
-  const [step2Form, setStep2Form] = useState({
-    role: 'VISITOR' as UserRole,
-    specialization: '',
-    researchAxis: '',
-    academicYear: '',
-    supervisor: '',
-    thesisSubject: '',
-    projectSubject: '',
-    orcid: '',
-    googleScholar: '',
-    researchGate: '',
-    linkedin: '',
-    website: '',
-  });
+  // ── Derived data ─────────────────────────────────────────────────────────
+  const users: AppUser[] = (rawUsers ?? []).map(dto => ({
+    id: dto.id,
+    firstName: dto.firstName,
+    lastName: dto.lastName,
+    email: dto.email,
+    role: normalizeRole(dto.role),
+    active: dto.isActive ?? true,
+  }));
 
-  const filterGroups = [
-    {
-      id: 'role', label: t('users.role'), options: [
-        { id: 'sa', label: 'SuperAdmin', value: 'SUPER_ADMIN' },
-        { id: 'ad', label: 'Admin', value: 'ADMIN' },
-        { id: 'ch', label: t('role.researcher'), value: 'CHERCHEUR' },
-        { id: 'do', label: t('role.phd'), value: 'DOCTORANT' },
-        { id: 'ma', label: t('role.master'), value: 'MASTERIEN' },
-        { id: 'vi', label: 'Visiteur', value: 'VISITOR' },
-      ]
-    },
-    {
-      id: 'status', label: t('users.status'), options: [
-        { id: 'active', label: t('users.active'), value: 'active' },
-        { id: 'inactive', label: t('users.inactive'), value: 'inactive' },
-      ]
-    },
-  ];
+  const researchers = users.filter(u => u.role === 'CHERCHEUR');
 
   const filtered = users.filter(u => {
     const q = searchQuery.toLowerCase();
@@ -131,35 +162,96 @@ export default function SuperAdminUsers() {
     inactive: users.filter(u => !u.active).length,
   };
 
+  const filterGroups = [
+    {
+      id: 'role', label: t('users.role'), options: [
+        { id: 'sa', label: 'SuperAdmin', value: 'SUPER_ADMIN' },
+        { id: 'ad', label: 'Admin', value: 'ADMIN' },
+        { id: 'ch', label: t('role.researcher'), value: 'CHERCHEUR' },
+        { id: 'do', label: t('role.phd'), value: 'DOCTORANT' },
+        { id: 'ma', label: t('role.master'), value: 'MASTERIEN' },
+        { id: 'vi', label: 'Visiteur', value: 'VISITOR' },
+      ]
+    },
+    {
+      id: 'status', label: t('users.status'), options: [
+        { id: 'active', label: t('users.active'), value: 'active' },
+        { id: 'inactive', label: t('users.inactive'), value: 'inactive' },
+      ]
+    },
+  ];
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  function closeAllModals() {
+    setShowStep1(false);
+    setShowStep2(false);
+    setCreatedUserId(null);
+    setEditingUser(null);
+  }
+
   function openCreate() {
-    setStep1Form({ firstName: '', lastName: '', email: '', password: '' });
-    setStep2Form({ role: 'VISITOR', specialization: '', researchAxis: '', academicYear: '', supervisor: '', thesisSubject: '', projectSubject: '', orcid: '', googleScholar: '', researchGate: '', linkedin: '', website: '' });
     setEditingUser(null);
     setCreatedUserId(null);
+    setStep1Form({ firstName: '', lastName: '', email: '', password: '' });
+    setStep2Form({ ...DEFAULT_STEP2_FORM });
     setShowStep1(true);
   }
 
-  function openEdit(user: AppUser) {
+  async function openEdit(user: AppUser) {
+    setEditLoadingId(user.id);
+
+    const base = { ...DEFAULT_STEP2_FORM, role: user.role };
+
+    try {
+      if (user.role === 'CHERCHEUR') {
+        const profile = await triggerResearcherProfile(user.id).unwrap();
+        setStep2Form({
+          ...base,
+          rank: profile.rank || '',
+          specialty: profile.specialty || '',
+          office: profile.office || '',
+          phoneNumber: profile.phoneNumber || '',
+          orcid: profile.orcid || '',
+          googleScholar: profile.googleScholar || '',
+          researchGate: profile.researchGate || '',
+          linkedIn: profile.linkedIn || '',
+          researchAxisId: profile.researchAxes?.[0]?.id || '',
+        });
+      } else if (user.role === 'DOCTORANT') {
+        const profile = await triggerPhDProfile(user.id).unwrap();
+        setStep2Form({
+          ...base,
+          enrollmentYear: profile.enrollmentYear ? String(profile.enrollmentYear) : '',
+          supervisorId: profile.supervisorId || '',
+          thesisSubject: profile.thesisSubject || '',
+          researchAxisId: profile.researchAxes?.[0]?.id || '',
+        });
+      } else if (user.role === 'MASTERIEN') {
+        const profile = await triggerMasterianProfile(user.id).unwrap();
+        setStep2Form({
+          ...base,
+          cohort: profile.cohort || '',
+          dissertationSubject: profile.dissertationSubject || '',
+          supervisorId: profile.supervisorId || '',
+        });
+      } else {
+        setStep2Form(base);
+      }
+    } catch {
+      // Profile may not exist yet — proceed with empty form pre-filled to current role
+      setStep2Form(base);
+    }
+
+    setEditLoadingId(null);
     setEditingUser(user);
     setStep1Form({ firstName: user.firstName, lastName: user.lastName, email: user.email, password: '' });
-    setStep2Form({
-      role: user.role,
-      specialization: user.specialization || '',
-      researchAxis: user.researchAxis || '',
-      academicYear: user.academicYear || '',
-      supervisor: user.supervisor || '',
-      thesisSubject: user.thesisSubject || '',
-      projectSubject: user.projectSubject || '',
-      orcid: user.orcid || '',
-      googleScholar: user.googleScholar || '',
-      researchGate: user.researchGate || '',
-      linkedin: user.linkedin || '',
-      website: user.website || '',
-    });
     setShowStep1(true);
   }
 
-  function handleStep1Submit() {
+  // ── Step 1 submit ─────────────────────────────────────────────────────────
+
+  async function handleStep1Submit() {
     if (!step1Form.firstName.trim() || !step1Form.lastName.trim() || !step1Form.email.trim()) {
       toast.error(t('users.fillAllFields'));
       return;
@@ -170,82 +262,182 @@ export default function SuperAdminUsers() {
     }
 
     if (editingUser) {
-      // Editing existing user - go to step 2
+      // Edit mode: step 1 is display-only, proceed straight to role/profile config
       setShowStep1(false);
       setShowStep2(true);
-    } else {
-      // Creating new user
-      const newUser: AppUser = {
-        id: Date.now().toString(),
-        firstName: step1Form.firstName,
-        lastName: step1Form.lastName,
-        email: step1Form.email,
-        role: 'VISITOR',
-        active: true,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
+      return;
+    }
 
-      setUsers(prev => [...prev, newUser]);
+    // New user creation
+    setStep1Loading(true);
+    try {
+      const newUser = await addUser({
+        firstName: step1Form.firstName.trim(),
+        lastName: step1Form.lastName.trim(),
+        email: step1Form.email.trim().toLowerCase(),
+        password: step1Form.password,
+        isActive: true,
+      }).unwrap();
+
+      if (!newUser?.id) throw new Error('No user data returned');
+
       setCreatedUserId(newUser.id);
       toast.success(t('users.userCreatedAs'));
       setShowStep1(false);
       setShowStep2(true);
+    } catch (err: any) {
+      const msg = err?.data?.message || err?.message || t('users.errorOccurred');
+      toast.error(msg);
+    } finally {
+      setStep1Loading(false);
     }
   }
 
-  function handleStep2Submit() {
-    const targetId = editingUser?.id || createdUserId;
+  // ── Step 2 submit ─────────────────────────────────────────────────────────
+
+  async function handleStep2Submit() {
+    const targetId = editingUser?.id ?? createdUserId;
     if (!targetId) return;
 
-    setUsers(prev => prev.map(u => {
-      if (u.id === targetId) {
-        const updated: AppUser = {
-          ...u,
-          firstName: step1Form.firstName,
-          lastName: step1Form.lastName,
-          email: step1Form.email,
-          role: step2Form.role,
-          specialization: step2Form.specialization || undefined,
-          researchAxis: step2Form.researchAxis || undefined,
-          academicYear: step2Form.academicYear || undefined,
-          supervisor: step2Form.supervisor || undefined,
-          thesisSubject: step2Form.thesisSubject || undefined,
-          projectSubject: step2Form.projectSubject || undefined,
-        };
+    // Validate role-specific required fields
+    if (step2Form.role === 'CHERCHEUR') {
+      if (!step2Form.rank.trim() || !step2Form.specialty.trim() || !step2Form.office.trim() || !step2Form.phoneNumber.trim()) {
+        toast.error(t('users.fillRequiredFields'));
+        return;
+      }
+    } else if (step2Form.role === 'DOCTORANT') {
+      const yr = parseInt(step2Form.enrollmentYear, 10);
+      if (!yr || yr < 1900 || yr > 2200) {
+        toast.error(t('users.invalidYear'));
+        return;
+      }
+    } else if (step2Form.role === 'MASTERIEN') {
+      if (!step2Form.cohort.trim() || !step2Form.dissertationSubject.trim()) {
+        toast.error(t('users.fillRequiredFields'));
+        return;
+      }
+    }
 
-        // Only add academic profiles for CHERCHEUR
+    setStep2Loading(true);
+    try {
+      const newRoleNum = ROLE_TO_ENUM[step2Form.role];
+      // isSameRole: editing an existing user whose role hasn't changed
+      const isSameRole = editingUser !== null && editingUser.role === step2Form.role;
+
+      // ── Step A: updateRole (skip only when editing with same role) ────────
+      if (!isSameRole) {
+        const roleData: UpdateUserRoleRequest = { role: newRoleNum };
+
         if (step2Form.role === 'CHERCHEUR') {
-          updated.orcid = step2Form.orcid || undefined;
-          updated.googleScholar = step2Form.googleScholar || undefined;
-          updated.researchGate = step2Form.researchGate || undefined;
-          updated.linkedin = step2Form.linkedin || undefined;
-          updated.website = step2Form.website || undefined;
+          roleData.rank = step2Form.rank.trim();
+          roleData.specialty = step2Form.specialty.trim();
+          roleData.office = step2Form.office.trim();
+          roleData.phoneNumber = step2Form.phoneNumber.trim();
+          if (step2Form.researchAxisId) {
+            roleData.researchAxisIds = [step2Form.researchAxisId];
+          }
+        } else if (step2Form.role === 'DOCTORANT') {
+          roleData.enrollmentYear = parseInt(step2Form.enrollmentYear, 10);
+        } else if (step2Form.role === 'MASTERIEN') {
+          roleData.cohort = step2Form.cohort.trim();
+          roleData.dissertationSubject = step2Form.dissertationSubject.trim();
         }
 
-        return updated;
+        await updateUserRole({ userId: targetId, data: roleData }).unwrap();
       }
-      return u;
-    }));
 
-    toast.success(editingUser ? t('users.userModified') : t('users.userConfigured'));
-    setShowStep2(false);
-    setCreatedUserId(null);
-    setEditingUser(null);
+      // ── Step B: profile-specific updates ─────────────────────────────────
+
+      if (step2Form.role === 'CHERCHEUR') {
+        // Same-role edit: updateRole was skipped → must push all fields via profile endpoint
+        // New role with optional profile data: updateRole set required fields; push optional fields
+        const hasOptional = step2Form.orcid || step2Form.googleScholar || step2Form.researchGate || step2Form.linkedIn;
+        if (isSameRole || hasOptional) {
+          await updateResearcherProfile({
+            userId: targetId,
+            data: {
+              rank: step2Form.rank.trim(),
+              specialty: step2Form.specialty.trim(),
+              office: step2Form.office.trim(),
+              phoneNumber: step2Form.phoneNumber.trim(),
+              orcid: step2Form.orcid.trim() || undefined,
+              googleScholar: step2Form.googleScholar.trim() || undefined,
+              researchGate: step2Form.researchGate.trim() || undefined,
+              linkedIn: step2Form.linkedIn.trim() || undefined,
+              researchAxisIds: step2Form.researchAxisId ? [step2Form.researchAxisId] : undefined,
+            },
+          }).unwrap();
+        }
+      } else if (step2Form.role === 'DOCTORANT') {
+        const enrollYear = parseInt(step2Form.enrollmentYear, 10) || 0;
+        const hasDoctorantExtra = step2Form.thesisSubject || step2Form.supervisorId || step2Form.researchAxisId;
+        if (isSameRole || hasDoctorantExtra) {
+          await updatePhDStudentProfile({
+            userId: targetId,
+            data: {
+              thesisSubject: step2Form.thesisSubject.trim() || undefined,
+              enrollmentYear: enrollYear,
+              supervisorId: step2Form.supervisorId || undefined,
+              researchAxisIds: step2Form.researchAxisId ? [step2Form.researchAxisId] : undefined,
+            },
+          }).unwrap();
+        }
+      } else if (step2Form.role === 'MASTERIEN') {
+        // Same-role edit: updateRole skipped → must push cohort+dissertationSubject via profile
+        // New role + supervisorId: updateRole set cohort+dissertationSubject, add supervisorId
+        if (isSameRole || step2Form.supervisorId) {
+          await updateMasterianProfile({
+            userId: targetId,
+            data: {
+              dissertationSubject: step2Form.dissertationSubject.trim(),
+              cohort: step2Form.cohort.trim(),
+              supervisorId: step2Form.supervisorId || undefined,
+            },
+          }).unwrap();
+        }
+      }
+
+      toast.success(editingUser ? t('users.userModified') : t('users.userConfigured'));
+      closeAllModals();
+    } catch (err: any) {
+      const msg = err?.data?.message || err?.message || t('users.errorOccurred');
+      toast.error(msg);
+    } finally {
+      setStep2Loading(false);
+    }
   }
 
-  function handleDelete() {
+  // ── Delete ────────────────────────────────────────────────────────────────
+
+  async function handleDelete() {
     if (!deleteTarget) return;
-    setUsers(prev => prev.filter(u => u.id !== deleteTarget.id));
-    toast.success(t('users.userDeleted'));
-    setDeleteTarget(null);
+    const target = deleteTarget;
+    setDeleteTarget(null); // close dialog immediately
+    try {
+      await deleteUser(target.id).unwrap();
+      toast.success(`${target.firstName} ${t('users.userDeleted')}`);
+    } catch (err: any) {
+      toast.error(err?.data?.message || t('users.errorOccurred'));
+    }
   }
 
-  function toggleActive(u: AppUser) {
-    setUsers(prev => prev.map(x => x.id === u.id ? { ...x, active: !x.active } : x));
-    toast.success(u.active ? `${u.firstName} ${t('users.userDeactivated')}` : `${u.firstName} ${t('users.userActivated')}`);
+  // ── Toggle active ─────────────────────────────────────────────────────────
+
+  async function toggleActive(u: AppUser) {
+    try {
+      if (u.active) {
+        await deactivateUser(u.id).unwrap();
+        toast.success(`${u.firstName} ${t('users.userDeactivated')}`);
+      } else {
+        await activateUser(u.id).unwrap();
+        toast.success(`${u.firstName} ${t('users.userActivated')}`);
+      }
+    } catch (err: any) {
+      toast.error(err?.data?.message || t('users.errorOccurred'));
+    }
   }
 
-  const availableSupervisors = users.filter(u => u.role === 'CHERCHEUR').map(u => `${u.firstName} ${u.lastName}`);
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
@@ -273,7 +465,7 @@ export default function SuperAdminUsers() {
           <Card key={s.label}>
             <CardContent className="p-4 flex items-center gap-3">
               <div className={clsx('w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold', s.color)}>
-                {s.value}
+                {usersLoading ? '…' : s.value}
               </div>
               <div className="text-sm text-text-secondary">{s.label}</div>
             </CardContent>
@@ -306,8 +498,26 @@ export default function SuperAdminUsers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
-                {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-6 py-12 text-center text-text-muted">{t('users.noUsers')}</td></tr>
+                {usersLoading && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-text-muted">
+                      <Loader2 size={24} className="animate-spin mx-auto" />
+                    </td>
+                  </tr>
+                )}
+                {usersError && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-error">
+                      {t('users.errorOccurred')}
+                    </td>
+                  </tr>
+                )}
+                {!usersLoading && !usersError && filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-text-muted">
+                      {t('users.noUsers')}
+                    </td>
+                  </tr>
                 )}
                 {filtered.map(u => {
                   const rc = roleConfig[u.role];
@@ -319,9 +529,8 @@ export default function SuperAdminUsers() {
                           <div className="w-10 h-10 rounded-full bg-accent-blue flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
                             {u.firstName.charAt(0)}{u.lastName.charAt(0)}
                           </div>
-                          <div>
-                            <div className="font-semibold text-navy dark:text-white">{u.firstName} {u.lastName}</div>
-                            <div className="text-xs text-text-muted">{t('users.since')} {u.createdAt}</div>
+                          <div className="font-semibold text-navy dark:text-white">
+                            {u.firstName} {u.lastName}
                           </div>
                         </div>
                       </td>
@@ -331,13 +540,13 @@ export default function SuperAdminUsers() {
                           <RoleIcon size={12} />{rc.label}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm text-text-secondary">{u.specialization || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">—</td>
                       <td className="px-6 py-4">
                         <Badge variant={u.active ? 'success' : 'default'}>
                           {u.active ? t('users.active') : t('users.inactive')}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm text-text-muted">{u.lastLogin || '—'}</td>
+                      <td className="px-6 py-4 text-sm text-text-muted">—</td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -352,10 +561,14 @@ export default function SuperAdminUsers() {
                           </button>
                           <button
                             onClick={() => openEdit(u)}
-                            className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg transition-colors text-accent-blue"
+                            disabled={editLoadingId === u.id}
+                            className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg transition-colors text-accent-blue disabled:opacity-50"
                             title={t('common.modify')}
                           >
-                            <Pencil size={16} />
+                            {editLoadingId === u.id
+                              ? <Loader2 size={16} className="animate-spin" />
+                              : <Pencil size={16} />
+                            }
                           </button>
                           <button
                             onClick={() => setDeleteTarget(u)}
@@ -374,10 +587,16 @@ export default function SuperAdminUsers() {
         </CardContent>
       </Card>
 
-      {/* Step 1: Base User Info */}
+      {/* ── Step 1: Base User Info ─────────────────────────────────────────── */}
       {showStep1 && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4" onClick={() => { setShowStep1(false); setEditingUser(null); }}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+          onClick={() => { setShowStep1(false); setEditingUser(null); }}
+        >
+          <div
+            className="bg-white dark:bg-card rounded-2xl shadow-modal max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-surface-border flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-navy dark:text-white">
@@ -385,7 +604,10 @@ export default function SuperAdminUsers() {
                 </h2>
                 <p className="text-sm text-text-muted mt-1">{t('users.step1')}</p>
               </div>
-              <button onClick={() => { setShowStep1(false); setEditingUser(null); }} className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg">✕</button>
+              <button
+                onClick={() => { setShowStep1(false); setEditingUser(null); }}
+                className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg"
+              >✕</button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -394,7 +616,8 @@ export default function SuperAdminUsers() {
                   <input
                     value={step1Form.firstName}
                     onChange={e => setStep1Form(f => ({ ...f, firstName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                    disabled={!!editingUser}
+                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     placeholder={t('users.firstName')}
                   />
                 </div>
@@ -403,7 +626,8 @@ export default function SuperAdminUsers() {
                   <input
                     value={step1Form.lastName}
                     onChange={e => setStep1Form(f => ({ ...f, lastName: e.target.value }))}
-                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                    disabled={!!editingUser}
+                    className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                     placeholder={t('users.lastName')}
                   />
                 </div>
@@ -414,7 +638,8 @@ export default function SuperAdminUsers() {
                   type="email"
                   value={step1Form.email}
                   onChange={e => setStep1Form(f => ({ ...f, email: e.target.value }))}
-                  className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                  disabled={!!editingUser}
+                  className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                   placeholder="email@limtic.tn"
                 />
               </div>
@@ -448,17 +673,28 @@ export default function SuperAdminUsers() {
               )}
             </div>
             <div className="p-6 border-t border-surface-border flex justify-end gap-3">
-              <Button variant="outlined" onClick={() => { setShowStep1(false); setEditingUser(null); }}>{t('common.cancel')}</Button>
-              <Button onClick={handleStep1Submit}>{t('users.next')} →</Button>
+              <Button variant="outlined" onClick={() => { setShowStep1(false); setEditingUser(null); }}>
+                {t('common.cancel')}
+              </Button>
+              <Button onClick={handleStep1Submit} disabled={step1Loading} className="flex items-center gap-2">
+                {step1Loading && <Loader2 size={14} className="animate-spin" />}
+                {t('users.next')} →
+              </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Step 2: Role & Specific Data */}
+      {/* ── Step 2: Role & Specific Data ──────────────────────────────────── */}
       {showStep2 && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4" onClick={() => { setShowStep2(false); setCreatedUserId(null); setEditingUser(null); }}>
-          <div className="bg-white dark:bg-card rounded-2xl shadow-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4"
+          onClick={() => closeAllModals()}
+        >
+          <div
+            className="bg-white dark:bg-card rounded-2xl shadow-modal max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-6 border-b border-surface-border flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold text-navy dark:text-white">
@@ -466,9 +702,11 @@ export default function SuperAdminUsers() {
                 </h2>
                 <p className="text-sm text-text-muted mt-1">{t('users.step2')}</p>
               </div>
-              <button onClick={() => { setShowStep2(false); setCreatedUserId(null); setEditingUser(null); }} className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg">✕</button>
+              <button onClick={closeAllModals} className="p-2 hover:bg-light-gray dark:hover:bg-muted rounded-lg">✕</button>
             </div>
+
             <div className="p-6 space-y-5">
+              {/* Role selector */}
               <div>
                 <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.userRole')} *</label>
                 <select
@@ -485,45 +723,80 @@ export default function SuperAdminUsers() {
                 </select>
               </div>
 
-              {/* Chercheur fields */}
+              {/* ── CHERCHEUR fields ─────────────────────────────────────── */}
               {step2Form.role === 'CHERCHEUR' && (
                 <>
-                  <div>
-                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.specialization')}</label>
-                    <input
-                      value={step2Form.specialization}
-                      onChange={e => setStep2Form(f => ({ ...f, specialization: e.target.value }))}
-                      className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
-                      placeholder="Ex: Intelligence Artificielle, Sécurité..."
-                    />
+                  {/* Required professional fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-navy dark:text-white mb-1">{t('users.rank')} *</label>
+                      <input
+                        value={step2Form.rank}
+                        onChange={e => setStep2Form(f => ({ ...f, rank: e.target.value }))}
+                        className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                        placeholder={t('users.rankPlaceholder')}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-navy dark:text-white mb-1">{t('profile.office')} *</label>
+                      <input
+                        value={step2Form.office}
+                        onChange={e => setStep2Form(f => ({ ...f, office: e.target.value }))}
+                        className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                        placeholder="B101"
+                      />
+                    </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-navy dark:text-white mb-1">{t('users.specialization')} *</label>
+                      <input
+                        value={step2Form.specialty}
+                        onChange={e => setStep2Form(f => ({ ...f, specialty: e.target.value }))}
+                        className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                        placeholder="Ex: Intelligence Artificielle..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-navy dark:text-white mb-1">{t('profile.phone')} *</label>
+                      <input
+                        value={step2Form.phoneNumber}
+                        onChange={e => setStep2Form(f => ({ ...f, phoneNumber: e.target.value }))}
+                        className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
+                        placeholder="+216 XX XXX XXX"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Research axis */}
                   <div>
-                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.researchAxis')} *</label>
+                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.researchAxis')}</label>
                     <select
-                      value={step2Form.researchAxis}
-                      onChange={e => setStep2Form(f => ({ ...f, researchAxis: e.target.value }))}
+                      value={step2Form.researchAxisId}
+                      onChange={e => setStep2Form(f => ({ ...f, researchAxisId: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                     >
                       <option value="">{t('users.selectAxis')}</option>
-                      {researchAxes.map(axe => (
-                        <option key={axe} value={axe}>{axe}</option>
+                      {researchAxes.map(axis => (
+                        <option key={axis.id} value={axis.id}>{axis.title}</option>
                       ))}
                     </select>
                   </div>
+
+                  {/* Optional academic profiles */}
                   <div className="border-t border-surface-border pt-5">
                     <h3 className="text-sm font-semibold text-navy dark:text-white mb-4">{t('users.academicProfiles')}</h3>
                     <div className="space-y-3">
-                      {[
-                        { key: 'orcid', label: t('users.orcid'), placeholder: '0000-0000-0000-0000' },
-                        { key: 'googleScholar', label: t('users.googleScholar'), placeholder: 'https://scholar.google.com/...' },
-                        { key: 'researchGate', label: t('users.researchGate'), placeholder: 'https://www.researchgate.net/...' },
-                        { key: 'linkedin', label: t('users.linkedin'), placeholder: 'https://www.linkedin.com/in/...' },
-                        { key: 'website', label: t('users.personalWebsite'), placeholder: 'https://...' },
-                      ].map(field => (
+                      {([
+                        { key: 'orcid',        label: t('users.orcid'),          placeholder: '0000-0000-0000-0000' },
+                        { key: 'googleScholar', label: t('users.googleScholar'),  placeholder: 'https://scholar.google.com/...' },
+                        { key: 'researchGate',  label: t('users.researchGate'),   placeholder: 'https://www.researchgate.net/...' },
+                        { key: 'linkedIn',      label: t('users.linkedin'),       placeholder: 'https://www.linkedin.com/in/...' },
+                      ] as const).map(field => (
                         <div key={field.key}>
                           <label className="block text-xs font-medium text-text-muted mb-1">{field.label}</label>
                           <input
-                            value={step2Form[field.key as keyof typeof step2Form] as string}
+                            value={step2Form[field.key]}
                             onChange={e => setStep2Form(f => ({ ...f, [field.key]: e.target.value }))}
                             className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                             placeholder={field.placeholder}
@@ -535,41 +808,44 @@ export default function SuperAdminUsers() {
                 </>
               )}
 
-              {/* Doctorant fields */}
+              {/* ── DOCTORANT fields ─────────────────────────────────────── */}
               {step2Form.role === 'DOCTORANT' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.researchAxis')} *</label>
+                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.researchAxis')}</label>
                     <select
-                      value={step2Form.researchAxis}
-                      onChange={e => setStep2Form(f => ({ ...f, researchAxis: e.target.value }))}
+                      value={step2Form.researchAxisId}
+                      onChange={e => setStep2Form(f => ({ ...f, researchAxisId: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                     >
                       <option value="">{t('users.selectAxis')}</option>
-                      {researchAxes.map(axe => (
-                        <option key={axe} value={axe}>{axe}</option>
+                      {researchAxes.map(axis => (
+                        <option key={axis.id} value={axis.id}>{axis.title}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.enrollmentYear')} *</label>
                     <input
-                      value={step2Form.academicYear}
-                      onChange={e => setStep2Form(f => ({ ...f, academicYear: e.target.value }))}
+                      value={step2Form.enrollmentYear}
+                      onChange={e => setStep2Form(f => ({ ...f, enrollmentYear: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                       placeholder="2024"
+                      type="number"
+                      min="1990"
+                      max="2200"
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.supervisor')}</label>
                     <select
-                      value={step2Form.supervisor}
-                      onChange={e => setStep2Form(f => ({ ...f, supervisor: e.target.value }))}
+                      value={step2Form.supervisorId}
+                      onChange={e => setStep2Form(f => ({ ...f, supervisorId: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                     >
                       <option value="">{t('users.selectSupervisor')}</option>
-                      {availableSupervisors.map(sup => (
-                        <option key={sup} value={sup}>{sup}</option>
+                      {researchers.map(r => (
+                        <option key={r.id} value={r.id}>{r.firstName} {r.lastName}</option>
                       ))}
                     </select>
                   </div>
@@ -586,14 +862,14 @@ export default function SuperAdminUsers() {
                 </>
               )}
 
-              {/* Masterien fields */}
+              {/* ── MASTERIEN fields ─────────────────────────────────────── */}
               {step2Form.role === 'MASTERIEN' && (
                 <>
                   <div>
                     <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.enrollmentYear')} *</label>
                     <input
-                      value={step2Form.academicYear}
-                      onChange={e => setStep2Form(f => ({ ...f, academicYear: e.target.value }))}
+                      value={step2Form.cohort}
+                      onChange={e => setStep2Form(f => ({ ...f, cohort: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                       placeholder="2025-2026"
                     />
@@ -601,21 +877,21 @@ export default function SuperAdminUsers() {
                   <div>
                     <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.supervisor')}</label>
                     <select
-                      value={step2Form.supervisor}
-                      onChange={e => setStep2Form(f => ({ ...f, supervisor: e.target.value }))}
+                      value={step2Form.supervisorId}
+                      onChange={e => setStep2Form(f => ({ ...f, supervisorId: e.target.value }))}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                     >
                       <option value="">{t('users.selectSupervisor')}</option>
-                      {availableSupervisors.map(sup => (
-                        <option key={sup} value={sup}>{sup}</option>
+                      {researchers.map(r => (
+                        <option key={r.id} value={r.id}>{r.firstName} {r.lastName}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.projectTitle')}</label>
+                    <label className="block text-sm font-medium text-navy dark:text-white mb-2">{t('users.projectTitle')} *</label>
                     <textarea
-                      value={step2Form.projectSubject}
-                      onChange={e => setStep2Form(f => ({ ...f, projectSubject: e.target.value }))}
+                      value={step2Form.dissertationSubject}
+                      onChange={e => setStep2Form(f => ({ ...f, dissertationSubject: e.target.value }))}
                       rows={3}
                       className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm resize-none"
                       placeholder="Titre du projet de mémoire..."
@@ -624,14 +900,19 @@ export default function SuperAdminUsers() {
                 </>
               )}
             </div>
+
             <div className="p-6 border-t border-surface-border flex justify-end gap-3">
-              <Button variant="outlined" onClick={() => { setShowStep2(false); setCreatedUserId(null); setEditingUser(null); }}>{t('common.cancel')}</Button>
-              <Button onClick={handleStep2Submit}>{t('users.finish')}</Button>
+              <Button variant="outlined" onClick={closeAllModals}>{t('common.cancel')}</Button>
+              <Button onClick={handleStep2Submit} disabled={step2Loading} className="flex items-center gap-2">
+                {step2Loading && <Loader2 size={14} className="animate-spin" />}
+                {t('users.finish')}
+              </Button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ── Delete confirm dialog ────────────────────────────────────────── */}
       <ConfirmDialog
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

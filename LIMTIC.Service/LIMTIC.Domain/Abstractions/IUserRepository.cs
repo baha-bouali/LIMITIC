@@ -9,6 +9,7 @@ namespace LIMTIC.Domain.Abstractions
         Task<UserEntity?> GetUserByEmailAsync(string email);
         Task<bool> AddUserAsync(UserEntity user);
         Task<bool> UpdateUserAsync(UserEntity user);
+        Task<bool> DeleteUserAsync(Guid userId);
         Task<(List<UserEntity> Items, int Total, Dictionary<UserRole, int> Counts)> GetUsersAsync(
             UserRole? role, bool? isActive, string? search, int page, int limit);
     }
