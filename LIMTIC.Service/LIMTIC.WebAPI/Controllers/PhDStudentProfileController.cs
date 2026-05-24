@@ -30,7 +30,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data });
 
-            return BadRequest(new PhDStudentProfileResponse
+            return NotFound(new PhDStudentProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -61,11 +61,18 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data?.Profile });
 
-            return BadRequest(new PhDStudentProfileResponse
+            if (result.ValidationErrors != null)
+                return BadRequest(new PhDStudentProfileResponse
+                {
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
+                });
+
+            return NotFound(new PhDStudentProfileResponse
             {
                 Success = false,
-                Message = result.Message,
-                ValidationErrors = result.ValidationErrors
+                Message = result.Message
             });
         }
 
@@ -77,7 +84,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new BaseResponse { Success = true });
 
-            return BadRequest(new BaseResponse
+            return NotFound(new BaseResponse
             {
                 Success = false,
                 Message = result.Message

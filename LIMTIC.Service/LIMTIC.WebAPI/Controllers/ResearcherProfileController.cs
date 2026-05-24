@@ -30,7 +30,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data });
 
-            return BadRequest(new ResearcherProfileResponse
+            return NotFound(new ResearcherProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -67,11 +67,18 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data?.Profile });
 
-            return BadRequest(new ResearcherProfileResponse
+            if (result.ValidationErrors != null)
+                return BadRequest(new ResearcherProfileResponse
+                {
+                    Success = false,
+                    Message = result.Message,
+                    ValidationErrors = result.ValidationErrors
+                });
+
+            return NotFound(new ResearcherProfileResponse
             {
                 Success = false,
-                Message = result.Message,
-                ValidationErrors = result.ValidationErrors
+                Message = result.Message
             });
         }
 
@@ -83,7 +90,7 @@ namespace LIMTIC.WebAPI.Controllers
             if (result.Success)
                 return Ok(new BaseResponse { Success = true });
 
-            return BadRequest(new BaseResponse
+            return NotFound(new BaseResponse
             {
                 Success = false,
                 Message = result.Message

@@ -1,8 +1,11 @@
-﻿using LIMTIC.Application.Abstractions.UserManagement;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Profiles;
+using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.IOC;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
+using LIMTIC.UnitTests.Helpers;
 using LIMTIC.WebAPI.IOC;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +24,9 @@ namespace LIMTIC.UnitTests.Base
         protected IPhDStudentRepository PhDStudentRepository => ServiceProvider.GetRequiredService<IPhDStudentRepository>();
         protected IResetPasswordRepository ResetPasswordRepository => ServiceProvider.GetRequiredService<IResetPasswordRepository>();
         protected IRefreshTokenRepository RefreshTokenRepository => ServiceProvider.GetRequiredService<IRefreshTokenRepository>();
+        protected IResearcherProfileService ResearcherProfileService => ServiceProvider.GetRequiredService<IResearcherProfileService>();
+        protected IPhDStudentProfileService PhDStudentProfileService => ServiceProvider.GetRequiredService<IPhDStudentProfileService>();
+        protected IMasterianProfileService MasterianProfileService => ServiceProvider.GetRequiredService<IMasterianProfileService>();
 
         protected BaseTests()
         {
@@ -36,6 +42,10 @@ namespace LIMTIC.UnitTests.Base
             services.AddApplication();
             services.AddMappers();
             services.AddWebApi();
+
+            // Override ICurrentUserService with a test stub that acts as SuperAdmin
+            // so profile service authorization checks pass in unit tests
+            services.AddScoped<ICurrentUserService, TestCurrentUserService>();
 
             // Remove previous AppDbContext registration if present
             var descriptor = services.FirstOrDefault(

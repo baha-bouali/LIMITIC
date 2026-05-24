@@ -6,8 +6,10 @@ using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
 using LIMTIC.WebAPI.Models.Auth.ResetPassword;
 using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
+using LIMTIC.WebAPI.Models.Profiles;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -19,6 +21,114 @@ namespace LIMTIC.E2Es.Extensions
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             return request;
+        }
+
+        // ── Update Role ────────────────────────────────────────────────────────────
+        public static async Task<HttpResponseMessage> UpdateUserRole(
+            this HttpClient client, Guid userId, UpdateUserRoleRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/users/updateRole/{userId}", HttpMethod.Put, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        // ── Researcher Profile ─────────────────────────────────────────────────────
+        public static async Task<ResearcherProfileResponse?> GetResearcherProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<ResearcherProfileResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetResearcherProfileFullResponse(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> UpdateResearcherProfile(
+            this HttpClient client, Guid userId, UpdateResearcherProfileRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Put, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> DeleteResearcherProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        // ── PhD Student Profile ────────────────────────────────────────────────────
+        public static async Task<PhDStudentProfileResponse?> GetPhDStudentProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<PhDStudentProfileResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetPhDStudentProfileFullResponse(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> UpdatePhDStudentProfile(
+            this HttpClient client, Guid userId, UpdatePhDStudentProfileRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Put, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> DeletePhDStudentProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        // ── Masterian Profile ──────────────────────────────────────────────────────
+        public static async Task<MasterianProfileResponse?> GetMasterianProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<MasterianProfileResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetMasterianProfileFullResponse(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Get, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> UpdateMasterianProfile(
+            this HttpClient client, Guid userId, UpdateMasterianProfileRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Put, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> DeleteMasterianProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
         }
 
         public static async Task<CreateUserResponse?> AddUser(this HttpClient client, CreateUserRequest createUserRequest, string accessToken)
