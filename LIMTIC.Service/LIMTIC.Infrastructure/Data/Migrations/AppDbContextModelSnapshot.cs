@@ -389,36 +389,6 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("OTPTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("OTPTokenHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ResetPasswordTokenHash")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("ResetPasswords");
-                });
-
-            modelBuilder.Entity("LIMTIC.Domain.Entities.User", b =>
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -447,7 +417,121 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ResearchAxes");
-                }));
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("OTPTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OTPTokenHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ResetPasswordTokenHash")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResetPasswords");
+                });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Settings.LabSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ContactEmail")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("LabName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LabSlogan")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("SmtpHost")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("SmtpPasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("SmtpPort")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("SmtpUseTls")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("SmtpUsername")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LabSettings", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Address = "",
+                            ContactEmail = "",
+                            CreatedAtUtc = new DateTime(2026, 5, 24, 2, 4, 35, 143, DateTimeKind.Utc).AddTicks(6540),
+                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                            LabName = "LIMTIC Lab",
+                            LabSlogan = "",
+                            Phone = "",
+                            SmtpHost = "",
+                            SmtpPasswordHash = "",
+                            SmtpPort = 25,
+                            SmtpUseTls = false,
+                            SmtpUsername = ""
+                        });
+                });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
@@ -726,6 +810,17 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
@@ -807,17 +902,6 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Navigation("PhDStudent");
 
                     b.Navigation("Researcher");
-                });
-
-            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 #pragma warning restore 612, 618
         }
