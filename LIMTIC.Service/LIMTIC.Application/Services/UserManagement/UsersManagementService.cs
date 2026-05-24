@@ -38,8 +38,7 @@ namespace LIMTIC.Application.Services.UserManagement
             IResearcherRepository researcherRepository,
             IPhDStudentRepository phdStudentRepository,
             IMasterianRepository masterianRepository,
-            IResearchAxisRepository researchAxisRepository)
-            IValidator<CreateUserCommand> createUserCommandValidator,
+            IResearchAxisRepository researchAxisRepository,
             IAuditLogsRepository auditLogsRepository,
             ICurrentUserService currentUserService)
         {
@@ -325,13 +324,6 @@ namespace LIMTIC.Application.Services.UserManagement
                     if (masterian != null) await _masterianRepository.DeleteAsync(masterian);
                     break;
             }
-            if (!result)
-                return Result<string>.FailureResult("Failed to change password");
-
-            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
-            await _auditLogsRepository.AddLog(log);
-
-            return Result<string>.SuccessResult("Password changed successfully");
         }
     }
 }

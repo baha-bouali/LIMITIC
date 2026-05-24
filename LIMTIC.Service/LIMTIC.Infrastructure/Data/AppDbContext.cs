@@ -15,6 +15,7 @@ using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
 using LIMTIC.Infrastructure.Data.Configurations.ResearchAxis;
 using LIMTIC.Infrastructure.Data.Configurations.ResetPassword;
+using LIMTIC.Infrastructure.Data.Configurations.Settings;
 using LIMTIC.Infrastructure.Data.Configurations.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -98,7 +99,6 @@ namespace LIMTIC.Infrastructure.Data
 
             modelBuilder.ApplyConfiguration(new ResetPasswordConfiguration());
 
-            // LabSettings configuration
             modelBuilder.ApplyConfiguration(new LabSettingsConfiguration());
 
             modelBuilder.ApplyConfiguration(new AuditLogsConfiguration());

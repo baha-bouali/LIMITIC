@@ -32,7 +32,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "User",
                 Email = $"audit.user.{Guid.NewGuid():N}@test.com",
                 Password = "Test1234!",
-                Role = LIMTIC.Domain.Enums.UserRole.Admin,
                 IsActive = true
             }, accessToken);
 
