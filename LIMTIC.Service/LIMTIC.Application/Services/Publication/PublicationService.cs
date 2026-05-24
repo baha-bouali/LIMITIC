@@ -1,4 +1,6 @@
 ﻿using LIMTIC.Application.Abstractions.Publication;
+using LIMTIC.Application.DTOs.Publications;
+using LIMTIC.Application.Mappings;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
@@ -32,72 +34,72 @@ namespace LIMTIC.Application.Services.Publication
 
         // ─── Single publication ────────────────────────────────────────────────
 
-        public async Task<PublicationEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PublicationDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            var entity = await _publicationRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            return entity?.ToDto();
         }
 
         // ─── User-scoped queries ───────────────────────────────────────────────
 
-        public async Task<IEnumerable<PublicationEntity>> GetByUserIdAsync(Guid userId, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PublicationSummaryDto>> GetByUserIdAsync(
+            Guid userId, CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByUserIdAsync(userId, cancellationToken);
+            var entities = await _publicationRepository.GetByUserIdAsync(userId, cancellationToken);
+            return entities.ToSummaryDtos();
         }
 
-        public async Task<IEnumerable<PublicationEntity>> GetByUserIdAndStatusAsync(
-            Guid userId,
-            PublicationStatus status,
+        public async Task<IEnumerable<PublicationSummaryDto>> GetByUserIdAndStatusAsync(
+            Guid userId, PublicationStatus status, CancellationToken cancellationToken = default)
+        {
+            var entities = await _publicationRepository.GetByUserIdAndStatusAsync(userId, status, cancellationToken);
+            return entities.ToSummaryDtos();
+        }
+
+        // ─── Public / visibility queries ───────────────────────────────────────
+
+        public async Task<IEnumerable<PublicationSummaryDto>> GetPublicPublicationsAsync(
             CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByUserIdAndStatusAsync(userId, status, cancellationToken);
+            var entities = await _publicationRepository.GetByStatusAndVisibilityAsync(
+                PublicationStatus.Published, PublicationVisibility.Public, cancellationToken);
+            return entities.ToSummaryDtos();
         }
 
-        // ─── Public / visibility queries ──────────────────────────────────────
-
-        public async Task<IEnumerable<PublicationEntity>> GetPublicPublicationsAsync(CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PublicationSummaryDto>> GetRecentPublicPublicationsAsync(
+            int limit = 3, CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByStatusAndVisibilityAsync(
-                PublicationStatus.Published,
-                PublicationVisibility.Public,
-                cancellationToken);
-        }
+            var entities = await _publicationRepository.GetByStatusAndVisibilityAsync(
+                PublicationStatus.Published, PublicationVisibility.Public, cancellationToken);
 
-        public async Task<IEnumerable<PublicationEntity>> GetRecentPublicPublicationsAsync(
-            int limit = 3,
-            CancellationToken cancellationToken = default)
-        {
-            var publications = await _publicationRepository.GetByStatusAndVisibilityAsync(
-                PublicationStatus.Published,
-                PublicationVisibility.Public,
-                cancellationToken);
-
-            return publications
+            return entities
                 .OrderByDescending(p => p.Year)
                 .ThenByDescending(p => p.CreatedAtUtc)
-                .Take(limit);
+                .Take(limit)
+                .ToSummaryDtos();
         }
 
         // ─── Research-axis queries ─────────────────────────────────────────────
 
-        public async Task<IEnumerable<PublicationEntity>> GetByResearchAxisIdAsync(
-            Guid researchAxisId,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PublicationSummaryDto>> GetByResearchAxisIdAsync(
+            Guid researchAxisId, CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByResearchAxisIdAsync(researchAxisId, cancellationToken);
+            var entities = await _publicationRepository.GetByResearchAxisIdAsync(researchAxisId, cancellationToken);
+            return entities.ToSummaryDtos();
         }
 
         // ─── Type-specific queries ─────────────────────────────────────────────
 
-        public async Task<IEnumerable<PublicationEntity>> GetByTypeAsync(
-            PublicationType type,
-            CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<PublicationSummaryDto>> GetByTypeAsync(
+            PublicationType type, CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetByTypeAsync(type, cancellationToken);
+            var entities = await _publicationRepository.GetByTypeAsync(type, cancellationToken);
+            return entities.ToSummaryDtos();
         }
 
-        // ─── Filtered / paginated listing ─────────────────────────────────────
+        // ─── Filtered / paginated listing ──────────────────────────────────────
 
-        public async Task<(IEnumerable<PublicationEntity> Items, int TotalCount)> GetFilteredAsync(
+        public async Task<(IEnumerable<PublicationSummaryDto> Items, int TotalCount)> GetFilteredAsync(
             PublicationType? type = null,
             PublicationStatus? status = null,
             PublicationVisibility? visibility = null,
@@ -109,65 +111,69 @@ namespace LIMTIC.Application.Services.Publication
             int pageSize = 20,
             CancellationToken cancellationToken = default)
         {
-            return await _publicationRepository.GetFilteredAsync(
+            var (items, totalCount) = await _publicationRepository.GetFilteredAsync(
                 type, status, visibility, userId, researchAxisId,
                 year, search, page, pageSize, cancellationToken);
+
+            return (items.ToSummaryDtos(), totalCount);
         }
 
         // ─── Type-specific detail accessors ───────────────────────────────────
 
-        public async Task<JournalArticleEntity?> GetJournalArticleByPublicationIdAsync(
+        public async Task<JournalArticleDto?> GetJournalArticleByPublicationIdAsync(
             Guid publicationId, CancellationToken cancellationToken = default)
         {
-            return await _journalArticleRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            var entity = await _journalArticleRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            return entity?.ToDto();
         }
 
-        public async Task<TechnicalReportEntity?> GetTechnicalReportByPublicationIdAsync(
+        public async Task<TechnicalReportDto?> GetTechnicalReportByPublicationIdAsync(
             Guid publicationId, CancellationToken cancellationToken = default)
         {
-            return await _technicalReportRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            var entity = await _technicalReportRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            return entity?.ToDto();
         }
 
-        public async Task<BookChapterEntity?> GetBookChapterByPublicationIdAsync(
+        public async Task<BookChapterDto?> GetBookChapterByPublicationIdAsync(
             Guid publicationId, CancellationToken cancellationToken = default)
         {
-            return await _bookChapterRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            var entity = await _bookChapterRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            return entity?.ToDto();
         }
 
-        public async Task<NationalConferenceEntity?> GetNationalConferenceByPublicationIdAsync(
+        public async Task<NationalConferenceDto?> GetNationalConferenceByPublicationIdAsync(
             Guid publicationId, CancellationToken cancellationToken = default)
         {
-            return await _nationalConferenceRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            var entity = await _nationalConferenceRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            return entity?.ToDto();
         }
 
-        public async Task<InternationalConferenceEntity?> GetInternationalConferenceByPublicationIdAsync(
+        public async Task<InternationalConferenceDto?> GetInternationalConferenceByPublicationIdAsync(
             Guid publicationId, CancellationToken cancellationToken = default)
         {
-            return await _internationalConferenceRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            var entity = await _internationalConferenceRepository.GetByPublicationIdAsync(publicationId, cancellationToken);
+            return entity?.ToDto();
         }
 
-        // ─── Write operations ─────────────────────────────────────────────────
+        // ─── Write operations ──────────────────────────────────────────────────
 
-        public async Task<PublicationEntity> CreateAsync(
-            PublicationEntity publication,
-            CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> CreateAsync(
+            PublicationEntity publication, CancellationToken cancellationToken = default)
         {
             publication.Status = PublicationStatus.Draft;
 
             await _publicationRepository.AddAsync(publication, cancellationToken);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(publication.Id, cancellationToken);
         }
 
-        public async Task<PublicationEntity> UpdateAsync(
-            PublicationEntity publication,
-            CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> UpdateAsync(
+            PublicationEntity publication, CancellationToken cancellationToken = default)
         {
             var existing = await _publicationRepository.GetByIdAsync(publication.Id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {publication.Id} not found.");
 
-            // Guard: only drafts and rejected publications can be edited
             if (existing.Status is not (PublicationStatus.Draft or PublicationStatus.Rejected))
                 throw new InvalidOperationException(
                     $"Publication {publication.Id} cannot be edited in status '{existing.Status}'.");
@@ -175,7 +181,7 @@ namespace LIMTIC.Application.Services.Publication
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(publication.Id, cancellationToken);
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -187,9 +193,25 @@ namespace LIMTIC.Application.Services.Publication
             await _publicationRepository.SaveChangesAsync(cancellationToken);
         }
 
-        // ─── Workflow / status transitions ────────────────────────────────────
+        // ─── Visibility-only update ────────────────────────────────────────────
 
-        public async Task<PublicationEntity> SubmitAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> UpdateVisibilityAsync(
+            Guid id, PublicationVisibility visibility, CancellationToken cancellationToken = default)
+        {
+            var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
+                ?? throw new KeyNotFoundException($"Publication {id} not found.");
+
+            publication.Visibility = visibility;
+
+            _publicationRepository.Update(publication);
+            await _publicationRepository.SaveChangesAsync(cancellationToken);
+
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
+        }
+
+        // ─── Workflow / status transitions ─────────────────────────────────────
+
+        public async Task<PublicationDto> SubmitAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {id} not found.");
@@ -199,58 +221,51 @@ namespace LIMTIC.Application.Services.Publication
                     $"Only Draft publications can be submitted. Current status: '{publication.Status}'.");
 
             publication.Status = PublicationStatus.Submitted;
-
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
         }
 
-        public async Task<PublicationEntity> ApproveAsync(Guid id, CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> ApproveAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {id} not found.");
 
             if (publication.Status != PublicationStatus.Submitted)
                 throw new InvalidOperationException(
-                    $"Only SOUMIS publications can be approved. Current status: '{publication.Status}'.");
+                    $"Only Submitted publications can be approved. Current status: '{publication.Status}'.");
 
             publication.Status = PublicationStatus.Published;
-
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
         }
 
-        public async Task<PublicationEntity> RejectAsync(
-            Guid id,
-            string? reason = null,
-            CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> RejectAsync(
+            Guid id, string? reason = null, CancellationToken cancellationToken = default)
         {
             var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {id} not found.");
 
             if (publication.Status != PublicationStatus.Submitted)
                 throw new InvalidOperationException(
-                    $"Only SOUMIS publications can be rejected. Current status: '{publication.Status}'.");
+                    $"Only Submitted publications can be rejected. Current status: '{publication.Status}'.");
 
             publication.Status = PublicationStatus.Rejected;
-            // Persist the rejection reason if your entity / audit log supports it.
-            // e.g. publication.RejectionReason = reason;
+            // publication.RejectionReason = reason;  // uncomment once field exists
 
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
         }
 
-        // ─── PDF management ───────────────────────────────────────────────────
+        // ─── PDF management ────────────────────────────────────────────────────
 
-        public async Task<PublicationEntity> AddPdfAsync(
-            Guid id,
-            string pdfUrl,
-            CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> AddPdfAsync(
+            Guid id, string pdfUrl, CancellationToken cancellationToken = default)
         {
             var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {id} not found.");
@@ -260,13 +275,11 @@ namespace LIMTIC.Application.Services.Publication
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
         }
 
-        public async Task<PublicationEntity> RemovePdfAsync(
-            Guid id,
-            string pdfUrl,
-            CancellationToken cancellationToken = default)
+        public async Task<PublicationDto> RemovePdfAsync(
+            Guid id, string pdfUrl, CancellationToken cancellationToken = default)
         {
             var publication = await _publicationRepository.GetByIdAsync(id, cancellationToken)
                 ?? throw new KeyNotFoundException($"Publication {id} not found.");
@@ -278,7 +291,7 @@ namespace LIMTIC.Application.Services.Publication
             _publicationRepository.Update(publication);
             await _publicationRepository.SaveChangesAsync(cancellationToken);
 
-            return publication;
+            return await GetFullDtoOrThrowAsync(id, cancellationToken);
         }
 
         // ─── Statistics ───────────────────────────────────────────────────────
@@ -286,9 +299,17 @@ namespace LIMTIC.Application.Services.Publication
         public async Task<int> CountPublicPublicationsAsync(CancellationToken cancellationToken = default)
         {
             return await _publicationRepository.CountByStatusAndVisibilityAsync(
-                PublicationStatus.Published,
-                PublicationVisibility.Public,
-                cancellationToken);
+                PublicationStatus.Published, PublicationVisibility.Public, cancellationToken);
+        }
+
+        // ─── Private helpers ───────────────────────────────────────────────────
+
+        private async Task<PublicationDto> GetFullDtoOrThrowAsync(Guid id, CancellationToken cancellationToken)
+        {
+            var entity = await _publicationRepository.GetByIdWithDetailsAsync(id, cancellationToken)
+                ?? throw new InvalidOperationException(
+                    $"Publication {id} could not be retrieved after the operation.");
+            return entity.ToDto();
         }
     }
 }

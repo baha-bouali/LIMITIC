@@ -21,7 +21,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [AllowAnonymous]
         public async Task<IActionResult> AddUser(CreateUserRequest createUserRequest)
         {
             var command = new CreateUserCommand
