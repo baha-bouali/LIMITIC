@@ -5,8 +5,10 @@ using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.Domain.Enums;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.UserManagement.GetUsers;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -26,6 +28,54 @@ namespace LIMTIC.WebAPI.Controllers
         {
             _usersManagementService = usersManagementService;
             _currentUserService = currentUserService;
+        }
+
+        // ── GET list ───────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// List users with optional filters.
+        /// Query params: role, status (active|inactive), q (search firstName/lastName/email), page, limit
+        /// </summary>
+        [HttpGet]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> GetUsers(
+            [FromQuery] UserRole? role,
+            [FromQuery] string? status,
+            [FromQuery] string? q,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 20)
+        {
+            bool? isActive = status switch
+            {
+                "active"   => true,
+                "inactive" => false,
+                _          => null
+            };
+
+            var result = await _usersManagementService.GetUsersAsync(role, isActive, q, page, limit);
+
+            var counts = result.Data!.Counts.ToDictionary(
+                kvp => kvp.Key switch
+                {
+                    UserRole.SuperAdmin => "SUPER_ADMIN",
+                    UserRole.Admin      => "ADMIN",
+                    UserRole.Researcher => "CHERCHEUR",
+                    UserRole.PhDStudent => "DOCTORANT",
+                    UserRole.Masterian  => "MASTERIEN",
+                    UserRole.Visitor    => "VISITEUR",
+                    _                   => kvp.Key.ToString().ToUpper()
+                },
+                kvp => kvp.Value);
+
+            return Ok(new GetUsersResponse
+            {
+                Success = true,
+                Items   = result.Data.Items,
+                Total   = result.Data.Total,
+                Counts  = counts,
+                Page    = result.Data.Page,
+                Limit   = result.Data.Limit
+            });
         }
 
         [HttpPost("addUser/")]

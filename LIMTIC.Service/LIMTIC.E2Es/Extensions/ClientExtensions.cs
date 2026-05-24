@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
+using LIMTIC.Domain.Enums;
 using LIMTIC.WebAPI;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
 using LIMTIC.WebAPI.Models.Auth.Login;
@@ -10,6 +11,7 @@ using LIMTIC.WebAPI.Models.Profiles;
 using LIMTIC.WebAPI.Models.ResearchAxis;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
+using LIMTIC.WebAPI.Models.UserManagement.GetUsers;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 
 namespace LIMTIC.E2Es.Extensions
@@ -317,6 +319,54 @@ namespace LIMTIC.E2Es.Extensions
             this HttpClient client, Guid id, string accessToken)
         {
             var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> AddAxisMember(
+            this HttpClient client, Guid axisId, AddAxisMemberRequest request, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{axisId}/members", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(request);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> RemoveAxisMember(
+            this HttpClient client, Guid axisId, Guid userId, string accessToken)
+        {
+            var req = CreateRequest($"api/research-axes/{axisId}/members/{userId}", HttpMethod.Delete, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        // ── Users list ─────────────────────────────────────────────────────────────
+
+        public static async Task<GetUsersResponse?> GetUsers(
+            this HttpClient client, string accessToken,
+            UserRole? role = null, string? status = null, string? q = null,
+            int page = 1, int limit = 20)
+        {
+            var qs = $"api/users?page={page}&limit={limit}";
+            if (role.HasValue) qs += $"&role={(int)role.Value}";
+            if (status != null) qs += $"&status={Uri.EscapeDataString(status)}";
+            if (q != null) qs += $"&q={Uri.EscapeDataString(q)}";
+
+            var req = CreateRequest(qs, HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<GetUsersResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> GetUsersFullResponse(
+            this HttpClient client, string accessToken,
+            UserRole? role = null, string? status = null, string? q = null,
+            int page = 1, int limit = 20)
+        {
+            var qs = $"api/users?page={page}&limit={limit}";
+            if (role.HasValue) qs += $"&role={(int)role.Value}";
+            if (status != null) qs += $"&status={Uri.EscapeDataString(status)}";
+            if (q != null) qs += $"&q={Uri.EscapeDataString(q)}";
+
+            var req = CreateRequest(qs, HttpMethod.Get, accessToken);
             return await client.SendAsync(req);
         }
     }

@@ -6,6 +6,7 @@ using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs;
+using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.UserMapper;
 using LIMTIC.Application.Validations;
@@ -172,6 +173,20 @@ namespace LIMTIC.Application.Services.UserManagement
             return updated
                 ? Result<string>.SuccessResult(blobName)
                 : Result<string>.FailureResult("Failed to update avatar");
+        }
+
+        public async Task<Result<GetUsersResult>> GetUsersAsync(UserRole? role, bool? isActive, string? search, int page, int limit)
+        {
+            var (items, total, counts) = await _userRepository.GetUsersAsync(role, isActive, search, page, limit);
+
+            return Result<GetUsersResult>.SuccessResult(new GetUsersResult
+            {
+                Items = items.Select(_userMapper.MapToUserDto).ToList(),
+                Total = total,
+                Counts = counts,
+                Page = page,
+                Limit = limit
+            });
         }
 
         // ── Private helpers ──────────────────────────────────────────────────────

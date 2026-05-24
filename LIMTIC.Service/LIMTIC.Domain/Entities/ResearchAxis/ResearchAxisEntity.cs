@@ -10,6 +10,10 @@ namespace LIMTIC.Domain.Entities.ResearchAxis
         public string Title { get; set; }
         public string Description { get; set; }
         public string[] Themes { get; set; }
+        public string? Color { get; set; }
+
+        public Guid? ResponsibleId { get; set; }
+        public ResearcherEntity? Responsible { get; set; }
 
         public ICollection<PublicationEntity> Publications { get; set; } = [];
         public ICollection<EventEntity> Events { get; set; } = [];

@@ -12,15 +12,18 @@ namespace LIMTIC.Application.Services.ResearchAxis
     public class ResearchAxisService : IResearchAxisService
     {
         private readonly IResearchAxisRepository _researchAxisRepository;
+        private readonly IResearcherRepository _researcherRepository;
         private readonly IValidator<CreateResearchAxisCommand> _createValidator;
         private readonly IValidator<UpdateResearchAxisCommand> _updateValidator;
 
         public ResearchAxisService(
             IResearchAxisRepository researchAxisRepository,
+            IResearcherRepository researcherRepository,
             IValidator<CreateResearchAxisCommand> createValidator,
             IValidator<UpdateResearchAxisCommand> updateValidator)
         {
             _researchAxisRepository = researchAxisRepository;
+            _researcherRepository = researcherRepository;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
         }
@@ -46,18 +49,33 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!validation.IsValid)
                 return Result<ResearchAxisDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validation));
 
+            if (command.ResponsibleId.HasValue && !await _researcherRepository.ExistsAsync(command.ResponsibleId.Value))
+                return Result<ResearchAxisDto>.FailureResult("Responsible user is not a researcher");
+
             var entity = new ResearchAxisEntity
             {
                 Id = Guid.NewGuid(),
                 Title = command.Title.Trim(),
                 Description = command.Description.Trim(),
-                Themes = command.Themes
+                Themes = command.Themes,
+                Color = command.Color?.Trim(),
+                ResponsibleId = command.ResponsibleId
             };
 
+            if (command.MemberIds != null && command.MemberIds.Count > 0)
+            {
+                var members = await LoadResearchersAsync(command.MemberIds);
+                if (members is null)
+                    return Result<ResearchAxisDto>.FailureResult("One or more member IDs do not belong to a researcher");
+                entity.Researchers = members;
+            }
+
             var added = await _researchAxisRepository.AddAsync(entity);
-            return added
-                ? Result<ResearchAxisDto>.SuccessResult(MapToDto(entity))
-                : Result<ResearchAxisDto>.FailureResult("Failed to create research axis");
+            if (!added)
+                return Result<ResearchAxisDto>.FailureResult("Failed to create research axis");
+
+            var created = await _researchAxisRepository.GetByIdAsync(entity.Id);
+            return Result<ResearchAxisDto>.SuccessResult(MapToDto(created!));
         }
 
         public async Task<Result<ResearchAxisDto>> UpdateAsync(UpdateResearchAxisCommand command)
@@ -70,9 +88,22 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (entity is null)
                 return Result<ResearchAxisDto>.FailureResult("Research axis not found");
 
+            if (command.ResponsibleId.HasValue && !await _researcherRepository.ExistsAsync(command.ResponsibleId.Value))
+                return Result<ResearchAxisDto>.FailureResult("Responsible user is not a researcher");
+
             entity.Title = command.Title.Trim();
             entity.Description = command.Description.Trim();
             entity.Themes = command.Themes;
+            entity.Color = command.Color?.Trim();
+            entity.ResponsibleId = command.ResponsibleId;
+
+            if (command.MemberIds != null)
+            {
+                var members = await LoadResearchersAsync(command.MemberIds);
+                if (members is null)
+                    return Result<ResearchAxisDto>.FailureResult("One or more member IDs do not belong to a researcher");
+                entity.Researchers = members;
+            }
 
             var updated = await _researchAxisRepository.UpdateAsync(entity);
             return updated
@@ -86,10 +117,50 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (entity is null)
                 return Result<bool>.FailureResult("Research axis not found");
 
+            if (entity.Publications.Count > 0)
+                return Result<bool>.FailureResult("Cannot delete axis with associated publications");
+
             var deleted = await _researchAxisRepository.DeleteAsync(entity);
             return deleted
                 ? Result<bool>.SuccessResult(true)
                 : Result<bool>.FailureResult("Failed to delete research axis");
+        }
+
+        public async Task<Result<bool>> AddMemberAsync(Guid axisId, Guid userId)
+        {
+            if (!await _researchAxisRepository.ExistsAsync(axisId))
+                return Result<bool>.FailureResult("Research axis not found");
+
+            if (!await _researcherRepository.ExistsAsync(userId))
+                return Result<bool>.FailureResult("User is not a researcher");
+
+            var added = await _researchAxisRepository.AddMemberAsync(axisId, userId);
+            return added
+                ? Result<bool>.SuccessResult(true)
+                : Result<bool>.FailureResult("Failed to add member");
+        }
+
+        public async Task<Result<bool>> RemoveMemberAsync(Guid axisId, Guid userId)
+        {
+            if (!await _researchAxisRepository.ExistsAsync(axisId))
+                return Result<bool>.FailureResult("Research axis not found");
+
+            var removed = await _researchAxisRepository.RemoveMemberAsync(axisId, userId);
+            return removed
+                ? Result<bool>.SuccessResult(true)
+                : Result<bool>.FailureResult("Member not found in this axis");
+        }
+
+        private async Task<ICollection<Domain.Entities.Users.ResearcherEntity>?> LoadResearchersAsync(List<Guid> ids)
+        {
+            var researchers = new List<Domain.Entities.Users.ResearcherEntity>();
+            foreach (var id in ids)
+            {
+                var r = await _researcherRepository.GetByUserIdAsync(id);
+                if (r is null) return null;
+                researchers.Add(r);
+            }
+            return researchers;
         }
 
         private static ResearchAxisDto MapToDto(ResearchAxisEntity e) => new()
@@ -97,7 +168,15 @@ namespace LIMTIC.Application.Services.ResearchAxis
             Id = e.Id,
             Title = e.Title,
             Description = e.Description,
-            Themes = e.Themes
+            Themes = e.Themes,
+            Color = e.Color,
+            ResponsibleId = e.ResponsibleId,
+            Members = e.Researchers.Select(r => new AxisMemberDto
+            {
+                Id = r.Id,
+                FirstName = r.User?.FirstName ?? string.Empty,
+                LastName = r.User?.LastName ?? string.Empty
+            }).ToList()
         };
     }
 }

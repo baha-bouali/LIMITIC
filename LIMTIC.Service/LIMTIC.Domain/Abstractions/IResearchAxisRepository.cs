@@ -11,5 +11,7 @@ namespace LIMTIC.Domain.Abstractions
         Task<bool> UpdateAsync(ResearchAxisEntity entity);
         Task<bool> DeleteAsync(ResearchAxisEntity entity);
         Task<bool> ExistsAsync(Guid id);
+        Task<bool> AddMemberAsync(Guid axisId, Guid researcherUserId);
+        Task<bool> RemoveMemberAsync(Guid axisId, Guid researcherUserId);
     }
 }

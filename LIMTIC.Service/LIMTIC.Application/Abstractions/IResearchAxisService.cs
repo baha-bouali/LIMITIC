@@ -11,5 +11,7 @@ namespace LIMTIC.Application.Abstractions
         Task<Result<ResearchAxisDto>> CreateAsync(CreateResearchAxisCommand command);
         Task<Result<ResearchAxisDto>> UpdateAsync(UpdateResearchAxisCommand command);
         Task<Result<bool>> DeleteAsync(Guid id);
+        Task<Result<bool>> AddMemberAsync(Guid axisId, Guid userId);
+        Task<Result<bool>> RemoveMemberAsync(Guid axisId, Guid userId);
     }
 }
