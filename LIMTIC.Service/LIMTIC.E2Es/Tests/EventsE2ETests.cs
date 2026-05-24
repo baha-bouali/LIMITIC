@@ -1,7 +1,5 @@
 using System.Net;
-using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.ResearchAxis;
-using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
@@ -21,84 +19,62 @@ namespace LIMTIC.E2Es.Tests
         {
         }
 
-        private void SeedEventsData()
+        private async Task SeedEventsDataUsingEndpoints()
         {
-            using var scope = Factory.Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var accessToken = await LoginAsSuperAdmin();
+            Assert.NotNull(accessToken);
 
-            var researchAxis = new ResearchAxisEntity
-            {
-                Id = Guid.NewGuid(),
-                Title = "AI Research",
-                Description = "Research in Artificial Intelligence",
-                Themes = new[] { "Machine Learning", "Deep Learning" },
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
-            };
-            db.ResearchAxes.Add(researchAxis);
-            db.SaveChanges();
+            var researchAxisId = SeedResearchAxis();
 
-            var upcomingEvent = new EventEntity
+            var upcoming = await Client.CreateEvent(new CreateEventRequest
             {
-                Id = Guid.NewGuid(),
+                Type = "Conference",
                 Title = "Future AI Conference 2025",
-                Type = EventType.Conference,
                 StartDate = DateTime.UtcNow.AddDays(30),
                 EndDate = DateTime.UtcNow.AddDays(32),
                 Location = "Paris Convention Center",
                 Description = "An upcoming international conference on AI",
-                ResearchAxisId = researchAxis.Id,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
-            };
+                ResearchAxisId = researchAxisId,
+                Speakers = new List<CreateEventSpeakerRequest>
+                {
+                    new CreateEventSpeakerRequest
+                    {
+                        FirstName = "John",
+                        LastName = "Smith",
+                        Email = "john.smith@university.edu",
+                        Institution = "MIT",
+                        Role = "Professor",
+                        Biography = "Expert in Machine Learning"
+                    }
+                }
+            }, accessToken);
 
-            var speaker1 = new SpeakerEntity
+            var ongoing = await Client.CreateEvent(new CreateEventRequest
             {
-                Id = Guid.NewGuid(),
-                EventId = upcomingEvent.Id,
-                FirstName = "John",
-                LastName = "Smith",
-                Email = "john.smith@university.edu",
-                Institution = "MIT",
-                Role = "Professor",
-                Biography = "Expert in Machine Learning",
-                Photo = null,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
-            };
-
-            upcomingEvent.Speakers = new List<SpeakerEntity> { speaker1 };
-
-            var ongoingEvent = new EventEntity
-            {
-                Id = Guid.NewGuid(),
+                Type = "Seminar",
                 Title = "Machine Learning Seminar",
-                Type = EventType.Seminar,
                 StartDate = DateTime.UtcNow.AddHours(-1),
                 EndDate = DateTime.UtcNow.AddHours(2),
                 Location = "Room 101, Building A",
                 Description = "Current seminar on practical ML applications",
-                ResearchAxisId = researchAxis.Id,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
-            };
+                ResearchAxisId = researchAxisId
+            }, accessToken);
 
-            var pastEvent = new EventEntity
+            var past = await Client.CreateEvent(new CreateEventRequest
             {
-                Id = Guid.NewGuid(),
+                Type = "Workshop",
                 Title = "Data Science Workshop 2024",
-                Type = EventType.Workshop,
                 StartDate = DateTime.UtcNow.AddDays(-10),
                 EndDate = DateTime.UtcNow.AddDays(-9),
                 Location = "Virtual",
                 Description = "Past workshop on data science fundamentals",
-                ResearchAxisId = researchAxis.Id,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = DateTime.UtcNow
-            };
+                ResearchAxisId = researchAxisId
+            }, accessToken);
 
-            db.Events.AddRange(upcomingEvent, ongoingEvent, pastEvent);
-            db.SaveChanges();
+            Assert.NotNull(upcoming);
+            Assert.NotNull(ongoing);
+            Assert.NotNull(past);
+            Assert.True(upcoming.Success && ongoing.Success && past.Success);
         }
 
         private Guid SeedResearchAxis()
@@ -132,7 +108,7 @@ namespace LIMTIC.E2Es.Tests
             // 4. Assert response structure and data
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request to retrieve all events
             var response = await Client.GetEvents();
@@ -160,7 +136,7 @@ namespace LIMTIC.E2Es.Tests
             // 5. Assert response contains only past events
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request with status filter "Upcoming"
             var upcomingResponse = await Client.GetEvents(status: "Upcoming");
@@ -192,7 +168,7 @@ namespace LIMTIC.E2Es.Tests
             // 5. Assert response contains only seminar events
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request with type filter "Conference"
             var conferenceResponse = await Client.GetEvents(type: "Conference");
@@ -224,7 +200,7 @@ namespace LIMTIC.E2Es.Tests
             // 5. Assert response contains only matching events
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request with search query for "AI"
             var aiSearchResponse = await Client.GetEvents(q: "AI");
@@ -260,7 +236,7 @@ namespace LIMTIC.E2Es.Tests
             // 5. Assert second page contains 1 event and is different from first page
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request with page 1 and limit 1
             var firstPageResponse = await Client.GetEvents(page: 1, limit: 1);
@@ -291,7 +267,7 @@ namespace LIMTIC.E2Es.Tests
             // 4. Assert speaker properties are correctly mapped
 
             // 1. Seed events data (with speakers)
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request to retrieve events
             var response = await Client.GetEvents();
@@ -321,7 +297,7 @@ namespace LIMTIC.E2Es.Tests
             // 3. Assert response is successful (public endpoint)
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request without authentication
             var response = await Client.GetEventsFullHttpResponse();
@@ -364,7 +340,7 @@ namespace LIMTIC.E2Es.Tests
             // 5. Assert response correctly applies all filters and search
 
             // 1. Seed events data
-            SeedEventsData();
+            await SeedEventsDataUsingEndpoints();
 
             // 2. Send GET request with multiple filters (status + type)
             var filteredResponse = await Client.GetEvents(status: "Upcoming", type: "Conference");
@@ -397,6 +373,14 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task CreateUpdateDeleteEventE2ETest()
         {
+            // Steps:
+            // 1. Authenticate as SuperAdmin
+            // 2. Seed a research axis for event creation
+            // 3. Create an event with one speaker
+            // 4. Update the created event fields
+            // 5. Delete the event
+            // 6. Verify deleted event is not returned by GET /api/events
+
             var accessToken = await LoginAsSuperAdmin();
             Assert.NotNull(accessToken);
 
@@ -414,7 +398,7 @@ namespace LIMTIC.E2Es.Tests
                 ResearchAxisId = researchAxisId,
                 Speakers = new List<CreateEventSpeakerRequest>
                 {
-                    new()
+                    new CreateEventSpeakerRequest()
                     {
                         FirstName = "Nora",
                         LastName = "Hamdi",
@@ -466,6 +450,14 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task AddUpdateDeleteSpeakerE2ETest()
         {
+            // Steps:
+            // 1. Authenticate as SuperAdmin
+            // 2. Seed a research axis and create a parent event
+            // 3. Add a speaker to the event
+            // 4. Update the created speaker
+            // 5. Delete the speaker
+            // 6. Verify deleted speaker is not returned in event speakers list
+
             var accessToken = await LoginAsSuperAdmin();
             Assert.NotNull(accessToken);
 

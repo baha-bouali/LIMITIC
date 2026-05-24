@@ -226,6 +226,14 @@ namespace LIMTIC.UnitTests.Tests
         [Fact]
         public async Task EventCrudAsyncWorksCorrectly()
         {
+            // Steps:
+            // 1. Create and save a research axis
+            // 2. Create an event through repository
+            // 3. Read it back and verify initial values
+            // 4. Update event fields and save changes
+            // 5. Read updated event and verify new values
+            // 6. Delete event and verify it no longer exists
+
             var researchAxis = new ResearchAxisEntity
             {
                 Id = Guid.NewGuid(),
@@ -280,6 +288,14 @@ namespace LIMTIC.UnitTests.Tests
         [Fact]
         public async Task SpeakerCrudAsyncWorksCorrectly()
         {
+            // Steps:
+            // 1. Create and save a research axis and parent event
+            // 2. Create a speaker through repository
+            // 3. Read it back and verify initial values
+            // 4. Update speaker fields and save changes
+            // 5. Read updated speaker and verify new values
+            // 6. Delete speaker and verify it no longer exists
+
             var researchAxis = new ResearchAxisEntity
             {
                 Id = Guid.NewGuid(),
