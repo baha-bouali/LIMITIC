@@ -30,7 +30,6 @@ namespace LIMTIC.WebAPI.Controllers
                 LastName = createUserRequest.LastName,
                 Email = createUserRequest.Email,
                 Password = createUserRequest.Password,
-                Role = createUserRequest.Role,
                 IsActive = createUserRequest.IsActive,
             };
 

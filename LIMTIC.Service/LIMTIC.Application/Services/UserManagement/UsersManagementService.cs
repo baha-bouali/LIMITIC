@@ -9,6 +9,7 @@ using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.UserMapper;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Users;
+using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.UserManagement
 {

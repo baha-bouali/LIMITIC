@@ -30,7 +30,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Doe",
                 Email = "john.doe@example.com",
                 Password = "password",
-                Role = UserRole.Admin,
                 IsActive = true
             };
 
@@ -70,7 +69,6 @@ namespace LIMTIC.E2Es.Tests
                 LastName = "Doe",
                 Email = "john.doe12@example.com",
                 Password = "password",
-                Role = UserRole.Researcher,
                 IsActive = false
             };
 
