@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Toaster } from 'sonner';
 
 // Public pages
@@ -78,6 +78,43 @@ import VisitorAxes from './pages/dashboard/visitor/Axes';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { useAuth } from './contexts/AuthContext';
+import { getDashboardPathForRole, type UserRole } from './auth/session';
+
+const DASHBOARD_ACCESS: Record<string, UserRole[]> = {
+  superadmin: ['SUPER_ADMIN'],
+  admin: ['SUPER_ADMIN', 'ADMIN'],
+  chercheur: ['SUPER_ADMIN', 'CHERCHEUR'],
+  doctorant: ['SUPER_ADMIN', 'DOCTORANT'],
+  masterien: ['SUPER_ADMIN', 'MASTERIEN'],
+  visitor: ['SUPER_ADMIN', 'VISITOR'],
+};
+
+function DashboardRoleGuard({ allowedRoles }: { allowedRoles: UserRole[] }) {
+  const { user, role, isReady } = useAuth();
+
+  if (!isReady) return null;
+  if (!user) return <Navigate to="/login" replace />;
+
+  const currentRole = role ?? user.role;
+  if (!allowedRoles.includes(currentRole)) {
+    return <Navigate to={getDashboardPathForRole(currentRole)} replace />;
+  }
+
+  return <Outlet />;
+}
+
+function DashboardIndexRedirect() {
+  const { role, isAuthenticated, isReady } = useAuth();
+
+  if (!isReady) return null;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Navigate to={getDashboardPathForRole(role)} replace />;
+}
 
 export default function App() {
   return (
@@ -103,66 +140,78 @@ export default function App() {
               {/* Dashboard routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>
                 {/* Default redirect */}
-                <Route index element={<Navigate to="chercheur" replace />} />
+                <Route index element={<DashboardIndexRedirect />} />
 
                 {/* SuperAdmin routes */}
-                <Route path="superadmin" element={<SuperAdminOverview />} />
-                <Route path="superadmin/users" element={<SuperAdminUsers />} />
-                <Route path="superadmin/publications" element={<SuperAdminPublications />} />
-                <Route path="superadmin/events" element={<SuperAdminEvents />} />
-                <Route path="superadmin/axes" element={<SuperAdminAxes />} />
-                <Route path="superadmin/audit" element={<SuperAdminAudit />} />
-                <Route path="superadmin/settings" element={<SuperAdminSettings />} />
-                <Route path="superadmin/statistics" element={<SuperAdminStatistics />} />
-                <Route path="superadmin/notifications" element={<SuperAdminNotifications />} />
-                <Route path="superadmin/profile" element={<SuperAdminProfile />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.superadmin} />}>
+                  <Route path="superadmin" element={<SuperAdminOverview />} />
+                  <Route path="superadmin/users" element={<SuperAdminUsers />} />
+                  <Route path="superadmin/publications" element={<SuperAdminPublications />} />
+                  <Route path="superadmin/events" element={<SuperAdminEvents />} />
+                  <Route path="superadmin/axes" element={<SuperAdminAxes />} />
+                  <Route path="superadmin/audit" element={<SuperAdminAudit />} />
+                  <Route path="superadmin/settings" element={<SuperAdminSettings />} />
+                  <Route path="superadmin/statistics" element={<SuperAdminStatistics />} />
+                  <Route path="superadmin/notifications" element={<SuperAdminNotifications />} />
+                  <Route path="superadmin/profile" element={<SuperAdminProfile />} />
+                </Route>
 
                 {/* Admin routes */}
-                <Route path="admin" element={<AdminOverview />} />
-                <Route path="admin/users" element={<SuperAdminUsers />} />
-                <Route path="admin/publications" element={<SuperAdminPublications />} />
-                <Route path="admin/events" element={<AdminEvents />} />
-                <Route path="admin/axes" element={<SuperAdminAxes />} />
-                <Route path="admin/statistics" element={<SuperAdminStatistics />} />
-                <Route path="admin/notifications" element={<AdminNotifications />} />
-                <Route path="admin/profile" element={<AdminProfile />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.admin} />}>
+                  <Route path="admin" element={<AdminOverview />} />
+                  <Route path="admin/users" element={<SuperAdminUsers />} />
+                  <Route path="admin/publications" element={<SuperAdminPublications />} />
+                  <Route path="admin/events" element={<AdminEvents />} />
+                  <Route path="admin/axes" element={<SuperAdminAxes />} />
+                  <Route path="admin/statistics" element={<SuperAdminStatistics />} />
+                  <Route path="admin/notifications" element={<AdminNotifications />} />
+                  <Route path="admin/profile" element={<AdminProfile />} />
+                </Route>
 
                 {/* Chercheur routes */}
-                <Route path="chercheur" element={<ChercheurOverview />} />
-                <Route path="chercheur/profile" element={<ChercheurProfile />} />
-                <Route path="chercheur/publications" element={<ChercheurPublications />} />
-                <Route path="chercheur/encadrements" element={<ChercheurEncadrements />} />
-                <Route path="chercheur/axes" element={<ChercheurAxes />} />
-                <Route path="chercheur/notifications" element={<ChercheurNotifications />} />
-                <Route path="chercheur/events" element={<ChercheurEvents />} />
-                <Route path="chercheur/team" element={<ChercheurTeam />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.chercheur} />}>
+                  <Route path="chercheur" element={<ChercheurOverview />} />
+                  <Route path="chercheur/profile" element={<ChercheurProfile />} />
+                  <Route path="chercheur/publications" element={<ChercheurPublications />} />
+                  <Route path="chercheur/encadrements" element={<ChercheurEncadrements />} />
+                  <Route path="chercheur/axes" element={<ChercheurAxes />} />
+                  <Route path="chercheur/notifications" element={<ChercheurNotifications />} />
+                  <Route path="chercheur/events" element={<ChercheurEvents />} />
+                  <Route path="chercheur/team" element={<ChercheurTeam />} />
+                </Route>
 
                 {/* Doctorant routes */}
-                <Route path="doctorant" element={<DoctorantOverview />} />
-                <Route path="doctorant/profile" element={<DoctorantProfile />} />
-                <Route path="doctorant/publications" element={<DoctorantPublications />} />
-                <Route path="doctorant/all-publications" element={<DoctorantAllPublications />} />
-                <Route path="doctorant/axes" element={<DoctorantAxes />} />
-                <Route path="doctorant/team" element={<DoctorantTeam />} />
-                <Route path="doctorant/notifications" element={<DoctorantNotifications />} />
-                <Route path="doctorant/events" element={<DoctorantEvents />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.doctorant} />}>
+                  <Route path="doctorant" element={<DoctorantOverview />} />
+                  <Route path="doctorant/profile" element={<DoctorantProfile />} />
+                  <Route path="doctorant/publications" element={<DoctorantPublications />} />
+                  <Route path="doctorant/all-publications" element={<DoctorantAllPublications />} />
+                  <Route path="doctorant/axes" element={<DoctorantAxes />} />
+                  <Route path="doctorant/team" element={<DoctorantTeam />} />
+                  <Route path="doctorant/notifications" element={<DoctorantNotifications />} />
+                  <Route path="doctorant/events" element={<DoctorantEvents />} />
+                </Route>
 
                 {/* Mastérien routes */}
-                <Route path="masterien" element={<MasterienOverview />} />
-                <Route path="masterien/profile" element={<MasterienProfile />} />
-                <Route path="masterien/all-publications" element={<MasterienAllPublications />} />
-                <Route path="masterien/axes" element={<MasterienAxes />} />
-                <Route path="masterien/team" element={<MasterienTeam />} />
-                <Route path="masterien/notifications" element={<MasterienNotifications />} />
-                <Route path="masterien/events" element={<MasterienEvents />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.masterien} />}>
+                  <Route path="masterien" element={<MasterienOverview />} />
+                  <Route path="masterien/profile" element={<MasterienProfile />} />
+                  <Route path="masterien/all-publications" element={<MasterienAllPublications />} />
+                  <Route path="masterien/axes" element={<MasterienAxes />} />
+                  <Route path="masterien/team" element={<MasterienTeam />} />
+                  <Route path="masterien/notifications" element={<MasterienNotifications />} />
+                  <Route path="masterien/events" element={<MasterienEvents />} />
+                </Route>
 
                 {/* Visitor routes - reuse Masterien pages since same permissions */}
-                <Route path="visitor" element={<VisitorOverview />} />
-                <Route path="visitor/profile" element={<VisitorProfile />} />
-                <Route path="visitor/all-publications" element={<VisitorAllPublications />} />
-                <Route path="visitor/axes" element={<VisitorAxes />} />
-                <Route path="visitor/team" element={<VisitorTeam />} />
-                <Route path="visitor/events" element={<VisitorEvents />} />
+                <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.visitor} />}>
+                  <Route path="visitor" element={<VisitorOverview />} />
+                  <Route path="visitor/profile" element={<VisitorProfile />} />
+                  <Route path="visitor/all-publications" element={<VisitorAllPublications />} />
+                  <Route path="visitor/axes" element={<VisitorAxes />} />
+                  <Route path="visitor/team" element={<VisitorTeam />} />
+                  <Route path="visitor/events" element={<VisitorEvents />} />
+                </Route>
               </Route>
 
               {/* 404 fallback */}

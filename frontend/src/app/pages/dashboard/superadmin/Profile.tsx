@@ -1,24 +1,38 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { skipToken } from '@reduxjs/toolkit/query';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Camera, Save, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useChangePasswordMutation } from '../../../api/usersApi';
+import { useChangePasswordMutation, useGetUserByIdQuery } from '../../../api/usersApi';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function SuperAdminProfile() {
+  const { user } = useAuth();
+  const { data: userRecord } = useGetUserByIdQuery(user?.id ?? skipToken);
   const [profile, setProfile] = useState({
-    firstName: 'Super',
-    lastName: 'Admin',
-    email: 'superadmin@limtic.tn',
-    phone: '+216 71 234 567',
-    bio: 'Administrateur principal du système de gestion du laboratoire LIMTIC.',
+    firstName: userRecord?.firstName ?? user?.firstName ?? '',
+    lastName: userRecord?.lastName ?? user?.lastName ?? '',
+    email: userRecord?.email ?? user?.email ?? '',
+    phone: '',
+    bio: '',
   });
 
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
   const [changePassword] = useChangePasswordMutation();
+
+  useEffect(() => {
+    setProfile({
+      firstName: userRecord?.firstName ?? user?.firstName ?? '',
+      lastName: userRecord?.lastName ?? user?.lastName ?? '',
+      email: userRecord?.email ?? user?.email ?? '',
+      phone: '',
+      bio: '',
+    });
+  }, [user, userRecord]);
 
   async function handleSaveProfile() {
     setSaving(true);
@@ -69,7 +83,7 @@ export default function SuperAdminProfile() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-navy to-accent-blue flex items-center justify-center text-white text-3xl font-bold">
-                SA
+                {(profile.firstName.charAt(0) || 'S')}{(profile.lastName.charAt(0) || 'A')}
               </div>
               <button className="absolute bottom-0 right-0 w-8 h-8 bg-accent-blue text-white rounded-full flex items-center justify-center hover:bg-navy transition-colors shadow-md">
                 <Camera size={14} />

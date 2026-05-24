@@ -5,7 +5,7 @@ export interface UserDto {
   firstName?: string;
   lastName?: string;
   email: string;
-  role?: string;
+  role?: number;
   isActive?: boolean;
 }
 
@@ -27,4 +27,4 @@ export const usersApi = api.injectEndpoints({
   overrideExisting: false,
 });
 
-export const { useGetUserByIdQuery, useGetUsersQuery, useAddUserMutation, useChangePasswordMutation } = usersApi;
+export const { useGetUserByIdQuery, useLazyGetUserByIdQuery, useGetUsersQuery, useAddUserMutation, useChangePasswordMutation } = usersApi;

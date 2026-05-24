@@ -1,25 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { skipToken } from '@reduxjs/toolkit/query';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
 import { Badge } from '../../../components/ui/Badge';
 import { Camera, Save, Eye, EyeOff, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
-import { useChangePasswordMutation } from '../../../api/usersApi';
+import { useChangePasswordMutation, useGetUserByIdQuery } from '../../../api/usersApi';
+import { useAuth } from '../../../contexts/AuthContext';
 
 export default function AdminProfile() {
+  const { user } = useAuth();
+  const { data: userRecord } = useGetUserByIdQuery(user?.id ?? skipToken);
   const [profile, setProfile] = useState({
-    firstName: 'Karim',
-    lastName: 'Mansouri',
-    email: 'admin@limtic.tn',
-    phone: '+216 71 234 890',
-    department: 'Direction du Laboratoire LIMTIC',
-    bio: 'Administrateur du laboratoire LIMTIC, responsable de la gestion des publications et des événements scientifiques.',
+    firstName: userRecord?.firstName ?? user?.firstName ?? '',
+    lastName: userRecord?.lastName ?? user?.lastName ?? '',
+    email: userRecord?.email ?? user?.email ?? '',
+    phone: '',
+    department: '',
+    bio: '',
   });
 
   const [passwords, setPasswords] = useState({ current: '', newPass: '', confirm: '' });
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
   const [changePassword] = useChangePasswordMutation();
+
+  useEffect(() => {
+    setProfile({
+      firstName: userRecord?.firstName ?? user?.firstName ?? '',
+      lastName: userRecord?.lastName ?? user?.lastName ?? '',
+      email: userRecord?.email ?? user?.email ?? '',
+      phone: '',
+      department: '',
+      bio: '',
+    });
+  }, [user, userRecord]);
 
   async function handleSaveProfile() {
     setSaving(true);
@@ -70,7 +85,7 @@ export default function AdminProfile() {
           <div className="flex items-center gap-6">
             <div className="relative">
               <div className="w-24 h-24 rounded-full bg-gradient-to-br from-accent-blue to-teal flex items-center justify-center text-white text-3xl font-bold">
-                KM
+                {(profile.firstName.charAt(0) || 'A')}{(profile.lastName.charAt(0) || 'D')}
               </div>
               <button className="absolute bottom-0 right-0 w-8 h-8 bg-accent-blue text-white rounded-full flex items-center justify-center hover:bg-navy transition-colors shadow-md">
                 <Camera size={14} />
@@ -81,7 +96,7 @@ export default function AdminProfile() {
               <Badge variant="info" className="mt-1 flex items-center gap-1 w-fit">
                 <UserCheck size={12} /> Admin
               </Badge>
-              <p className="text-sm text-text-muted mt-1">{profile.department}</p>
+              <p className="text-sm text-text-muted mt-1">{profile.department || 'Compte administrateur'}</p>
             </div>
           </div>
         </CardContent>

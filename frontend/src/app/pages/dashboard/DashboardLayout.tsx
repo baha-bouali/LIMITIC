@@ -13,6 +13,7 @@ import { Badge } from '../../components/ui/Badge';
 import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher';
 import { clsx } from 'clsx';
 import { useTheme } from '../../contexts/ThemeContext';
+import { getDashboardSlugForRole } from '../../auth/session';
 
 export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -336,7 +337,7 @@ export default function DashboardLayout() {
                   </div>
                   <div className="p-3 border-t border-surface-border dark:border-[#2d3d4e] text-center">
                     <Link
-                      to={`/dashboard/${user.role.toLowerCase().replace('_', '')}/notifications`}
+                      to={`/dashboard/${getDashboardSlugForRole(user.role)}/notifications`}
                       className="text-sm text-accent-blue hover:underline"
                       onClick={() => setShowNotifications(false)}
                     >
@@ -390,7 +391,7 @@ export default function DashboardLayout() {
                   </div>
                   <div className="p-2">
                     <Link
-                      to={`/dashboard/${user.role.toLowerCase().replace('_', '')}/profile`}
+                      to={`/dashboard/${getDashboardSlugForRole(user.role)}/profile`}
                       className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-light-gray dark:hover:bg-[#1e2a35] transition-colors text-navy dark:text-white"
                       onClick={() => setShowProfileMenu(false)}
                     >

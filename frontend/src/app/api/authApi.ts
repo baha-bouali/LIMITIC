@@ -9,6 +9,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   accessToken: string;
+  userId?: string;
+  email?: string;
   user?: UserDto;
   message?: string;
   validationErrors?: string[];

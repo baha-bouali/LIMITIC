@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { useLoginMutation, useLogoutMutation, useRefreshTokenMutation } from '../api/authApi';
-import { clearAccessToken, getAccessToken, userFromAccessToken, type User, setRole, getRole, clearRole } from '../auth/session';
+import { useLazyGetUserByIdQuery } from '../api/usersApi';
+import { clearAccessToken, clearRole, clearStoredUser, clearUserId, getAccessToken, getRole, getStoredUser, getUserId, normalizeRole, resolveUserIdFromAuthSource, setRole, setStoredUser, setUserId, type User } from '../auth/session';
+import type { UserDto } from '../api/usersApi';
 
 interface AuthContextType {
   user: User | null;
@@ -14,6 +16,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function userFromUserDto(user: UserDto): User {
+  const email = String(user.email ?? '').trim();
+  const resolvedId = String(user.id ?? '').trim();
+
+  return {
+    id: resolvedId || email || '1',
+    email,
+    firstName: String(user.firstName ?? email.split('@')[0] ?? 'Utilisateur'),
+    lastName: String(user.lastName ?? ''),
+    role: normalizeRole(user.role, email),
+  };
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isReady, setIsReady] = useState(false);
@@ -21,41 +36,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loginMutation] = useLoginMutation();
   const [logoutMutation] = useLogoutMutation();
   const [refreshTokenMutation] = useRefreshTokenMutation();
+  const [loadUserById] = useLazyGetUserByIdQuery();
+
+  const resolveUserById = async (userId?: string | null) => {
+    if (!userId) return null;
+
+    try {
+      const userDto = await loadUserById(userId).unwrap();
+      return userFromUserDto(userDto);
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     let active = true;
 
     async function bootstrapSession() {
-      const storedToken = getAccessToken();
-      if (storedToken) {
-        const storedUser = userFromAccessToken(storedToken);
-        if (storedUser && active) setUser(storedUser);
+      const storedSnapshot = getStoredUser();
+      const storedUserId = getUserId();
+      const storedUser = storedSnapshot ?? (await resolveUserById(storedUserId));
+
+      if (storedUser && active) {
+        setUser(storedUser);
+        setUserId(storedUser.id);
+        setStoredUser(storedUser);
+        try {
+          setRole(storedUser.role);
+        } catch {
+          // ignore storage failures
+        }
       }
 
       try {
         const refreshed = await refreshTokenMutation().unwrap();
-        // prefer user DTO from refresh response when available
-        const refreshedUser = (refreshed as any).user ? {
-          id: String((refreshed as any).user.id),
-          email: String((refreshed as any).user.email),
-          firstName: String((refreshed as any).user.firstName ?? ''),
-          lastName: String((refreshed as any).user.lastName ?? ''),
-          role: (refreshed as any).user.role as User['role'],
-        } : userFromAccessToken(refreshed.accessToken);
-        if (refreshedUser && active) {
-          setUser(refreshedUser);
-          try { setRole(refreshedUser.role); } catch {}
-        } else {
-          // if no refreshed user but role stored, try to set a minimal role-only state
+        const refreshedUserId = resolveUserIdFromAuthSource({
+          userId: refreshed.userId ?? storedUserId ?? null,
+          user: refreshed.user ?? null,
+          accessToken: refreshed.accessToken ?? getAccessToken(),
+        }) ?? storedUserId ?? null;
+        const fetchedUser = await resolveUserById(refreshedUserId);
+
+        if (fetchedUser && active) {
+          setUser(fetchedUser);
+          setUserId(fetchedUser.id);
+          setStoredUser(fetchedUser);
           try {
-            const storedRole = getRole();
-            if (storedRole && active && !refreshedUser) {
-              setUser((prev) => prev ?? null);
-            }
-          } catch {}
+            setRole(fetchedUser.role);
+          } catch {
+            // ignore storage failures
+          }
+        } else if (active && !storedUser) {
+          clearRole();
+          clearUserId();
+          clearStoredUser();
+          setUser(null);
         }
       } catch {
-        if (!storedToken) clearAccessToken();
+        if (!storedUser) {
+          clearAccessToken();
+          clearRole();
+          clearUserId();
+          clearStoredUser();
+          if (active) setUser(null);
+        }
       } finally {
         if (active) setIsReady(true);
       }
@@ -70,25 +114,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const result = await loginMutation({ username: email, password }).unwrap();
-    // Prefer user returned by the API (DTO) if present, otherwise decode access token
-    let nextUser = null as User | null;
-    if ((result as any).user) {
-      const u = (result as any).user;
-      nextUser = {
-        id: String(u.id),
-        email: String(u.email),
-        firstName: String(u.firstName ?? ''),
-        lastName: String(u.lastName ?? ''),
-        role: u.role as User['role'],
-      };
-    } else if (result.accessToken) {
-      nextUser = userFromAccessToken(result.accessToken);
-    }
+    const resolvedUserId = resolveUserIdFromAuthSource({
+      userId: result.userId ?? null,
+      user: result.user ?? null,
+      accessToken: result.accessToken,
+    });
+    const fetchedUser = await resolveUserById(resolvedUserId);
 
-    if (!nextUser) throw new Error('Invalid access token or missing user');
-    setUser(nextUser);
-    try { setRole(nextUser.role); } catch {}
-    return nextUser;
+    if (!fetchedUser) throw new Error('Unable to load user by id');
+    setUser(fetchedUser);
+    setUserId(fetchedUser.id);
+    setStoredUser(fetchedUser);
+    try {
+      setRole(fetchedUser.role);
+    } catch {
+      // ignore storage failures
+    }
+    return fetchedUser;
   };
 
   const logout = async () => {
@@ -97,6 +139,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       clearAccessToken();
       try { clearRole(); } catch {}
+      clearUserId();
+      clearStoredUser();
       setUser(null);
     }
   };

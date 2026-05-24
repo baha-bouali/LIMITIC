@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -40,6 +40,29 @@ export function ProfileForm({ role, initialData }: ProfileFormProps) {
   const [showPass, setShowPass] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
   const [changePassword] = useChangePasswordMutation();
+
+  useEffect(() => {
+    setProfile({
+      firstName: initialData?.firstName || '',
+      lastName: initialData?.lastName || '',
+      email: initialData?.email || '',
+      phone: initialData?.phone || '',
+      bio: initialData?.bio || '',
+      grade: initialData?.grade || '',
+      speciality: initialData?.speciality || '',
+      office: initialData?.office || '',
+      orcid: initialData?.orcid || '',
+      googleScholar: initialData?.googleScholar || '',
+      researchGate: initialData?.researchGate || '',
+      linkedin: initialData?.linkedin || '',
+      website: initialData?.website || '',
+      encadrant: initialData?.encadrant || '',
+      thesisTitle: initialData?.thesisTitle || '',
+      enrollmentYear: initialData?.enrollmentYear || '',
+      masterSpeciality: initialData?.masterSpeciality || '',
+      projectTitle: initialData?.projectTitle || '',
+    });
+  }, [initialData, role]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

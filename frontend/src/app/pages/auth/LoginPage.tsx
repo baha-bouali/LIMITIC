@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import limticLogo from '@/imports/5b435523-dd99-4ba8-9226-dcd9ab960a41-removebg-preview.png';
-import iconLogo from '@/imports/icon.png';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,6 +7,7 @@ import { LanguageSwitcher } from '../../components/shared/LanguageSwitcher';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
+import { getDashboardPathForRole } from '../../auth/session';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,27 +24,7 @@ export default function LoginPage() {
     try {
       const user = await login(email, password);
       toast.success(t('login.connectionSuccess'));
-
-      switch (user.role) {
-        case 'SUPER_ADMIN':
-          navigate('/dashboard/superadmin');
-          break;
-        case 'ADMIN':
-          navigate('/dashboard/admin');
-          break;
-        case 'DOCTORANT':
-          navigate('/dashboard/doctorant');
-          break;
-        case 'MASTERIEN':
-          navigate('/dashboard/masterien');
-          break;
-        case 'VISITOR':
-          navigate('/dashboard/visitor');
-          break;
-        default:
-          navigate('/dashboard/chercheur');
-          break;
-      }
+      navigate(getDashboardPathForRole(user.role), { replace: true });
     } catch (error) {
       toast.error(t('login.connectionError'));
     } finally {
@@ -84,19 +63,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 mb-4">
-            <div className="flex items-center justify-center overflow-hidden px-4 py-3">
-              <img
-                src={limticLogo}
-                alt="LIMTIC"
-                className="w-64 h-auto object-contain"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  const span = document.createElement('span');
-                  span.className = 'text-3xl font-bold text-white';
-                  span.textContent = 'L';
-                  e.currentTarget.parentElement?.appendChild(span);
-                }}
-              />
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-2xl font-black text-white shadow-lg shadow-black/20">
+                L
+              </div>
+              <div className="text-left">
+                <div className="text-3xl font-black tracking-[0.32em] text-white">LIMTIC</div>
+                <div className="text-xs uppercase tracking-[0.35em] text-white/70">Portal</div>
+              </div>
             </div>
           </Link>
           <h1 className="text-3xl font-bold text-white mb-2">{t('login.secure')}</h1>
@@ -156,14 +130,9 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 p-4 bg-light-gray dark:bg-[#1e2a35] rounded-lg">
-            <p className="text-xs text-text-secondary dark:text-text-secondary mb-2">{t('login.testAccounts')}</p>
-            <ul className="text-xs text-text-secondary dark:text-text-secondary space-y-1">
-              <li>• superadmin@limtic.tn (Super Admin)</li>
-              <li>• admin@limtic.tn (Admin)</li>
-              <li>• chercheur@limtic.tn (Chercheur)</li>
-              <li>• doctorant@limtic.tn (Doctorant)</li>
-              <li>• masterien@limtic.tn (Mastérien)</li>
-            </ul>
+            <p className="text-xs text-text-secondary dark:text-text-secondary">
+              Connectez-vous avec votre compte institutionnel pour accéder à votre espace personnalisé.
+            </p>
           </div>
         </div>
 
