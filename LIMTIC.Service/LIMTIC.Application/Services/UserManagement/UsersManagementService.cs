@@ -151,6 +151,7 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
             var result = await _userRepository.UpdateUserAsync(user);
+            
 
             if (result)
             {
@@ -253,8 +254,6 @@ namespace LIMTIC.Application.Services.UserManagement
                 Limit = limit
             });
         }
-
-        // ── Private helpers ──────────────────────────────────────────────────────
 
         private async Task<Result<bool>> AssignSimpleRoleAsync(UserEntity user, UserRole role)
         {

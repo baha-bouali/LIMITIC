@@ -5,7 +5,7 @@ using LIMTIC.WebAPI.Models.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Users
 {
     [ApiController]
     [Route("api/profiles/researchers")]

@@ -1,7 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
-using LIMTIC.Application.DTOs.Events;
 using LIMTIC.Domain.Enums;
 using LIMTIC.WebAPI;
 using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
@@ -14,6 +13,14 @@ using LIMTIC.WebAPI.Models.Events.UpdateEvent;
 using LIMTIC.WebAPI.Models.Events.AddSpeaker;
 using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using LIMTIC.WebAPI.Models.Profiles;
+using LIMTIC.WebAPI.Models.Publications.Dashboard.CreatePublication;
+using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublication;
+using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublications;
+using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
+using LIMTIC.WebAPI.Models.Publications.Dashboard.Reject;
+using LIMTIC.WebAPI.Models.Publications.Public.GetPublication;
+using LIMTIC.WebAPI.Models.Publications.Public.GetPublications;
+using LIMTIC.WebAPI.Models.Publications.Public.GetRecent;
 using LIMTIC.WebAPI.Models.ResearchAxis;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
@@ -485,6 +492,116 @@ namespace LIMTIC.E2Es.Extensions
             return null;
         }
 
+        // ── Publications (Public) ───────────────────────────────────────────────
+
+        public static async Task<PublicationsListResponse?> GetPublicPublications(
+            this HttpClient client, int page = 1, int limit = 10, string? search = null, string? type = null, int? year = null, Guid? axeId = null)
+        {
+            var queryParams = new List<string> { $"page={page}", $"limit={limit}" };
+            if (!string.IsNullOrWhiteSpace(search))
+                queryParams.Add($"search={Uri.EscapeDataString(search)}");
+            if (!string.IsNullOrWhiteSpace(type))
+                queryParams.Add($"type={Uri.EscapeDataString(type)}");
+            if (year.HasValue)
+                queryParams.Add($"year={year.Value}");
+            if (axeId.HasValue)
+                queryParams.Add($"axeId={axeId.Value}");
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            var response = await client.GetAsync($"api/v1/public/publications{queryString}");
+
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<PublicationsListResponse>()
+                : null;
+        }
+
+        public static Task<HttpResponseMessage> GetPublicPublicationsFullResponse(this HttpClient client) =>
+            client.GetAsync("api/v1/public/publications");
+
+        public static async Task<List<PublicPublicationCardResponse>?> GetPublicRecentPublications(
+            this HttpClient client, int limit = 3)
+        {
+            var response = await client.GetAsync($"api/v1/public/publications/recent?limit={limit}");
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<List<PublicPublicationCardResponse>>()
+                : null;
+        }
+
+        public static async Task<PublicPublicationDetailResponse?> GetPublicPublicationById(this HttpClient client, Guid id)
+        {
+            var response = await client.GetAsync($"api/v1/public/publications/{id}");
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<PublicPublicationDetailResponse>()
+                : null;
+        }
+
+        // ── Publications (Dashboard) ────────────────────────────────────────────
+
+        public static async Task<DashboardPublicationsListResponse?> GetDashboardPublications(
+            this HttpClient client, string accessToken, string scope = "mine", int page = 1, int limit = 10)
+        {
+            var req = CreateRequest($"api/v1/publications?scope={Uri.EscapeDataString(scope)}&page={page}&limit={limit}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<DashboardPublicationsListResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> CreateDashboardPublication(
+            this HttpClient client, CreateDashboardPublicationRequest body, string accessToken)
+        {
+            var req = CreateRequest("api/v1/publications", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(body);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<DashboardPublicationDetailResponse?> GetDashboardPublicationById(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}", HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(req);
+            return response.IsSuccessStatusCode
+                ? await response.Content.ReadFromJsonAsync<DashboardPublicationDetailResponse>()
+                : null;
+        }
+
+        public static async Task<HttpResponseMessage> SubmitDashboardPublication(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}/submit", HttpMethod.Post, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> ValidateDashboardPublication(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}/validate", HttpMethod.Post, accessToken);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> RejectDashboardPublication(
+            this HttpClient client, Guid id, RejectPublicationRequest body, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}/reject", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(body);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> AddDashboardPublicationPdf(
+            this HttpClient client, Guid id, PdfRequest body, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Post, accessToken);
+            req.Content = JsonContent.Create(body);
+            return await client.SendAsync(req);
+        }
+
+        public static async Task<HttpResponseMessage> RemoveDashboardPublicationPdf(
+            this HttpClient client, Guid id, PdfRequest body, string accessToken)
+        {
+            var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Delete, accessToken);
+            req.Content = JsonContent.Create(body);
+            return await client.SendAsync(req);
+        }
         public static async Task<GetAuditLogsResponse?> GetAuditLogs(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
         {
             var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";

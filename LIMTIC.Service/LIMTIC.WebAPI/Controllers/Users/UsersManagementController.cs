@@ -5,6 +5,7 @@ using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs.UserManagement.GetUser;
+
 using LIMTIC.Domain.Enums;
 using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
@@ -13,7 +14,7 @@ using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Users
 {
     [ApiController]
     [Route("api/users/")]
@@ -79,7 +80,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpPost("addUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [AllowAnonymous]
         public async Task<IActionResult> AddUser(CreateUserRequest createUserRequest)
         {
             var command = new CreateUserCommand

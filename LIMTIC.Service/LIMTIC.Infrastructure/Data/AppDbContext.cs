@@ -1,5 +1,6 @@
 ﻿using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Entities.Contacts;
+
 using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Entities.Logs;
 using LIMTIC.Domain.Entities.Publications;

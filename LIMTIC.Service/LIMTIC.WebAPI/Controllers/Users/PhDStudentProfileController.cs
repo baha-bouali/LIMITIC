@@ -5,20 +5,20 @@ using LIMTIC.WebAPI.Models.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Users
 {
     [ApiController]
-    [Route("api/profiles/masterians")]
-    public class MasterianProfileController : ControllerBase
+    [Route("api/profiles/phd-students")]
+    public class PhDStudentProfileController : ControllerBase
     {
-        private readonly IMasterianProfileService _masterianProfileService;
+        private readonly IPhDStudentProfileService _phDStudentProfileService;
         private readonly ICurrentUserService _currentUserService;
 
-        public MasterianProfileController(
-            IMasterianProfileService masterianProfileService,
+        public PhDStudentProfileController(
+            IPhDStudentProfileService phDStudentProfileService,
             ICurrentUserService currentUserService)
         {
-            _masterianProfileService = masterianProfileService;
+            _phDStudentProfileService = phDStudentProfileService;
             _currentUserService = currentUserService;
         }
 
@@ -26,11 +26,11 @@ namespace LIMTIC.WebAPI.Controllers
         [Authorize]
         public async Task<IActionResult> GetProfile(Guid userId)
         {
-            var result = await _masterianProfileService.GetByUserIdAsync(userId);
+            var result = await _phDStudentProfileService.GetByUserIdAsync(userId);
             if (result.Success)
-                return Ok(new MasterianProfileResponse { Success = true, Profile = result.Data });
+                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data });
 
-            return NotFound(new MasterianProfileResponse
+            return NotFound(new PhDStudentProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -39,7 +39,7 @@ namespace LIMTIC.WebAPI.Controllers
 
         [HttpPut("{userId:guid}")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile(Guid userId, UpdateMasterianProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(Guid userId, UpdatePhDStudentProfileRequest request)
         {
             var currentUserId = _currentUserService.UserId;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
@@ -47,27 +47,28 @@ namespace LIMTIC.WebAPI.Controllers
             if (!isAdmin && currentUserId != userId)
                 return Forbid();
 
-            var command = new UpdateMasterianProfileCommand
+            var command = new UpdatePhDStudentProfileCommand
             {
                 UserId = userId,
-                DissertationSubject = request.DissertationSubject,
-                Cohort = request.Cohort,
-                SupervisorId = request.SupervisorId
+                ThesisSubject = request.ThesisSubject,
+                EnrollmentYear = request.EnrollmentYear,
+                SupervisorId = request.SupervisorId,
+                ResearchAxisIds = request.ResearchAxisIds
             };
 
-            var result = await _masterianProfileService.UpdateAsync(command);
+            var result = await _phDStudentProfileService.UpdateAsync(command);
             if (result.Success)
-                return Ok(new MasterianProfileResponse { Success = true, Profile = result.Data?.Profile });
+                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data?.Profile });
 
             if (result.ValidationErrors != null)
-                return BadRequest(new MasterianProfileResponse
+                return BadRequest(new PhDStudentProfileResponse
                 {
                     Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
 
-            return NotFound(new MasterianProfileResponse
+            return NotFound(new PhDStudentProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -78,7 +79,7 @@ namespace LIMTIC.WebAPI.Controllers
         [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> DeleteProfile(Guid userId)
         {
-            var result = await _masterianProfileService.DeleteAsync(userId);
+            var result = await _phDStudentProfileService.DeleteAsync(userId);
             if (result.Success)
                 return Ok(new BaseResponse { Success = true });
 

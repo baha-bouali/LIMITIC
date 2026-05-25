@@ -43,10 +43,8 @@ namespace LIMTIC.Application.Services.Publications
             }
 
             publication.AttachedPdfs = attachedPdfs.ToArray();
-            var saved = await _publicationRepository.UpdateAsync(publication);
-            return saved
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Failed to save publication attachments");
+            _publicationRepository.Update(publication);
+            return Result<bool>.SuccessResult(true);
         }
 
         public async Task<Result<FileDownloadDto>> GetAttachmentAsync(Guid publicationId, int index)

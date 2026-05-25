@@ -23,1014 +23,1014 @@ namespace LIMTIC.Infrastructure.Migrations
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Contacts.ContactEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                b.Property<string>("Email")
+                    .IsRequired()
+                    .HasMaxLength(255)
+                    .HasColumnType("character varying(255)");
 
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
+                b.Property<string>("FullName")
+                    .IsRequired()
+                    .HasMaxLength(150)
+                    .HasColumnType("character varying(150)");
 
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                b.Property<string>("Message")
+                    .IsRequired()
+                    .HasMaxLength(4000)
+                    .HasColumnType("character varying(4000)");
 
-                    b.Property<DateTime>("SentAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("SentAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                b.Property<string>("Subject")
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnType("character varying(200)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("SentAtUtc")
-                        .HasDatabaseName("IX_Contacts_SentAtUtc");
+                b.HasIndex("SentAtUtc")
+                    .HasDatabaseName("IX_Contacts_SentAtUtc");
 
-                    b.ToTable("Contacts");
-                });
+                b.ToTable("Contacts");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasMaxLength(4000)
+                    .HasColumnType("character varying(4000)");
 
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("EndDate")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Location")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.Property<string>("PhotoFileNames")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("PhotoFileNames")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Program")
-                        .HasMaxLength(4000)
-                        .HasColumnType("character varying(4000)");
+                b.Property<string>("Program")
+                    .HasMaxLength(4000)
+                    .HasColumnType("character varying(4000)");
 
-                    b.Property<Guid>("ResearchAxisId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ResearchAxisId")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("StartDate")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("Title")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Type")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("ResearchAxisId");
+                b.HasIndex("ResearchAxisId");
 
-                    b.ToTable("Events");
-                });
+                b.ToTable("Events");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.SpeakerEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                b.Property<string>("Email")
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnType("character varying(200)");
 
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("EventId")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("FirstName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Institution")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Institution")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("LastName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("Role")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<string>("Subject")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
+                b.Property<string>("Subject")
+                    .HasMaxLength(2000)
+                    .HasColumnType("character varying(2000)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("EventId");
+                b.HasIndex("EventId");
 
-                    b.ToTable("Speakers");
-                });
+                b.ToTable("Speakers");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("BookTitle")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("BookTitle")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Isbn")
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                b.Property<string>("Isbn")
+                    .HasMaxLength(20)
+                    .HasColumnType("character varying(20)");
 
-                    b.Property<string>("Pages")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Pages")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Publisher")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Publisher")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("BookChapters");
-                });
+                b.ToTable("BookChapters");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("ConferenceName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("ConferenceName")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Location")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.Property<string>("Pages")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Pages")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Ranking")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Ranking")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("InternationalConferences");
-                });
+                b.ToTable("InternationalConferences");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("JournalName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("JournalName")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<string>("Number")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Number")
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Pages")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Pages")
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<string>("Ranking")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Ranking")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Volume")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Volume")
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("JournalArticles");
-                });
+                b.ToTable("JournalArticles");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("ConferenceName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("ConferenceName")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Location")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.Property<string>("Pages")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Pages")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("NationalConferences");
-                });
+                b.ToTable("NationalConferences");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.PublicationEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Abstract")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Abstract")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string[]>("AttachedPdfs")
-                        .IsRequired()
-                        .HasColumnType("text[]");
+                b.Property<string[]>("AttachedPdfs")
+                    .IsRequired()
+                    .HasColumnType("text[]");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Doi")
-                        .HasColumnType("text");
+                b.Property<string>("Doi")
+                    .HasColumnType("text");
 
-                    b.Property<string>("Keywords")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Keywords")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("ResearchAxisId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ResearchAxisId")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Status")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("Title")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Type")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserId")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Visibility")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Visibility")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<int>("Year")
-                        .HasColumnType("integer");
+                b.Property<int>("Year")
+                    .HasColumnType("integer");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("ResearchAxisId");
+                b.HasIndex("ResearchAxisId");
 
-                    b.HasIndex("UserId");
+                b.HasIndex("UserId");
 
-                    b.ToTable("Publications");
-                });
+                b.ToTable("Publications");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Institution")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Institution")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.Property<long>("ReportNumber")
-                        .HasMaxLength(100)
-                        .HasColumnType("bigint");
+                b.Property<long>("ReportNumber")
+                    .HasMaxLength(100)
+                    .HasColumnType("bigint");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("TechnicalReports");
-                });
+                b.ToTable("TechnicalReports");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken.RefreshTokenEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("ExpiryDate")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("ExpiryDate")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Token")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Token")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                b.HasIndex("UserId");
 
-                    b.HasIndex(new[] { "Token" }, "IX_RefreshToken")
-                        .IsUnique();
+                b.HasIndex(new[] { "Token" }, "IX_RefreshToken")
+                    .IsUnique();
 
-                    b.ToTable("RefreshTokens");
-                });
+                b.ToTable("RefreshTokens");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc");
-                    b.Property<string>("Color")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<DateTime>("CreatedAtUtc");
+                b.Property<string>("Color")
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Description");
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<string>("Description");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Description");
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<string>("Description");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Description")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Themes")
-                        .IsRequired();
-                    b.Property<Guid?>("ResponsibleId")
-                        .HasColumnType("uuid");
+                b.Property<string>("Themes")
+                    .IsRequired();
+                b.Property<Guid?>("ResponsibleId")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Themes")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Themes")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
+                b.Property<string>("Title")
+                    .IsRequired()
+                    .HasMaxLength(300)
+                    .HasColumnType("character varying(300)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("ResearchAxes");
-                    b.HasIndex("ResponsibleId");
+                b.ToTable("ResearchAxes");
+                b.HasIndex("ResponsibleId");
 
-                    b.ToTable("ResearchAxes");
-                });
+                b.ToTable("ResearchAxes");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("OTPTokenExpiry");
-                    b.Property<DateTime>("OTPTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime?>("OTPTokenExpiry");
+                b.Property<DateTime>("OTPTokenExpiry")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("OTPTokenHash")
-                        .IsRequired()
-                        .HasColumnType("text");             
+                b.Property<string>("OTPTokenHash")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime?>("ResetPasswordTokenExpiry")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime?>("ResetPasswordTokenExpiry")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("ResetPasswordTokenHash")
-                        .HasColumnType("text");
+                b.Property<string>("ResetPasswordTokenHash")
+                    .HasColumnType("text");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("UserId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("ResearchAxes");
-                });
+                b.ToTable("ResearchAxes");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Settings.LabSettings", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Address")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("Address")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<string>("ContactEmail")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                b.Property<string>("ContactEmail")
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .HasColumnType("character varying(200)");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("LabName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
+                b.Property<string>("LabName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
 
-                    b.Property<string>("LabSlogan")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                b.Property<string>("LabSlogan")
+                    .IsRequired()
+                    .HasMaxLength(250)
+                    .HasColumnType("character varying(250)");
 
-                    b.Property<string>("LogoUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                b.Property<string>("LogoUrl")
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                b.Property<string>("Phone")
+                    .IsRequired()
+                    .HasMaxLength(50)
+                    .HasColumnType("character varying(50)");
 
-                    b.Property<string>("SmtpHost")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("SmtpHost")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.Property<string>("SmtpPasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
+                b.Property<string>("SmtpPasswordHash")
+                    .IsRequired()
+                    .HasMaxLength(1000)
+                    .HasColumnType("character varying(1000)");
 
-                    b.Property<int>("SmtpPort")
-                        .HasColumnType("integer");
+                b.Property<int>("SmtpPort")
+                    .HasColumnType("integer");
 
-                    b.Property<bool>("SmtpUseTls")
-                        .HasColumnType("boolean");
+                b.Property<bool>("SmtpUseTls")
+                    .HasColumnType("boolean");
 
-                    b.Property<string>("SmtpUsername")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                b.Property<string>("SmtpUsername")
+                    .IsRequired()
+                    .HasMaxLength(500)
+                    .HasColumnType("character varying(500)");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("LabSettings", (string)null);
+                b.ToTable("LabSettings", (string)null);
 
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
-                            Address = "",
-                            ContactEmail = "",
-                            CreatedAtUtc = new DateTime(2026, 5, 24, 0, 22, 22, 106, DateTimeKind.Utc).AddTicks(4560),
-                            CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
-                            LabName = "LIMTIC Lab",
-                            LabSlogan = "",
-                            Phone = "",
-                            SmtpHost = "",
-                            SmtpPasswordHash = "",
-                            SmtpPort = 25,
-                            SmtpUseTls = false,
-                            SmtpUsername = ""
-                        });
-                });
+                b.HasData(
+                    new
+                    {
+                        Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                        Address = "",
+                        ContactEmail = "",
+                        CreatedAtUtc = new DateTime(2026, 5, 24, 0, 22, 22, 106, DateTimeKind.Utc).AddTicks(4560),
+                        CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
+                        LabName = "LIMTIC Lab",
+                        LabSlogan = "",
+                        Phone = "",
+                        SmtpHost = "",
+                        SmtpPasswordHash = "",
+                        SmtpPort = 25,
+                        SmtpUseTls = false,
+                        SmtpUsername = ""
+                    });
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Cohort")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Cohort")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("DissertationSubject")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("DissertationSubject")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<Guid?>("SupervisorId")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("SupervisorId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("SupervisorId");
+                b.HasIndex("SupervisorId");
 
-                    b.ToTable("Masterians");
-                });
+                b.ToTable("Masterians");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.PhDStudentEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<int>("EnrollmentYear")
-                        .HasColumnType("integer");
+                b.Property<int>("EnrollmentYear")
+                    .HasColumnType("integer");
 
-                    b.Property<Guid?>("SupervisorId")
-                        .HasColumnType("uuid");
+                b.Property<Guid?>("SupervisorId")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("ThesisSubject")
-                        .HasColumnType("text");
+                b.Property<string>("ThesisSubject")
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.HasIndex("SupervisorId");
+                b.HasIndex("SupervisorId");
 
-                    b.ToTable("PhDStudents");
-                });
+                b.ToTable("PhDStudents");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.ResearcherEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("Id")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("Biography")
-                        .HasColumnType("text");
+                b.Property<string>("Biography")
+                    .HasColumnType("text");
 
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
 
-                    b.Property<string>("GoogleScholar")
-                        .HasColumnType("text");
+                b.Property<string>("GoogleScholar")
+                    .HasColumnType("text");
 
-                    b.Property<string>("LinkedIn")
-                        .HasColumnType("text");
+                b.Property<string>("LinkedIn")
+                    .HasColumnType("text");
 
-                    b.Property<string>("Office")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Office")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Orcid")
-                        .HasColumnType("text");
+                b.Property<string>("Orcid")
+                    .HasColumnType("text");
 
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("PhoneNumber")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("Rank")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Rank")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.Property<string>("ResearchGate")
-                        .HasColumnType("text");
+                b.Property<string>("ResearchGate")
+                    .HasColumnType("text");
 
-                    b.Property<string>("Specialty")
-                        .IsRequired()
-                        .HasColumnType("text");
+                b.Property<string>("Specialty")
+                    .IsRequired()
+                    .HasColumnType("text");
 
-                    b.HasKey("Id");
+                b.HasKey("Id");
 
-                    b.ToTable("Researchers");
-                });
+                b.ToTable("Researchers");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.UserEntity", b =>
+            {
+                b.Property<Guid>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("uuid");
+
+                b.Property<string>("AvatarBlobName")
+                    .HasColumnType("text");
+
+                b.Property<DateTime>("CreatedAtUtc")
+                    .HasColumnType("timestamp with time zone");
+
+                b.Property<Guid>("CreatedBy")
+                    .HasColumnType("uuid");
+
+                b.Property<string>("Email")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<string>("FirstName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<bool>("IsActive")
+                    .HasColumnType("boolean");
+
+                b.Property<string>("LastName")
+                    .IsRequired()
+                    .HasMaxLength(100)
+                    .HasColumnType("character varying(100)");
+
+                b.Property<string>("PasswordHash")
+                    .IsRequired()
+                    .HasColumnType("text");
+
+                b.Property<int>("Role")
+                    .HasColumnType("integer");
+
+                b.HasKey("Id");
+
+                b.HasIndex("Email")
+                    .IsUnique()
+                    .HasDatabaseName("IX_Users_Email");
+
+                b.HasIndex("IsActive")
+                    .HasDatabaseName("IX_Users_IsActive");
+
+                b.ToTable("Users", t =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    t.HasCheckConstraint("CK_User_FirstName_NotEmpty", "LTRIM(RTRIM(\"FirstName\")) <> ''");
 
-                    b.Property<string>("AvatarBlobName")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("FirstName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique()
-                        .HasDatabaseName("IX_Users_Email");
-
-                    b.HasIndex("IsActive")
-                        .HasDatabaseName("IX_Users_IsActive");
-
-                    b.ToTable("Users", t =>
-                        {
-                            t.HasCheckConstraint("CK_User_FirstName_NotEmpty", "LTRIM(RTRIM(\"FirstName\")) <> ''");
-
-                            t.HasCheckConstraint("CK_User_LastName_NotEmpty", "LTRIM(RTRIM(\"LastName\")) <> ''");
-                        });
+                    t.HasCheckConstraint("CK_User_LastName_NotEmpty", "LTRIM(RTRIM(\"LastName\")) <> ''");
                 });
+            });
 
             modelBuilder.Entity("PhDStudentEntityResearchAxisEntity", b =>
-                {
-                    b.Property<Guid>("PhDStudentsId")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("PhDStudentsId")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("ResearchAxesId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ResearchAxesId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("PhDStudentsId", "ResearchAxesId");
+                b.HasKey("PhDStudentsId", "ResearchAxesId");
 
-                    b.HasIndex("ResearchAxesId");
+                b.HasIndex("ResearchAxesId");
 
-                    b.ToTable("PhDStudentEntityResearchAxisEntity");
-                });
+                b.ToTable("PhDStudentEntityResearchAxisEntity");
+            });
 
             modelBuilder.Entity("ResearchAxisEntityResearcherEntity", b =>
-                {
-                    b.Property<Guid>("ResearchAxesId")
-                        .HasColumnType("uuid");
+            {
+                b.Property<Guid>("ResearchAxesId")
+                    .HasColumnType("uuid");
 
-                    b.Property<Guid>("ResearchersId")
-                        .HasColumnType("uuid");
+                b.Property<Guid>("ResearchersId")
+                    .HasColumnType("uuid");
 
-                    b.HasKey("ResearchAxesId", "ResearchersId");
+                b.HasKey("ResearchAxesId", "ResearchersId");
 
-                    b.HasIndex("ResearchersId");
+                b.HasIndex("ResearchersId");
 
-                    b.ToTable("ResearchAxisEntityResearcherEntity");
-                });
+                b.ToTable("ResearchAxisEntityResearcherEntity");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", "ResearchAxis")
-                        .WithMany("Events")
-                        .HasForeignKey("ResearchAxisId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", "ResearchAxis")
+                    .WithMany("Events")
+                    .HasForeignKey("ResearchAxisId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("ResearchAxis");
-                });
+                b.Navigation("ResearchAxis");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.SpeakerEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Events.EventEntity", "Event")
-                        .WithMany("Speakers")
-                        .HasForeignKey("EventId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Events.EventEntity", "Event")
+                    .WithMany("Speakers")
+                    .HasForeignKey("EventId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Event");
-                });
+                b.Navigation("Event");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
-                        .WithOne("BookChapter")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.BookChapterEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
+                    .WithOne("BookChapter")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Publications.BookChapterEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Publication");
-                });
+                b.Navigation("Publication");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
-                        .WithOne("InternationalConference")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
+                    .WithOne("InternationalConference")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Publications.InternationalConferenceEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Publication");
-                });
+                b.Navigation("Publication");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
-                        .WithOne("JournalArticle")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
+                    .WithOne("JournalArticle")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Publications.JournalArticleEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Publication");
-                });
+                b.Navigation("Publication");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
-                        .WithOne("NationalConference")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
+                    .WithOne("NationalConference")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Publications.NationalConferenceEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Publication");
-                });
+                b.Navigation("Publication");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.PublicationEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", "ResearchAxis")
-                        .WithMany("Publications")
-                        .HasForeignKey("ResearchAxisId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", "ResearchAxis")
+                    .WithMany("Publications")
+                    .HasForeignKey("ResearchAxisId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Restrict)
+                    .IsRequired();
 
-                    b.Navigation("ResearchAxis");
+                b.Navigation("ResearchAxis");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
-                        .WithOne("TechnicalReport")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
+                    .WithOne("TechnicalReport")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Publications.TechnicalReportEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("Publication");
-                });
+                b.Navigation("Publication");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.RefreshToken.RefreshTokenEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("FK_RefreshToken_User");
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired()
+                    .HasConstraintName("FK_RefreshToken_User");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Responsible")
-                        .WithMany()
-                        .HasForeignKey("ResponsibleId")
-                        .OnDelete(DeleteBehavior.SetNull);
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Responsible")
+                    .WithMany()
+                    .HasForeignKey("ResponsibleId")
+                    .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Responsible");
-                });
+                b.Navigation("Responsible");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.MasterianEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithOne("Masterian")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.MasterianEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithOne("Masterian")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Users.MasterianEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
-                        .WithMany()
-                        .HasForeignKey("SupervisorId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
+                    .WithMany()
+                    .HasForeignKey("SupervisorId")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Supervisor");
+                b.Navigation("Supervisor");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.PhDStudentEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithOne("PhDStudent")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.PhDStudentEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithOne("PhDStudent")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Users.PhDStudentEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
-                        .WithMany()
-                        .HasForeignKey("SupervisorId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Supervisor")
+                    .WithMany()
+                    .HasForeignKey("SupervisorId")
+                    .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Supervisor");
+                b.Navigation("Supervisor");
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.ResearcherEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithOne("Researcher")
-                        .HasForeignKey("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
+                    .WithOne("Researcher")
+                    .HasForeignKey("LIMTIC.Domain.Entities.Users.ResearcherEntity", "Id")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.Navigation("User");
-                });
+                b.Navigation("User");
+            });
 
             modelBuilder.Entity("PhDStudentEntityResearchAxisEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.PhDStudentEntity", null)
-                        .WithMany()
-                        .HasForeignKey("PhDStudentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.Users.PhDStudentEntity", null)
+                    .WithMany()
+                    .HasForeignKey("PhDStudentsId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ResearchAxesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
+                b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
+                    .WithMany()
+                    .HasForeignKey("ResearchAxesId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
 
             modelBuilder.Entity("ResearchAxisEntityResearcherEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ResearchAxesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", null)
+                    .WithMany()
+                    .HasForeignKey("ResearchAxesId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
 
-                    b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", null)
-                        .WithMany()
-                        .HasForeignKey("ResearchersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
+                b.HasOne("LIMTIC.Domain.Entities.Users.ResearcherEntity", null)
+                    .WithMany()
+                    .HasForeignKey("ResearchersId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Events.EventEntity", b =>
-                {
-                    b.Navigation("Speakers");
-                });
+            {
+                b.Navigation("Speakers");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.PublicationEntity", b =>
-                {
-                    b.Navigation("BookChapter");
+            {
+                b.Navigation("BookChapter");
 
-                    b.Navigation("InternationalConference");
+                b.Navigation("InternationalConference");
 
-                    b.Navigation("JournalArticle");
+                b.Navigation("JournalArticle");
 
-                    b.Navigation("NationalConference");
+                b.Navigation("NationalConference");
 
-                    b.Navigation("TechnicalReport");
-                });
+                b.Navigation("TechnicalReport");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.ResearchAxis.ResearchAxisEntity", b =>
-                {
-                    b.Navigation("Events");
+            {
+                b.Navigation("Events");
 
-                    b.Navigation("Publications");
-                });
+                b.Navigation("Publications");
+            });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Users.UserEntity", b =>
-                {
-                    b.Navigation("Masterian");
+            {
+                b.Navigation("Masterian");
 
-                    b.Navigation("PhDStudent");
+                b.Navigation("PhDStudent");
 
-                    b.Navigation("Researcher");
-                });
+                b.Navigation("Researcher");
+            });
 #pragma warning restore 612, 618
         }
     }
