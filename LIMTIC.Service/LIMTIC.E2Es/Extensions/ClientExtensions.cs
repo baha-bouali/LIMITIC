@@ -27,6 +27,7 @@ using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.GetUsers;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using LIMTIC.WebAPI.Models.Contact;
+using LIMTIC.WebAPI.Models.AuditLogs.GetAuditLogs;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -600,6 +601,27 @@ namespace LIMTIC.E2Es.Extensions
             var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Delete, accessToken);
             req.Content = JsonContent.Create(body);
             return await client.SendAsync(req);
+        public static async Task<GetAuditLogsResponse?> GetAuditLogs(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
+        {
+            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
+            if (toUtc.HasValue)
+                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
+
+            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
+            var response = await client.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+                return await response.Content.ReadFromJsonAsync<GetAuditLogsResponse>();
+            return null;
+        }
+
+        public static async Task<HttpResponseMessage> GetAuditLogsFullHttpResponse(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
+        {
+            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
+            if (toUtc.HasValue)
+                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
+
+            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
+            return await client.SendAsync(request);
         }
     }
 }

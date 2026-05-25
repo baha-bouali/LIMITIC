@@ -2,7 +2,11 @@ using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Settings;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Settings;
+using LIMTIC.Application.Abstractions.Email;
+using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Enums;
+using LIMTIC.Application.Abstractions;
 
 namespace LIMTIC.Application.Services.Settings
 {
@@ -11,12 +15,16 @@ namespace LIMTIC.Application.Services.Settings
         private readonly ISettingsRepository _settingsRepository;
         private readonly IEmailService _emailService;
         private readonly Microsoft.AspNetCore.DataProtection.IDataProtector _protector;
+        private readonly IAuditLogsRepository _auditLogsRepository;
+        private readonly ICurrentUserService _currentUserService;
 
-        public SettingsService(ISettingsRepository settingsRepository, IEmailService emailService, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider dataProtectionProvider)
+        public SettingsService(ISettingsRepository settingsRepository, IEmailService emailService, Microsoft.AspNetCore.DataProtection.IDataProtectionProvider dataProtectionProvider, IAuditLogsRepository auditLogsRepository, ICurrentUserService currentUserService)
         {
             _settingsRepository = settingsRepository;
             _emailService = emailService;
             _protector = dataProtectionProvider.CreateProtector("smtp-password");
+            _auditLogsRepository = auditLogsRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<SettingsResponseDto>> GetSettingsAsync()
@@ -61,6 +69,7 @@ namespace LIMTIC.Application.Services.Settings
             settings.Address = dto.Identity.Address;
             settings.Phone = dto.Identity.Phone;
             settings.LogoUrl = dto.Identity.LogoUrl;
+
             settings.SmtpHost = dto.Smtp.Host;
             settings.SmtpPort = dto.Smtp.Port;
             settings.SmtpUsername = dto.Smtp.Username;
@@ -81,7 +90,13 @@ namespace LIMTIC.Application.Services.Settings
             settings.SmtpUseTls = dto.Smtp.UseTls;
 
             var updated = await _settingsRepository.UpdateAsync(settings);
-            return updated ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to update settings");
+            if (!updated)
+                return Result<bool>.FailureResult("Failed to update settings");
+
+            var settingsLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Setting);
+            await _auditLogsRepository.AddLog(settingsLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
         public async Task<Result<bool>> TestSmtpAsync(string testEmail)

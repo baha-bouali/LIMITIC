@@ -1,4 +1,5 @@
 using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
@@ -26,6 +27,8 @@ namespace LIMTIC.Application.Services.UserManagement
         private readonly IPhDStudentRepository _phdStudentRepository;
         private readonly IMasterianRepository _masterianRepository;
         private readonly IResearchAxisRepository _researchAxisRepository;
+        private readonly IAuditLogsRepository _auditLogsRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public UsersManagementService(
             IUserRepository userRepository,
@@ -35,7 +38,9 @@ namespace LIMTIC.Application.Services.UserManagement
             IResearcherRepository researcherRepository,
             IPhDStudentRepository phdStudentRepository,
             IMasterianRepository masterianRepository,
-            IResearchAxisRepository researchAxisRepository)
+            IResearchAxisRepository researchAxisRepository,
+            IAuditLogsRepository auditLogsRepository,
+            ICurrentUserService currentUserService)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
@@ -45,6 +50,8 @@ namespace LIMTIC.Application.Services.UserManagement
             _phdStudentRepository = phdStudentRepository;
             _masterianRepository = masterianRepository;
             _researchAxisRepository = researchAxisRepository;
+            _auditLogsRepository = auditLogsRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command)
@@ -66,10 +73,16 @@ namespace LIMTIC.Application.Services.UserManagement
                 role: UserRole.Visitor);
 
             var result = await _userRepository.AddUserAsync(user);
-            return result ? Result<CreateUserCommandResponse>.SuccessResult(new CreateUserCommandResponse
+            if (!result)
+                return Result<CreateUserCommandResponse>.FailureResult("Failed to create user");
+
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(log);
+
+            return Result<CreateUserCommandResponse>.SuccessResult(new CreateUserCommandResponse
             {
                 User = _userMapper.MapToUserDto(user),
-            }) : Result<CreateUserCommandResponse>.FailureResult("Failed to create user");
+            });
         }
 
         public async Task<Result<GetUserCommandResponse>> GetUserByIdAsync(Guid userId)
@@ -92,6 +105,12 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.IsActive = true;
             var result = await _userRepository.UpdateUserAsync(user);
+
+            if (!result)
+                return Result<bool>.FailureResult("Failed to activate user");
+
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(log);
             return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
         }
 
@@ -106,6 +125,12 @@ namespace LIMTIC.Application.Services.UserManagement
 
             user.IsActive = false;
             var result = await _userRepository.UpdateUserAsync(user);
+
+            if (!result)
+                return Result<bool>.FailureResult("Failed to activate user");
+
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(log);
             return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to deactivate user");
         }
 
@@ -121,6 +146,13 @@ namespace LIMTIC.Application.Services.UserManagement
             user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
             var result = await _userRepository.UpdateUserAsync(user);
             
+
+            if (result)
+            {
+                var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+                await _auditLogsRepository.AddLog(log);
+            }
+
             return result ? Result<string>.SuccessResult("Password changed successfully") : Result<string>.FailureResult("Failed to change password");
         }
 
