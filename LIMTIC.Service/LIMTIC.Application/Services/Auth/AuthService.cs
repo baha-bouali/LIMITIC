@@ -15,6 +15,7 @@ using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
+using LIMTIC.Domain.Enums;
 using Microsoft.Extensions.Options;
 
 namespace LIMTIC.Application.Services.Auth
@@ -27,6 +28,7 @@ namespace LIMTIC.Application.Services.Auth
         private readonly IUserRepository _userRepository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
         private readonly IResetPasswordRepository _resetPasswordRepository;
+        private readonly IAuditLogsRepository _auditLogsRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly RefreshTokenSettings _refreshTokenSettings;
         private readonly OTPTokenSettings _otpTokenSettings;
@@ -40,6 +42,7 @@ namespace LIMTIC.Application.Services.Auth
             IUserRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IResetPasswordRepository resetPasswordRepository,
+            IAuditLogsRepository auditLogsRepository,
             IPasswordHasher passwordHasher,
             IOptions<RefreshTokenSettings> refreshTokenSettings,
             IOptions<OTPTokenSettings> otpTokenSettings,
@@ -52,6 +55,7 @@ namespace LIMTIC.Application.Services.Auth
             _userRepository = userRepository;
             _refreshTokenRepository = refreshTokenRepository;
             _resetPasswordRepository = resetPasswordRepository;
+            _auditLogsRepository = auditLogsRepository;
             _passwordHasher = passwordHasher;
             _refreshTokenSettings = refreshTokenSettings.Value;
             _otpTokenSettings = otpTokenSettings.Value;
@@ -84,6 +88,9 @@ namespace LIMTIC.Application.Services.Auth
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
+            var loginLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGIN, ResourceType.User);
+            await _auditLogsRepository.AddLog(loginLog);
+
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
         }
 
@@ -101,12 +108,17 @@ namespace LIMTIC.Application.Services.Auth
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
+            var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(validateLog);
+
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, token.User!.Id, token.User!.Email));
         }
 
         public async Task Logout(string? refreshToken)
         {
             await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
+            var logoutLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGOUT, ResourceType.User);
+            await _auditLogsRepository.AddLog(logoutLog);
         }
 
         public async Task<Result<string>> ForgetPasswordAsync(ForgetPasswordCommand command)
@@ -124,6 +136,9 @@ namespace LIMTIC.Application.Services.Auth
                 OTPCode = otp,
                 ExpiryMinutes = _otpTokenSettings.ExpireInMinutes
             });
+
+            var forgetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(forgetPasswordLog);
 
             return Result<string>.SuccessResult("OTP sent to email");
         }
@@ -149,6 +164,9 @@ namespace LIMTIC.Application.Services.Auth
             resetPasswordEntry.ResetPasswordTokenExpiry = DateTime.UtcNow.AddMinutes(_resetPasswordTokenSettings.ExpireInMinutes);
 
             await _resetPasswordRepository.UpdateResetPasswordAsync(resetPasswordEntry);
+
+            var verifyResetLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(verifyResetLog);
 
             return Result<VerifyResetCodeCommandResponse>.SuccessResult(new VerifyResetCodeCommandResponse
             {
@@ -179,6 +197,9 @@ namespace LIMTIC.Application.Services.Auth
             var updateResult = await _userRepository.UpdateUserAsync(user);
             if (!updateResult)
                 return Result<string>.FailureResult("Failed to reset password");
+
+            var resetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(resetPasswordLog);
 
             return Result<string>.SuccessResult("Password reset successful");
         }

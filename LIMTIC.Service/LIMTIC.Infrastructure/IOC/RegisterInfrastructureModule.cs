@@ -62,6 +62,7 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddHttpContextAccessor();
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ISettingsRepository, SettingsRepository>();
+            services.AddScoped<IAuditLogsRepository, AuditLogsRepository>();
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IEventsRepository, EventsRepository>();

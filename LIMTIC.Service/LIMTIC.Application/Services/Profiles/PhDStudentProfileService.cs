@@ -20,6 +20,7 @@ namespace LIMTIC.Application.Services.Profiles
         private readonly IProfileMapper _profileMapper;
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<UpdatePhDStudentProfileCommand> _updateValidator;
+        private readonly IAuditLogsRepository _auditLogsRepository;
 
         public PhDStudentProfileService(
             IPhDStudentRepository phDStudentRepository,
@@ -28,7 +29,8 @@ namespace LIMTIC.Application.Services.Profiles
             IUserRepository userRepository,
             IProfileMapper profileMapper,
             ICurrentUserService currentUserService,
-            IValidator<UpdatePhDStudentProfileCommand> updateValidator)
+            IValidator<UpdatePhDStudentProfileCommand> updateValidator,
+            IAuditLogsRepository auditLogsRepository)
         {
             _phDStudentRepository = phDStudentRepository;
             _researcherRepository = researcherRepository;
@@ -37,6 +39,7 @@ namespace LIMTIC.Application.Services.Profiles
             _profileMapper = profileMapper;
             _currentUserService = currentUserService;
             _updateValidator = updateValidator;
+            _auditLogsRepository = auditLogsRepository;
         }
 
         public async Task<Result<List<PhDStudentProfileDto>>> GetAllAsync()
@@ -106,6 +109,9 @@ namespace LIMTIC.Application.Services.Profiles
             // Reload to get updated supervisor navigation
             var updated = await _phDStudentRepository.GetByUserIdAsync(command.UserId);
 
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(profileLog);
+
             return Result<PhDStudentProfileCommandResponse>.SuccessResult(new PhDStudentProfileCommandResponse
             {
                 Profile = _profileMapper.MapToPhDStudentProfileDto(updated!)
@@ -131,6 +137,9 @@ namespace LIMTIC.Application.Services.Profiles
                 if (!updated)
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
+
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);
         }
