@@ -6,4 +6,9 @@ namespace LIMTIC.WebAPI.Models.Profiles
     {
         public ResearcherProfileDto? Profile { get; set; }
     }
+
+    public class ResearchersListResponse : BaseResponse
+    {
+        public List<ResearcherProfileDto>? Profiles { get; set; }
+    }
 }

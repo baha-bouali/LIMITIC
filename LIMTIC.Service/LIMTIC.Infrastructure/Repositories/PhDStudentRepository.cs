@@ -20,6 +20,16 @@ namespace LIMTIC.Infrastructure.Repositories
                 .FirstOrDefaultAsync(p => p.Id == userId);
         }
 
+        public async Task<List<PhDStudentEntity>> GetAllAsync()
+        {
+            return await _dbContext.PhDStudents
+                .Include(p => p.User)
+                .Include(p => p.Supervisor)
+                    .ThenInclude(s => s.User)
+                .Include(p => p.ResearchAxes)
+                .ToListAsync();
+        }
+
         public async Task<bool> AddAsync(PhDStudentEntity entity)
         {
             _dbContext.PhDStudents.Add(entity);

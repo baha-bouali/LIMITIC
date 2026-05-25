@@ -36,6 +36,13 @@ namespace LIMTIC.Application.Services.Profiles
             _updateValidator = updateValidator;
         }
 
+        public async Task<Result<List<MasterianProfileDto>>> GetAllAsync()
+        {
+            var masterians = await _masterianRepository.GetAllAsync();
+            var dtos = masterians.Select(_profileMapper.MapToMasterianProfileDto).ToList();
+            return Result<List<MasterianProfileDto>>.SuccessResult(dtos);
+        }
+
         public async Task<Result<MasterianProfileDto>> GetByUserIdAsync(Guid userId)
         {
             var masterian = await _masterianRepository.GetByUserIdAsync(userId);

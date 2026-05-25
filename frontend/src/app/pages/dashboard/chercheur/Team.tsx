@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { ComponentType } from 'react';
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { SearchFilter } from '../../../components/shared/SearchFilter';
-import { Users, Mail, ExternalLink, GraduationCap, BookOpen, Target } from 'lucide-react';
+import { Users, Mail, ExternalLink, GraduationCap, BookOpen, Target, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import {
+  useGetAllResearchersQuery,
+  useGetAllPhDStudentsQuery,
+  useGetAllMastersQuery,
+  useGetResearchAxesQuery,
+} from '../../../api/profilesApi';
 
 type MemberRole = 'CHERCHEUR' | 'DOCTORANT' | 'MASTERIEN';
 
@@ -15,37 +21,90 @@ interface TeamMember {
   role: MemberRole;
   grade?: string;
   specialization: string;
-  axe: string;
+  axeIds: string[];
+  axeLabel: string;
   email: string;
   thesis?: string;
   year?: string | number;
-  publications?: number;
+  supervisorName?: string | null;
   orcid?: string;
 }
-
-const members: TeamMember[] = [
-  { id: '1', name: 'Dr. Ahmed Ben Salem', role: 'CHERCHEUR', grade: 'Chercheur', specialization: 'Intelligence Artificielle et ML', axe: 'IA & Apprentissage Automatique', email: 'ahmed.bensalem@limtic.tn', publications: 28, orcid: '0000-0001-2345-6789' },
-  { id: '2', name: 'Dr. Fatma Gharbi', role: 'CHERCHEUR', grade: 'Maître-Assistante', specialization: 'Sécurité Informatique', axe: 'Sécurité & Cryptographie', email: 'fatma.gharbi@limtic.tn', publications: 19 },
-  { id: '3', name: 'Dr. Mohamed Mezghani', role: 'CHERCHEUR', grade: 'Chercheur', specialization: 'Réseaux & IoT', axe: 'Réseaux & Systèmes Distribués', email: 'med.mezghani@limtic.tn', publications: 45 },
-  { id: '4', name: 'Dr. Leila Ouertani', role: 'CHERCHEUR', grade: 'Chercheur', specialization: 'Vision par ordinateur', axe: 'IA & Apprentissage Automatique', email: 'leila.ouertani@limtic.tn', publications: 12 },
-  { id: '5', name: 'Dr. Sami Belhadj', role: 'CHERCHEUR', grade: 'Maître-Assistant', specialization: 'Data Science & Big Data', axe: 'Data Science & Visualisation', email: 'sami.belhadj@limtic.tn', publications: 8 },
-  { id: '6', name: 'Sarah Trabelsi', role: 'DOCTORANT', specialization: 'Deep Learning Médical', axe: 'IA & Apprentissage Automatique', email: 'sarah.trabelsi@limtic.tn', thesis: 'Deep Learning pour le diagnostic médical assisté par IA', year: 2024, publications: 3 },
-  { id: '7', name: 'Mohamed Najjar', role: 'DOCTORANT', specialization: 'Blockchain Healthcare', axe: 'Sécurité & Cryptographie', email: 'med.najjar@limtic.tn', thesis: 'Blockchain Security Analysis for Healthcare Data', year: 2023, publications: 2 },
-  { id: '8', name: 'Amira Khelil', role: 'DOCTORANT', specialization: 'NLP & Traitement de texte', axe: 'IA & Apprentissage Automatique', email: 'amira.khelil@limtic.tn', thesis: 'Modèles de langage pour l\'arabe dialectal', year: 2025, publications: 1 },
-  { id: '9', name: 'Ines Hamdi', role: 'MASTERIEN', specialization: 'Système de recommandation', axe: 'Data Science & Visualisation', email: 'ines.hamdi@limtic.tn', thesis: 'Système de recommandation basé sur l\'intelligence artificielle', year: '2025-2026' },
-  { id: '10', name: 'Karim Slimi', role: 'MASTERIEN', specialization: 'IoT Sécurité', axe: 'Réseaux & Systèmes Distribués', email: 'karim.slimi@limtic.tn', thesis: 'Sécurisation des architectures IoT pour les villes intelligentes', year: '2024-2025' },
-];
 
 export default function ChercheurTeam() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
 
+  const { data: researchers = [], isLoading: loadingR } = useGetAllResearchersQuery();
+  const { data: phDStudents = [], isLoading: loadingP } = useGetAllPhDStudentsQuery();
+  const { data: masters = [], isLoading: loadingM } = useGetAllMastersQuery();
+  const { data: researchAxes = [] } = useGetResearchAxesQuery();
+
+  const isLoading = loadingR || loadingP || loadingM;
+
+  const members: TeamMember[] = useMemo(() => {
+    const result: TeamMember[] = [];
+
+    for (const r of researchers) {
+      const axes = r.researchAxes ?? [];
+      result.push({
+        id: r.id,
+        name: `${r.firstName} ${r.lastName}`,
+        role: 'CHERCHEUR',
+        grade: r.rank ?? undefined,
+        specialization: r.specialty ?? '—',
+        axeIds: axes.map(a => a.id),
+        axeLabel: axes[0]?.title ?? '—',
+        email: r.email,
+        orcid: r.orcid ?? undefined,
+      });
+    }
+
+    for (const p of phDStudents) {
+      const axes = p.researchAxes ?? [];
+      result.push({
+        id: p.id,
+        name: `${p.firstName} ${p.lastName}`,
+        role: 'DOCTORANT',
+        specialization: p.thesisSubject ?? '—',
+        axeIds: axes.map(a => a.id),
+        axeLabel: axes[0]?.title ?? '—',
+        email: p.email,
+        thesis: p.thesisSubject ?? undefined,
+        year: p.enrollmentYear,
+        supervisorName: p.supervisorName ?? undefined,
+      });
+    }
+
+    for (const m of masters) {
+      result.push({
+        id: m.id,
+        name: `${m.firstName} ${m.lastName}`,
+        role: 'MASTERIEN',
+        specialization: m.dissertationSubject ?? '—',
+        axeIds: [],
+        axeLabel: m.cohort ?? '—',
+        email: m.email,
+        thesis: m.dissertationSubject ?? undefined,
+        year: m.cohort ?? undefined,
+        supervisorName: m.supervisorName ?? undefined,
+      });
+    }
+
+    return result;
+  }, [researchers, phDStudents, masters]);
+
   const roleConfig: Record<MemberRole, { label: string; variant: any; icon: ComponentType<{ size?: number; className?: string }>; color: string }> = {
     CHERCHEUR: { label: t('role.researcher'), variant: 'success', icon: Users, color: 'bg-success/10 text-success' },
     DOCTORANT: { label: t('role.phd'), variant: 'warning', icon: GraduationCap, color: 'bg-warning/10 text-warning' },
     MASTERIEN: { label: t('role.master'), variant: 'info', icon: BookOpen, color: 'bg-accent-blue/10 text-accent-blue' },
   };
+
+  const axisFilterOptions = researchAxes.map(a => ({
+    id: a.id,
+    label: a.title,
+    value: a.id,
+  }));
 
   const filterGroups = [
     {
@@ -55,27 +114,31 @@ export default function ChercheurTeam() {
         { id: 'ma', label: t('team.masters'), value: 'MASTERIEN' },
       ]
     },
-    {
-      id: 'axe', label: t('pub.axis'), options: [
-        { id: 'a1', label: 'IA & Apprentissage', value: 'IA & Apprentissage Automatique' },
-        { id: 'a2', label: 'Sécurité & Crypto', value: 'Sécurité & Cryptographie' },
-        { id: 'a3', label: 'Réseaux & Systèmes', value: 'Réseaux & Systèmes Distribués' },
-        { id: 'a4', label: 'Data Science', value: 'Data Science & Visualisation' },
-      ]
-    },
+    ...(axisFilterOptions.length > 0 ? [{
+      id: 'axe', label: t('pub.axis'), options: axisFilterOptions.slice(0, 4),
+    }] : []),
   ];
 
   const filtered = members.filter(m => {
     const q = searchQuery.toLowerCase();
-    const matchQ = !q || m.name.toLowerCase().includes(q) || m.specialization.toLowerCase().includes(q) || m.axe.toLowerCase().includes(q);
+    const matchQ = !q || m.name.toLowerCase().includes(q) || m.specialization.toLowerCase().includes(q) || m.axeLabel.toLowerCase().includes(q);
     const roleF = activeFilters.role as string;
     const axeF = activeFilters.axe as string;
-    return matchQ && (!roleF || m.role === roleF) && (!axeF || m.axe === axeF);
+    const matchAxe = !axeF || m.axeIds.includes(axeF);
+    return matchQ && (!roleF || m.role === roleF) && matchAxe;
   });
 
   const chercheurs = filtered.filter(m => m.role === 'CHERCHEUR');
   const doctorants = filtered.filter(m => m.role === 'DOCTORANT');
   const masteriens = filtered.filter(m => m.role === 'MASTERIEN');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 size={32} className="animate-spin text-accent-blue" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -123,7 +186,12 @@ export default function ChercheurTeam() {
   );
 }
 
-function Section({ title, icon: Icon, members, roleConfig }: { title: string; icon: ComponentType<{ size?: number; className?: string }>; members: TeamMember[]; roleConfig: Record<MemberRole, { label: string; variant: any; icon: ComponentType<{ size?: number; className?: string }>; color: string }> }) {
+function Section({ title, icon: Icon, members, roleConfig }: {
+  title: string;
+  icon: ComponentType<{ size?: number; className?: string }>;
+  members: TeamMember[];
+  roleConfig: Record<MemberRole, { label: string; variant: any; icon: ComponentType<{ size?: number; className?: string }>; color: string }>;
+}) {
   return (
     <div>
       <h2 className="text-lg font-bold text-navy dark:text-white mb-4 flex items-center gap-2">
@@ -133,7 +201,12 @@ function Section({ title, icon: Icon, members, roleConfig }: { title: string; ic
         {members.map(m => {
           const rc = roleConfig[m.role];
           const RoleIcon = rc.icon;
-          const initials = m.name.split(' ').filter(w => !w.startsWith('Dr.') && !w.startsWith('Prof.')).map(w => w.charAt(0)).slice(0, 2).join('');
+          const initials = m.name
+            .split(' ')
+            .filter(w => !w.startsWith('Dr.') && !w.startsWith('Prof.'))
+            .map(w => w.charAt(0))
+            .slice(0, 2)
+            .join('');
           return (
             <Card key={m.id} className="hover:shadow-card-hover transition-shadow">
               <CardContent className="p-5">
@@ -150,23 +223,37 @@ function Section({ title, icon: Icon, members, roleConfig }: { title: string; ic
                   </div>
                 </div>
                 <div className="space-y-1.5 text-xs text-text-secondary">
-                  <div className="flex items-center gap-1.5">
-                    <Target size={12} className="text-teal flex-shrink-0" />
-                    <span className="line-clamp-1">{m.specialization}</span>
-                  </div>
+                  {m.specialization !== '—' && (
+                    <div className="flex items-center gap-1.5">
+                      <Target size={12} className="text-teal flex-shrink-0" />
+                      <span className="line-clamp-1">{m.specialization}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <Mail size={12} className="text-accent-blue flex-shrink-0" />
                     <span className="truncate">{m.email}</span>
                   </div>
-                  {m.thesis && (
+                  {m.axeLabel !== '—' && (
+                    <div className="flex items-center gap-1.5">
+                      <Target size={12} className="text-text-muted flex-shrink-0" />
+                      <span className="line-clamp-1 text-text-muted">{m.axeLabel}</span>
+                    </div>
+                  )}
+                  {m.thesis && m.role !== 'CHERCHEUR' && (
                     <div className="mt-2 p-2 bg-light-gray dark:bg-muted rounded-lg">
                       <p className="text-xs text-text-secondary italic line-clamp-2">{m.thesis}</p>
                     </div>
                   )}
-                  {m.publications !== undefined && (
+                  {m.year && (
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <GraduationCap size={12} className="text-text-muted" />
+                      <span>{m.year}</span>
+                    </div>
+                  )}
+                  {m.orcid && (
                     <div className="flex items-center gap-1.5 mt-1">
                       <ExternalLink size={12} className="text-text-muted" />
-                      <span>{m.publications} publication{m.publications !== 1 ? 's' : ''}</span>
+                      <span className="truncate">{m.orcid}</span>
                     </div>
                   )}
                 </div>

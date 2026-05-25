@@ -19,6 +19,15 @@ namespace LIMTIC.Infrastructure.Repositories
                 .FirstOrDefaultAsync(m => m.Id == userId);
         }
 
+        public async Task<List<MasterianEntity>> GetAllAsync()
+        {
+            return await _dbContext.Masterians
+                .Include(m => m.User)
+                .Include(m => m.Supervisor)
+                    .ThenInclude(s => s.User)
+                .ToListAsync();
+        }
+
         public async Task<bool> AddAsync(MasterianEntity entity)
         {
             _dbContext.Masterians.Add(entity);

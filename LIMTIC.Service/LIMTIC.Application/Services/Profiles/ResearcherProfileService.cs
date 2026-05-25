@@ -37,6 +37,13 @@ namespace LIMTIC.Application.Services.Profiles
             _updateValidator = updateValidator;
         }
 
+        public async Task<Result<List<ResearcherProfileDto>>> GetAllAsync()
+        {
+            var researchers = await _researcherRepository.GetAllAsync();
+            var dtos = researchers.Select(_profileMapper.MapToResearcherProfileDto).ToList();
+            return Result<List<ResearcherProfileDto>>.SuccessResult(dtos);
+        }
+
         public async Task<Result<ResearcherProfileDto>> GetByUserIdAsync(Guid userId)
         {
             ResearcherEntity? researcher = null;

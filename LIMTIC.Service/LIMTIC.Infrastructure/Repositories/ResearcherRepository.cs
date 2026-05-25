@@ -32,6 +32,14 @@ namespace LIMTIC.Infrastructure.Repositories
             }
         }
 
+        public async Task<List<ResearcherEntity>> GetAllAsync()
+        {
+            return await _dbContext.Researchers
+                .Include(r => r.User)
+                .Include(r => r.ResearchAxes)
+                .ToListAsync();
+        }
+
         public async Task<bool> AddAsync(ResearcherEntity entity)
         {
             _dbContext.Researchers.Add(entity);

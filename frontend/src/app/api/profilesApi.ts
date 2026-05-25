@@ -96,10 +96,32 @@ interface ResearchAxesListResponse {
   researchAxes: ResearchAxisDto[];
 }
 
+interface ProfilesListResponse<T> {
+  success: boolean;
+  profiles: T[];
+}
+
 // ── Injected endpoints ─────────────────────────────────────────────────────
 
 export const profilesApi = api.injectEndpoints({
   endpoints: (builder) => ({
+
+    // ── Profile list GET endpoints ────────────────────────────────────────
+
+    getAllResearchers: builder.query<ResearcherProfileDto[], void>({
+      query: () => ({ url: 'profiles/researchers', method: 'GET' }),
+      transformResponse: (response: ProfilesListResponse<ResearcherProfileDto>) => response.profiles ?? [],
+    }),
+
+    getAllPhDStudents: builder.query<PhDStudentProfileDto[], void>({
+      query: () => ({ url: 'profiles/phd-students', method: 'GET' }),
+      transformResponse: (response: ProfilesListResponse<PhDStudentProfileDto>) => response.profiles ?? [],
+    }),
+
+    getAllMasters: builder.query<MasterianProfileDto[], void>({
+      query: () => ({ url: 'profiles/masterians', method: 'GET' }),
+      transformResponse: (response: ProfilesListResponse<MasterianProfileDto>) => response.profiles ?? [],
+    }),
 
     // ── Profile GET endpoints ─────────────────────────────────────────────
     // Backend returns { success, profile: <Dto> } — transformResponse unwraps it.
@@ -169,6 +191,9 @@ export const profilesApi = api.injectEndpoints({
 });
 
 export const {
+  useGetAllResearchersQuery,
+  useGetAllPhDStudentsQuery,
+  useGetAllMastersQuery,
   useGetResearcherProfileQuery,
   useLazyGetResearcherProfileQuery,
   useGetPhDStudentProfileQuery,
