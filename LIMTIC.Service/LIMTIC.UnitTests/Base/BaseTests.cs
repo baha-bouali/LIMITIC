@@ -9,9 +9,11 @@ using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
 using LIMTIC.UnitTests.Helpers;
 using LIMTIC.WebAPI.IOC;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.IO;
 
 namespace LIMTIC.UnitTests.Base
 {
@@ -47,6 +49,12 @@ namespace LIMTIC.UnitTests.Base
             services.AddApplication();
             services.AddMappers();
             services.AddWebApi();
+
+            // In this environment, the default DataProtection key store under the user profile may be blocked.
+            // Persist keys to a local test directory instead so crypto-based tests remain deterministic.
+            var dpKeysPath = Path.Combine(Directory.GetCurrentDirectory(), "DataProtection-Keys");
+            Directory.CreateDirectory(dpKeysPath);
+            services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(dpKeysPath));
 
             var emailDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IEmailService));
             if (emailDescriptor != null)

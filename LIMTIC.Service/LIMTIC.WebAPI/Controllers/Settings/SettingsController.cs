@@ -6,7 +6,7 @@ using LIMTIC.WebAPI.Models.Settings.GetSettings;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Settings
 {
     [ApiController]
     [Route("dashboard/superadmin/settings")]

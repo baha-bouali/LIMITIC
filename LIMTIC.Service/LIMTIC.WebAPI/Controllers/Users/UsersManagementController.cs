@@ -14,7 +14,7 @@ using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Users
 {
     [ApiController]
     [Route("api/users/")]

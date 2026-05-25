@@ -151,7 +151,7 @@ namespace LIMTIC.Application.Mappings
                 Visibility = r.Visibility,
                 Year = r.Year,
                 Authors = r.Authors,
-                AttachedPdfs = [],   // PDFs are managed via the dedicated PDF endpoints
+                AttachedPdfs = [],   
                 JournalArticle = r.JournalArticle is null ? null : new JournalArticleEntity
                 {
                     JournalName = r.JournalArticle.JournalName,

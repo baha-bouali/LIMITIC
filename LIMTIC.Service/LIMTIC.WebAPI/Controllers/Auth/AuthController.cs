@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Auth
 {
     [Route("api/auth/")]
     [ApiController]

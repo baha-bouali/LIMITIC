@@ -1,5 +1,6 @@
 ﻿using LIMTIC.Application.Abstractions.Publication;
 using LIMTIC.Application.Services.Publication;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
@@ -19,6 +20,7 @@ namespace LIMTIC.UnitTests.Tests
         private readonly Mock<IBookChapterRepository> _chapterRepo = new();
         private readonly Mock<INationalConferenceRepository> _nationalRepo = new();
         private readonly Mock<IInternationalConferenceRepository> _intlRepo = new();
+        private readonly Mock<ICurrentUserService> _currentUserService = new();
 
         #endregion
 
@@ -28,13 +30,17 @@ namespace LIMTIC.UnitTests.Tests
 
         public PublicationServiceTests()
         {
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.Empty);
+            _currentUserService.SetupGet(x => x.Role).Returns((string?)null);
+
             _sut = new PublicationService(
                 _pubRepo.Object,
                 _journalRepo.Object,
                 _reportRepo.Object,
                 _chapterRepo.Object,
                 _nationalRepo.Object,
-                _intlRepo.Object);
+                _intlRepo.Object,
+                _currentUserService.Object);
         }
 
         #endregion
@@ -354,6 +360,107 @@ namespace LIMTIC.UnitTests.Tests
 
             Assert.Equal(42, totalCount);
             Assert.Equal(2, resultItems.Count());
+        }
+
+        [Fact]
+        public async Task GetFilteredAsync_WithNullVisibility_ReturnsAllPublications()
+        {
+            // When visibility is null, it means show all publications (both public and private)
+            var items = new List<PublicationEntity>
+            {
+                BuildPublication(visibility: PublicationVisibility.Public),
+                BuildPublication(visibility: PublicationVisibility.Private)
+            };
+            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 2);
+            _pubRepo
+                .Setup(r => r.GetFilteredAsync(
+                    null, PublicationStatus.Published, null,
+                    null, null, null, null, 1, 10, default))
+                .ReturnsAsync(expected);
+
+            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
+                type: null,
+                status: PublicationStatus.Published,
+                visibility: null,
+                userId: null,
+                researchAxisId: null,
+                year: null,
+                search: null,
+                page: 1,
+                pageSize: 10);
+
+            Assert.Equal(2, totalCount);
+            Assert.Equal(2, resultItems.Count());
+            _pubRepo.Verify(r => r.GetFilteredAsync(
+                null, PublicationStatus.Published, null,
+                null, null, null, null, 1, 10, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetFilteredAsync_WithPublicVisibilityOnly_ReturnsPublicPublicationsOnly()
+        {
+            // When visibility is explicitly set to Public, show only public publications
+            var items = new List<PublicationEntity>
+            {
+                BuildPublication(visibility: PublicationVisibility.Public),
+                BuildPublication(visibility: PublicationVisibility.Public)
+            };
+            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 2);
+            _pubRepo
+                .Setup(r => r.GetFilteredAsync(
+                    null, PublicationStatus.Published, PublicationVisibility.Public,
+                    null, null, null, null, 1, 10, default))
+                .ReturnsAsync(expected);
+
+            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
+                type: null,
+                status: PublicationStatus.Published,
+                visibility: PublicationVisibility.Public,
+                userId: null,
+                researchAxisId: null,
+                year: null,
+                search: null,
+                page: 1,
+                pageSize: 10);
+
+            Assert.Equal(2, totalCount);
+            Assert.Equal(2, resultItems.Count());
+            _pubRepo.Verify(r => r.GetFilteredAsync(
+                null, PublicationStatus.Published, PublicationVisibility.Public,
+                null, null, null, null, 1, 10, default), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetFilteredAsync_WithPrivateVisibility_ReturnsPrivatePublicationsOnly()
+        {
+            // When visibility is explicitly set to Private, show only private publications
+            var items = new List<PublicationEntity>
+            {
+                BuildPublication(visibility: PublicationVisibility.Private)
+            };
+            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 1);
+            _pubRepo
+                .Setup(r => r.GetFilteredAsync(
+                    null, PublicationStatus.Published, PublicationVisibility.Private,
+                    null, null, null, null, 1, 10, default))
+                .ReturnsAsync(expected);
+
+            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
+                type: null,
+                status: PublicationStatus.Published,
+                visibility: PublicationVisibility.Private,
+                userId: null,
+                researchAxisId: null,
+                year: null,
+                search: null,
+                page: 1,
+                pageSize: 10);
+
+            Assert.Equal(1, totalCount);
+            Assert.Single(resultItems);
+            _pubRepo.Verify(r => r.GetFilteredAsync(
+                null, PublicationStatus.Published, PublicationVisibility.Private,
+                null, null, null, null, 1, 10, default), Times.Once);
         }
 
         #endregion

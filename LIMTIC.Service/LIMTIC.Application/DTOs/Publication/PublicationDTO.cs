@@ -2,8 +2,6 @@
 
 namespace LIMTIC.Application.DTOs.Publications
 {
-    // ─── Type-specific detail DTOs ─────────────────────────────────────────────
-
     public sealed record JournalArticleDto(
         Guid Id,
         string JournalName,
@@ -39,11 +37,7 @@ namespace LIMTIC.Application.DTOs.Publications
         CoreRanking Ranking,
         string RankingLabel);
 
-    // ─── Research-axis nested DTO ──────────────────────────────────────────────
-
     public sealed record ResearchAxisSummaryDto(Guid Id, string Title);
-
-    // ─── Full publication DTO (detail view) ────────────────────────────────────
 
     /// <summary>
     /// Complete representation returned by GetByIdAsync and write operations.
@@ -96,11 +90,8 @@ namespace LIMTIC.Application.DTOs.Publications
         string UserFullName,
         Guid ResearchAxisId,
         string ResearchAxisName,
-        // Ranking shorthands — null when the publication is not of that type
         JournalRanking? JournalRanking,
         CoreRanking? CoreRanking);
-
-    // ─── Write request DTOs ────────────────────────────────────────────────────
 
     /// <summary>
     /// Body accepted by POST (create) endpoints across all roles.
