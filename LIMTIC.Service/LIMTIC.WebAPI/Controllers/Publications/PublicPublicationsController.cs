@@ -16,11 +16,11 @@ namespace LIMTIC.WebAPI.Controllers.Publications
     [ApiController]
     [Route("api/v1/public/publications")]
     [AllowAnonymous]
-    public class PublicationsController : ControllerBase
+    public class PublicPublicationsController : ControllerBase
     {
         private readonly IPublicationService _publicationService;
 
-        public PublicationsController(IPublicationService publicationService)
+        public PublicPublicationsController(IPublicationService publicationService)
         {
             _publicationService = publicationService;
         }
