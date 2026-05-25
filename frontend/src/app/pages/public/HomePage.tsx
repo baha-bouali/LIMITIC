@@ -1,33 +1,43 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Button } from '../../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { ArrowRight, Users, FileText, GraduationCap, Calendar, ChevronDown, MapPin } from 'lucide-react';
+import { ArrowRight, Users, FileText, GraduationCap, Calendar, ChevronDown, MapPin, Loader2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useGetAllAxesQuery } from '../../api/axesApi';
+import { useGetEventsQuery } from '../../api/eventsApi';
+import { useGetPublicUsersQuery } from '../../api/usersApi';
 
 export default function HomePage() {
   const { t } = useLanguage();
-  const [scrollY, setScrollY] = useState(0);
+  const { data: axes = [], isLoading: axesLoading } = useGetAllAxesQuery();
+  const { data: events = [], isLoading: eventsLoading } = useGetEventsQuery({ limit: 1000 });
+  const { data: users = [], isLoading: usersLoading } = useGetPublicUsersQuery({ status: 'active', limit: 1000 });
 
-  useEffect(() => {
-    const handleScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  const researchersCount = users.filter((user) => user.role === 3).length;
+  const phdCount = users.filter((user) => user.role === 4).length;
+  const publicationsCount = axes.reduce((sum, axis) => sum + (axis.publicationsCount ?? 0), 0);
+  const upcomingEvents = events
+    .filter((event) => event.status === 'A_VENIR')
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  const featuredAxes = axes.slice(0, 3);
+  const featuredPublicationAxes = [...axes]
+    .filter((axis) => (axis.publicationsCount ?? 0) > 0)
+    .sort((a, b) => (b.publicationsCount ?? 0) - (a.publicationsCount ?? 0))
+    .slice(0, 3);
+  const isStatsLoading = axesLoading || eventsLoading || usersLoading;
 
   return (
     <div className="min-h-screen bg-white dark:bg-background">
       <PublicNavbar />
 
-      {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Gradient Background */}
         <div className="absolute inset-0 brand-gradient-diagonal">
-          {/* Animated particle network overlay */}
           <div className="absolute inset-0 opacity-10">
             <svg className="w-full h-full">
               <defs>
@@ -40,7 +50,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Content */}
         <div className="relative z-10 max-w-5xl mx-auto px-6 text-center text-white">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -48,12 +57,8 @@ export default function HomePage() {
             transition={{ duration: 0.8 }}
             className="space-y-8"
           >
-            <h1 className="text-5xl md:text-6xl font-bold leading-tight">
-              {t('home.hero.title')}
-            </h1>
-            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">
-              {t('home.hero.subtitle')}
-            </p>
+            <h1 className="text-5xl md:text-6xl font-bold leading-tight">{t('home.hero.title')}</h1>
+            <p className="text-xl md:text-2xl text-white/90 max-w-3xl mx-auto">{t('home.hero.subtitle')}</p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-6">
               <Link to="/publications">
                 <Button size="lg" variant="outlined" className="!text-white !border-white hover:!bg-white/10">
@@ -75,7 +80,6 @@ export default function HomePage() {
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
         <motion.div
           className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
           animate={{ y: [0, 10, 0] }}
@@ -85,55 +89,45 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Statistics Bar */}
       <section className="bg-navy text-white py-16">
         <div className="max-w-[var(--content-max-width)] mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <StatCounter icon={<Users />} count={24} label={t('home.stats.researchers')} />
-            <StatCounter icon={<FileText />} count={156} label={t('home.stats.publications')} />
-            <StatCounter icon={<GraduationCap />} count={18} label={t('home.stats.phd')} />
-            <StatCounter icon={<Calendar />} count={32} label={t('home.stats.events')} />
+            <StatCounter icon={<Users />} count={isStatsLoading ? 0 : researchersCount} label={t('home.stats.researchers')} />
+            <StatCounter icon={<FileText />} count={isStatsLoading ? 0 : publicationsCount} label={t('home.stats.publications')} />
+            <StatCounter icon={<GraduationCap />} count={isStatsLoading ? 0 : phdCount} label={t('home.stats.phd')} />
+            <StatCounter icon={<Calendar />} count={isStatsLoading ? 0 : upcomingEvents.length} label={t('home.stats.events')} />
           </div>
         </div>
       </section>
 
-      {/* Axes de Recherche Section */}
       <section className="bg-light-gray py-20">
         <div className="max-w-[var(--content-max-width)] mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-navy dark:text-white mb-4">{t('home.axes.title')}</h2>
             <p className="text-text-secondary text-lg">{t('home.axes.subtitle')}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <AxeCard
-              id="1"
-              title="Intelligence Artificielle"
-              description="Recherche avancée en apprentissage automatique, deep learning et systèmes intelligents"
-              responsible="Dr. Ahmed Ben Salem"
-              themes={['Machine Learning', 'NLP', 'Computer Vision', '+3 more']}
-              color="teal"
-            />
-            <AxeCard
-              id="2"
-              title="Systèmes Distribués"
-              description="Conception et optimisation de systèmes distribués à grande échelle"
-              responsible="Dr. Fatma Gharbi"
-              themes={['Cloud Computing', 'Blockchain', 'IoT']}
-              color="accent-blue"
-            />
-            <AxeCard
-              id="3"
-              title="Sécurité Informatique"
-              description="Protection des systèmes d'information et cryptographie appliquée"
-              responsible="Dr. Mohamed Mezghani"
-              themes={['Cryptographie', 'Sécurité Réseau', 'Audit', '+2 more']}
-              color="navy"
-            />
-          </div>
+          {axesLoading ? (
+            <LoadingBlock label={t('common.loading') || 'Loading'} />
+          ) : featuredAxes.length === 0 ? (
+            <EmptyBlock label={t('axes.noAxesFoundGeneric') || 'No research areas found'} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {featuredAxes.map((axis) => (
+                <AxeCard
+                  key={axis.id}
+                  id={axis.id}
+                  title={axis.title}
+                  description={axis.description}
+                  responsible={axis.responsibleName || t('axes.notAssigned')}
+                  themes={axis.themes || []}
+                  color={axis.color || 'accent-blue'}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Recent Publications Section */}
       <section className="bg-white dark:bg-background py-20">
         <div className="max-w-[var(--content-max-width)] mx-auto px-6">
           <div className="flex items-center justify-between mb-12">
@@ -142,36 +136,20 @@ export default function HomePage() {
               {t('home.viewAll')} <ArrowRight size={20} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PublicationCard
-              type="q1"
-              year="2026"
-              title="Deep Learning Approaches for Medical Image Segmentation: A Comprehensive Survey"
-              authors="A. Ben Salem, F. Gharbi, et al."
-              venue="IEEE Transactions on Medical Imaging"
-              doi="10.1109/TMI.2026.123456"
-            />
-            <PublicationCard
-              type="core-a-star"
-              year="2026"
-              title="Blockchain-Based Secure Data Sharing in Healthcare Systems"
-              authors="M. Mezghani, S. Trabelsi, et al."
-              venue="ACM Conference on Computer and Communications Security (CCS 2026)"
-              doi="10.1145/3576915.3623456"
-            />
-            <PublicationCard
-              type="q2"
-              year="2025"
-              title="Federated Learning for Privacy-Preserving Healthcare Analytics"
-              authors="F. Gharbi, A. Ben Salem"
-              venue="Journal of Biomedical Informatics"
-              doi="10.1016/j.jbi.2025.104321"
-            />
-          </div>
+          {axesLoading ? (
+            <LoadingBlock label={t('common.loading') || 'Loading'} />
+          ) : featuredPublicationAxes.length === 0 ? (
+            <EmptyBlock label={t('pubPage.noPublications') || 'No publications found'} />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {featuredPublicationAxes.map((axis) => (
+                <PublicationAxisCard key={axis.id} axis={axis} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Upcoming Events */}
       <section className="bg-off-white py-20">
         <div className="max-w-[var(--content-max-width)] mx-auto px-6">
           <div className="flex items-center justify-between mb-12">
@@ -180,26 +158,24 @@ export default function HomePage() {
               {t('home.viewAllEvents')} <ArrowRight size={20} />
             </Link>
           </div>
-          <div className="space-y-4">
-            <EventItem
-              type="SÉMINAIRE"
-              date={{ day: '15', month: 'Juin' }}
-              title="Intelligence Artificielle et Santé"
-              location="Amphithéâtre A, ISI"
-            />
-            <EventItem
-              type="ATELIER"
-              date={{ day: '22', month: 'Juin' }}
-              title="Introduction au Deep Learning"
-              location="Salle B12, ISI"
-            />
-            <EventItem
-              type="CONFÉRENCE"
-              date={{ day: '05', month: 'Juil' }}
-              title="LIMTIC Research Day 2026"
-              location="Campus Universitaire"
-            />
-          </div>
+          {eventsLoading ? (
+            <LoadingBlock label={t('common.loading') || 'Loading'} />
+          ) : upcomingEvents.length === 0 ? (
+            <EmptyBlock label={t('eventPage.noEvents') || 'No events'} />
+          ) : (
+            <div className="space-y-4">
+              {upcomingEvents.slice(0, 3).map((event) => (
+                <EventItem
+                  key={event.id}
+                  id={event.id}
+                  type={event.type}
+                  date={formatEventDate(event.startDate)}
+                  title={event.title}
+                  location={event.location}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -208,8 +184,39 @@ export default function HomePage() {
   );
 }
 
-// Component: Stat Counter
-function StatCounter({ icon, count, label }: { icon: React.ReactNode; count: number; label: string }) {
+function LoadingBlock({ label }: { label: string }) {
+  return (
+    <Card>
+      <CardContent className="p-10 flex items-center justify-center gap-3 text-text-secondary">
+        <Loader2 className="animate-spin text-accent-blue" size={22} />
+        <span>{label}</span>
+      </CardContent>
+    </Card>
+  );
+}
+
+function EmptyBlock({ label }: { label: string }) {
+  return (
+    <Card>
+      <CardContent className="p-10 text-center text-text-secondary">{label}</CardContent>
+    </Card>
+  );
+}
+
+function formatEventDate(date: string) {
+  const parsed = new Date(date);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return { day: '--', month: '' };
+  }
+
+  return {
+    day: parsed.toLocaleDateString('fr-FR', { day: '2-digit' }),
+    month: parsed.toLocaleDateString('fr-FR', { month: 'short' }),
+  };
+}
+
+function StatCounter({ icon, count, label }: { icon: ReactNode; count: number; label: string }) {
   const [displayCount, setDisplayCount] = useState(0);
 
   useEffect(() => {
@@ -234,9 +241,7 @@ function StatCounter({ icon, count, label }: { icon: React.ReactNode; count: num
   return (
     <div className="text-center">
       <div className="flex items-center justify-center mb-4">
-        <div className="w-16 h-16 flex items-center justify-center bg-white/10 rounded-full">
-          {icon}
-        </div>
+        <div className="w-16 h-16 flex items-center justify-center bg-white/10 rounded-full">{icon}</div>
       </div>
       <div className="text-5xl font-bold mb-2">{displayCount}</div>
       <div className="text-white/80">{label}</div>
@@ -244,9 +249,9 @@ function StatCounter({ icon, count, label }: { icon: React.ReactNode; count: num
   );
 }
 
-// Component: Axe Card
 function AxeCard({ id, title, description, responsible, themes, color }: any) {
   const { t } = useLanguage();
+
   return (
     <Card className="hover:shadow-lg transition-shadow overflow-hidden">
       <div className={`h-1 bg-${color}`} />
@@ -256,7 +261,7 @@ function AxeCard({ id, title, description, responsible, themes, color }: any) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">
-          {themes.map((theme: string, idx: number) => (
+          {themes.slice(0, 4).map((theme: string, idx: number) => (
             <Badge key={idx} variant="default">{theme}</Badge>
           ))}
         </div>
@@ -274,30 +279,25 @@ function AxeCard({ id, title, description, responsible, themes, color }: any) {
   );
 }
 
-// Component: Publication Card
-function PublicationCard({ type, year, title, authors, venue, doi }: any) {
+function PublicationAxisCard({ axis }: any) {
   const { t } = useLanguage();
-  // Create a simple ID from DOI
-  const pubId = doi.replace(/\//g, '-').replace(/\./g, '-');
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>
         <div className="flex items-center gap-2 mb-3">
-          <Badge variant={type}>{type === 'q1' ? 'Q1 ★' : type === 'core-a-star' ? 'CORE A*' : 'Q2'}</Badge>
-          <Badge variant="default">{year}</Badge>
+          <Badge variant="info">{axis.publicationsCount ?? 0} {t('axes.publicationsCount')}</Badge>
         </div>
-        <h4 className="text-base font-bold text-navy dark:text-white line-clamp-2 mb-2">{title}</h4>
-        <p className="text-sm text-text-secondary mb-1">{authors}</p>
-        <p className="text-sm text-text-secondary italic">{venue}</p>
+        <h4 className="text-base font-bold text-navy dark:text-white line-clamp-2 mb-2">{axis.title}</h4>
+        <p className="text-sm text-text-secondary line-clamp-3">{axis.description}</p>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <a href={`https://doi.org/${doi}`} target="_blank" rel="noopener noreferrer" className="text-xs text-accent-blue hover:underline">
-            DOI: {doi}
-          </a>
-          <Link to={`/publications/${pubId}`} className="text-accent-blue hover:underline text-sm">
-            {t('home.publications.read')} →
+          <Link to={`/axes-recherche/${axis.id}`} className="text-accent-blue hover:underline text-sm">
+            {t('home.publications.read')} <ArrowRight size={14} className="inline" />
+          </Link>
+          <Link to={`/publications?axe=${axis.id}`} className="text-accent-blue hover:underline text-sm">
+            {t('home.viewAll')} <ArrowRight size={14} className="inline" />
           </Link>
         </div>
       </CardContent>
@@ -305,9 +305,9 @@ function PublicationCard({ type, year, title, authors, venue, doi }: any) {
   );
 }
 
-// Component: Event Item
-function EventItem({ type, date, title, location, id = '1' }: any) {
+function EventItem({ type, date, title, location, id }: any) {
   const { t } = useLanguage();
+
   return (
     <Card className="hover:shadow-md transition-shadow">
       <div className="p-6 flex items-center gap-6">
@@ -325,7 +325,7 @@ function EventItem({ type, date, title, location, id = '1' }: any) {
           </div>
         </div>
         <Link to={`/evenements/${id}`} className="text-accent-blue hover:underline">
-          {t('home.events.view')} →
+          {t('home.events.view')} <ArrowRight size={14} className="inline" />
         </Link>
       </div>
     </Card>

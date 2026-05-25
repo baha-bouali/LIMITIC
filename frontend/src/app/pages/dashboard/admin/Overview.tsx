@@ -1,41 +1,40 @@
 import { Card, CardContent } from '../../../components/ui/Card';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
-import { FileText, Calendar, Users, Target, CheckCircle, XCircle, Clock, TrendingUp, ArrowRight } from 'lucide-react';
+import { FileText, Calendar, Users, Target, Clock, TrendingUp, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../../contexts/LanguageContext';
-
-const pendingPublications = [
-  { id: '1', title: 'Blockchain Security Analysis for Healthcare Data', author: 'Mohamed Najjar', type: 'CONFÉRENCE INT.', submitted: 'Il y a 2h' },
-  { id: '2', title: 'Deep Learning for MRI Segmentation', author: 'Sarah Trabelsi', type: 'ARTICLE JOURNAL', submitted: 'Il y a 5h' },
-  { id: '3', title: 'Federated Privacy-Preserving Models', author: 'Dr. Ahmed Ben Salem', type: 'ARTICLE JOURNAL', submitted: 'Il y a 1j' },
-];
-
-const upcomingEvents = [
-  { id: '1', title: 'Séminaire IA & Santé Numérique', date: '26 Mai 2026', type: 'Séminaire', status: 'A_VENIR' },
-  { id: '2', title: 'Soutenance de thèse — Sarah Trabelsi', date: '15 Juin 2026', type: 'Soutenance', status: 'A_VENIR' },
-  { id: '3', title: 'Journée Portes Ouvertes LIMTIC', date: '10 Juillet 2026', type: 'Conférence', status: 'A_VENIR' },
-];
+import { useGetAllAxesQuery } from '../../../api/axesApi';
+import { useGetEventsQuery } from '../../../api/eventsApi';
+import { useGetUsersQuery } from '../../../api/usersApi';
 
 export default function AdminOverview() {
   const { t } = useLanguage();
+  const { data: axes = [], isLoading: axesLoading } = useGetAllAxesQuery();
+  const { data: events = [], isLoading: eventsLoading } = useGetEventsQuery({ limit: 1000 });
+  const { data: users = [], isLoading: usersLoading } = useGetUsersQuery({ status: 'active', limit: 1000 });
+
+  const activeMembers = users.filter((user) => user.isActive !== false).length;
+  const upcomingEvents = events
+    .filter((event) => event.status === 'A_VENIR')
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+
+  const stats = [
+    { label: t('dash.pendingPublicationsCount'), value: 0, icon: Clock, color: 'bg-warning/10 text-warning', link: '/dashboard/admin/publications' },
+    { label: t('dash.upcomingEvents'), value: eventsLoading ? '...' : upcomingEvents.length, icon: Calendar, color: 'bg-accent-blue/10 text-accent-blue', link: '/dashboard/admin/events' },
+    { label: t('dash.activeMembers'), value: usersLoading ? '...' : activeMembers, icon: Users, color: 'bg-teal/10 text-teal', link: '/dashboard/admin/members' },
+    { label: t('dash.researchAxes'), value: axesLoading ? '...' : axes.length, icon: Target, color: 'bg-success/10 text-success', link: '/dashboard/admin/axes' },
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-navy dark:text-white">{t('dash.adminDashboard')}</h1>
         <p className="text-text-secondary mt-1">{t('dash.manageLabContent')}</p>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: t('dash.pendingPublicationsCount'), value: 3, icon: Clock, color: 'bg-warning/10 text-warning', link: '/dashboard/admin/publications' },
-          { label: t('dash.upcomingEvents'), value: 5, icon: Calendar, color: 'bg-accent-blue/10 text-accent-blue', link: '/dashboard/admin/events' },
-          { label: t('dash.activeMembers'), value: 34, icon: Users, color: 'bg-teal/10 text-teal', link: '/dashboard/admin/members' },
-          { label: t('dash.researchAxes'), value: 5, icon: Target, color: 'bg-success/10 text-success', link: '/dashboard/admin/axes' },
-        ].map(stat => {
+        {stats.map((stat) => {
           const Icon = stat.icon;
           return (
             <Link to={stat.link} key={stat.label}>
@@ -57,41 +56,22 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Publications */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-navy dark:text-white flex items-center gap-2">
                 <FileText size={20} className="text-accent-blue" />
                 {t('dash.pendingPublications')}
-                <Badge variant="warning">{pendingPublications.length}</Badge>
+                <Badge variant="default">0</Badge>
               </h2>
               <Link to="/dashboard/admin/publications" className="text-sm text-accent-blue hover:underline flex items-center gap-1">
                 {t('dash.viewAll')} <ArrowRight size={14} />
               </Link>
             </div>
-            <div className="space-y-3">
-              {pendingPublications.map(pub => (
-                <div key={pub.id} className="flex items-start gap-3 p-3 bg-light-gray dark:bg-muted rounded-xl">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-navy dark:text-white truncate">{pub.title}</p>
-                    <p className="text-xs text-text-muted mt-0.5">{pub.author} · {pub.type} · {pub.submitted}</p>
-                  </div>
-                  <div className="flex gap-1 flex-shrink-0">
-                    <button className="p-1.5 bg-success/10 text-success rounded-lg hover:bg-success/20 transition-colors" title={t('pub.approve')}>
-                      <CheckCircle size={16} />
-                    </button>
-                    <button className="p-1.5 bg-error/10 text-error rounded-lg hover:bg-error/20 transition-colors" title={t('pub.reject')}>
-                      <XCircle size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <EmptyPanel label={t('dash.noPendingPublications')} />
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-5">
@@ -104,24 +84,29 @@ export default function AdminOverview() {
               </Link>
             </div>
             <div className="space-y-3">
-              {upcomingEvents.map(evt => (
-                <div key={evt.id} className="flex items-center gap-3 p-3 bg-light-gray dark:bg-muted rounded-xl">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-navy to-accent-blue flex flex-col items-center justify-center text-white flex-shrink-0">
-                    <div className="text-xs font-bold leading-none">{evt.date.split(' ')[0]}</div>
-                    <div className="text-xs opacity-80">{evt.date.split(' ')[1].slice(0, 3)}</div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm text-navy dark:text-white">{evt.title}</p>
-                    <Badge variant="info" className="text-xs mt-1">{evt.type}</Badge>
-                  </div>
-                </div>
-              ))}
+              {eventsLoading ? (
+                <LoadingPanel />
+              ) : upcomingEvents.length === 0 ? (
+                <EmptyPanel label={t('eventPage.noEvents') || 'No events'} />
+              ) : (
+                upcomingEvents.slice(0, 3).map((event) => (
+                  <Link key={event.id} to={`/dashboard/admin/events`} className="flex items-center gap-3 p-3 bg-light-gray dark:bg-muted rounded-xl hover:opacity-80">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-navy to-accent-blue flex flex-col items-center justify-center text-white flex-shrink-0">
+                      <div className="text-xs font-bold leading-none">{formatDay(event.startDate)}</div>
+                      <div className="text-xs opacity-80">{formatMonth(event.startDate)}</div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-navy dark:text-white truncate">{event.title}</p>
+                      <Badge variant="info" className="text-xs mt-1">{event.type}</Badge>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick actions */}
       <Card>
         <CardContent className="p-6">
           <h2 className="text-lg font-bold text-navy dark:text-white mb-4">{t('dash.quickActions')}</h2>
@@ -143,4 +128,20 @@ export default function AdminOverview() {
       </Card>
     </div>
   );
+}
+
+function LoadingPanel() {
+  return <div className="py-6 text-center text-sm text-text-secondary">Loading...</div>;
+}
+
+function EmptyPanel({ label }: { label: string }) {
+  return <div className="py-6 text-center text-sm text-text-secondary">{label}</div>;
+}
+
+function formatDay(value: string) {
+  return new Date(value).toLocaleDateString('fr-FR', { day: '2-digit' });
+}
+
+function formatMonth(value: string) {
+  return new Date(value).toLocaleDateString('fr-FR', { month: 'short' });
 }
