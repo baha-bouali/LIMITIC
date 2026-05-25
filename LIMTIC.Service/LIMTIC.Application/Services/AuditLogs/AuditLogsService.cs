@@ -28,6 +28,7 @@ namespace LIMTIC.Application.Services.AuditLogs
             {
                 Id = l.Id.ToString(),
                 ActorId = l.ActorId.ToString(),
+                ActorName = l.Actor is { } a ? $"{a.FirstName} {a.LastName}".Trim() : null,
                 Action = l.Action.ToString(),
                 Resource = l.Resource.ToString(),
                 Timestamp = l.Timestamp

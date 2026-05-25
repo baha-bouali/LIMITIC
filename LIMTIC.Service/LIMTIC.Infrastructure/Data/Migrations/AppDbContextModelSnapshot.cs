@@ -171,6 +171,39 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.ToTable("Speakers");
                 });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Logs.AuditLogsEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Resource")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
                 {
                     b.Property<Guid>("Id")
@@ -434,7 +467,6 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime>("CreatedAtUtc");
                     b.Property<string>("Color")
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
@@ -445,20 +477,10 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Property<Guid>("CreatedBy")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Description");
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Description");
-                    b.Property<Guid>("CreatedBy")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("Themes")
-                        .IsRequired();
                     b.Property<Guid?>("ResponsibleId")
                         .HasColumnType("uuid");
 
@@ -473,7 +495,6 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ResearchAxes");
                     b.HasIndex("ResponsibleId");
 
                     b.ToTable("ResearchAxes");
@@ -485,13 +506,12 @@ namespace LIMTIC.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("OTPTokenExpiry");
                     b.Property<DateTime>("OTPTokenExpiry")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("OTPTokenHash")
                         .IsRequired()
-                        .HasColumnType("text");             
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ResetPasswordTokenExpiry")
                         .HasColumnType("timestamp with time zone");
@@ -504,7 +524,9 @@ namespace LIMTIC.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ResearchAxes");
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ResetPasswords");
                 });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Settings.LabSettings", b =>
@@ -579,7 +601,7 @@ namespace LIMTIC.Infrastructure.Migrations
                             Id = new Guid("00000000-0000-0000-0000-000000000001"),
                             Address = "",
                             ContactEmail = "",
-                            CreatedAtUtc = new DateTime(2026, 5, 24, 0, 22, 22, 106, DateTimeKind.Utc).AddTicks(4560),
+                            CreatedAtUtc = new DateTime(2026, 5, 25, 2, 30, 31, 516, DateTimeKind.Utc).AddTicks(141),
                             CreatedBy = new Guid("00000000-0000-0000-0000-000000000000"),
                             LabName = "LIMTIC Lab",
                             LabSlogan = "",
@@ -803,6 +825,17 @@ namespace LIMTIC.Infrastructure.Migrations
                     b.Navigation("Event");
                 });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Logs.AuditLogsEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "Actor")
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Actor");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
                 {
                     b.HasOne("LIMTIC.Domain.Entities.Publications.PublicationEntity", "Publication")
@@ -885,17 +918,6 @@ namespace LIMTIC.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("FK_RefreshToken_User");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("LIMTIC.Domain.Entities.ResetPassword.ResetPasswordEntity", b =>
-                {
-                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
 
                     b.Navigation("User");
                 });
