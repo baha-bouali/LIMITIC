@@ -9,6 +9,16 @@ import { FileText } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useGetPublicPublicationsQuery } from '../../api/publicationsApi';
 
+const TYPE_LABELS: Record<string, string> = {
+  ArticleJournal: 'Article de journal',
+  ConferenceInternational: 'Conférence internationale',
+  ConferenceNational: 'Conférence nationale',
+  ChapterBook: "Chapitre d'ouvrage",
+  TechnicalReport: 'Rapport technique',
+};
+
+const CONFERENCE_TYPES = new Set(['ConferenceInternational', 'ConferenceNational']);
+
 const normalizeRanking = (value?: string | null) => value?.toLowerCase().replace(/\s+/g, '-').replace(/_/g, '-') ?? '';
 
 const getRankingLabel = (value: string) => {
@@ -48,8 +58,11 @@ export default function PublicationsPage() {
         id: 'type',
         label: t('pubPage.typePublication'),
         options: [
-          { id: 'journal', label: t('pubPage.journalArticles'), value: 'ARTICLE_JOURNAL' },
-          { id: 'conf', label: t('pubPage.conferences'), value: 'CONFERENCE_INT' },
+          { id: 'journal', label: t('pubPage.journalArticles'), value: 'ArticleJournal' },
+          { id: 'conf-int', label: 'Conférence internationale', value: 'ConferenceInternational' },
+          { id: 'conf-nat', label: 'Conférence nationale', value: 'ConferenceNational' },
+          { id: 'chapter', label: "Chapitre d'ouvrage", value: 'ChapterBook' },
+          { id: 'report', label: 'Rapport technique', value: 'TechnicalReport' },
         ],
       },
       {
@@ -78,7 +91,7 @@ export default function PublicationsPage() {
 
     const matchesFilters = Object.entries(activeFilters).every(([key, values]) => {
       if (values.length === 0) return true;
-      if (key === 'type') return values.includes(pub.publicationType);
+      if (key === 'type') return values.includes(pub.type);
       if (key === 'ranking') return values.includes(normalizeRanking(pub.ranking || pub.coreRanking));
       if (key === 'year') return values.includes(pub.year.toString());
       if (key === 'axe') return values.includes(pub.axe.id);
@@ -126,8 +139,8 @@ export default function PublicationsPage() {
           <p className="text-xl text-white/90 mb-6">{t('pubPage.subtitle')}</p>
           <div className="flex gap-8 mt-8">
             <div className="text-center"><div className="text-3xl font-bold">{data?.stats.total ?? allPublications.length}</div><div className="text-white/80">{t('pubPage.total')}</div></div>
-            <div className="text-center"><div className="text-3xl font-bold">{data?.stats.journals ?? allPublications.filter(p => p.publicationType === 'ARTICLE_JOURNAL').length}</div><div className="text-white/80">{t('pubPage.journals')}</div></div>
-            <div className="text-center"><div className="text-3xl font-bold">{data?.stats.conferences ?? allPublications.filter(p => p.publicationType === 'CONFERENCE_INT').length}</div><div className="text-white/80">{t('pubPage.conferences')}</div></div>
+            <div className="text-center"><div className="text-3xl font-bold">{data?.stats.journals ?? allPublications.filter(p => p.type === 'ArticleJournal').length}</div><div className="text-white/80">{t('pubPage.journals')}</div></div>
+            <div className="text-center"><div className="text-3xl font-bold">{data?.stats.conferences ?? allPublications.filter(p => CONFERENCE_TYPES.has(p.type)).length}</div><div className="text-white/80">{t('pubPage.conferences')}</div></div>
           </div>
         </div>
       </div>
@@ -168,7 +181,7 @@ export default function PublicationsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-3 flex-wrap">
                         <Badge variant={(normalizeRanking(pub.ranking || pub.coreRanking) || 'default') as any}>{getRankingLabel(normalizeRanking(pub.ranking || pub.coreRanking) || pub.type)}</Badge>
-                        <Badge variant="default">{pub.publicationType === 'ARTICLE_JOURNAL' ? t('pubPage.journalArticle') : t('pubPage.conference')}</Badge>
+                        <Badge variant="default">{TYPE_LABELS[pub.type] ?? pub.type}</Badge>
                         <Badge variant="info" className="text-xs">{pub.axe.title}</Badge>
                       </div>
                       <Link to={`/publications/${pub.id}`}>

@@ -4,51 +4,51 @@ import { Badge } from '../ui/Badge';
 import { X, FileText, Globe, BookOpen, File, ClipboardList, Plus, Trash2, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
+import { useGetAllAxesQuery } from '../../api/axesApi';
+import type { CreateDashboardPublicationRequest, DashboardPublicationDetailDto } from '../../api/dashboardPublicationsApi';
 
-type PublicationType = 'ARTICLE_JOURNAL' | 'CONFERENCE_INT' | 'CONFERENCE_NAT' | 'CHAPITRE_OUVRAGE' | 'RAPPORT_TECHNIQUE';
-type PublicationStatus = 'BROUILLON' | 'SOUMIS' | 'PUBLIE';
+type ApiPublicationType = 'ArticleJournal' | 'ConferenceInternational' | 'ConferenceNational' | 'ChapterBook' | 'TechnicalReport';
+type ApiVisibility = 'Public' | 'Private';
 
 interface PublicationFormProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
-  initialData?: any;
+  onSubmit: (data: CreateDashboardPublicationRequest, id?: string) => void;
+  initialData?: DashboardPublicationDetailDto | null;
   canPublishDirectly?: boolean;
 }
 
 export function PublicationForm({ onClose, onSubmit, initialData, canPublishDirectly = false }: PublicationFormProps) {
+  const { data: axes = [] } = useGetAllAxesQuery();
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    type: initialData?.type || 'ARTICLE_JOURNAL' as PublicationType,
+    type: (initialData?.type as ApiPublicationType) || 'ArticleJournal' as ApiPublicationType,
     title: initialData?.title || '',
     year: initialData?.year || new Date().getFullYear(),
-    abstract: initialData?.abstract || '',
-    keywords: initialData?.keywords || [],
-    visibility: initialData?.visibility || 'PUBLIQUE',
-    axes: initialData?.axes || [],
-    // Type-specific fields
+    abstract: initialData?.abstract_ || '',
+    keywords: initialData?.keywords || [] as string[],
+    visibility: (initialData?.visibility as ApiVisibility) || 'Public' as ApiVisibility,
+    researchAxisId: initialData?.axe?.id || '',
+    doi: initialData?.doi || '',
+    venue: initialData?.venue || '',
+    authors: initialData?.authors || [] as string[],
+    // Journal article fields
     journalName: initialData?.journalName || '',
     volume: initialData?.volume || '',
-    issue: initialData?.issue || '',
+    number: initialData?.number || '',
     pages: initialData?.pages || '',
-    doi: initialData?.doi || '',
-    impactFactor: initialData?.impactFactor || '',
-    quartile: initialData?.quartile || 'Q1',
-    snip: initialData?.snip || '',
-    issn: initialData?.issn || '',
-    conferenceName: initialData?.conferenceName || '',
-    acronym: initialData?.acronym || '',
+    ranking: initialData?.quartile || '',
+    // Conference fields
+    conferenceName: '',
     location: initialData?.location || '',
-    country: initialData?.country || '',
-    coreRanking: initialData?.coreRanking || 'A*',
-    indexation: initialData?.indexation || [],
+    coreRanking: initialData?.coreRanking || '',
+    // Book chapter fields
     bookTitle: initialData?.bookTitle || '',
-    editor: initialData?.editor || '',
+    publisher: initialData?.publisher || '',
     isbn: initialData?.isbn || '',
-    reportNumber: initialData?.reportNumber || '',
+    // Technical report fields
+    reportNumber: initialData?.reportNumber ? String(initialData.reportNumber) : '',
     institution: initialData?.institution || '',
-    authors: initialData?.authors || [],
-    pdfFile: null as File | null,
-    status: initialData?.status || 'BROUILLON' as PublicationStatus,
   });
 
   const [currentKeyword, setCurrentKeyword] = useState('');
@@ -57,7 +57,6 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
   const [authorSearch, setAuthorSearch] = useState('');
   const [showAuthorDropdown, setShowAuthorDropdown] = useState(false);
 
-  // Mock data for existing lab members
   const labMembers = [
     { id: '1', name: 'Dr. Ahmed Ben Salem', role: 'Chercheur', email: 'ahmed.bensalem@limtic.tn' },
     { id: '2', name: 'Dr. Fatma Gharbi', role: 'Chercheur', email: 'fatma.gharbi@limtic.tn' },
@@ -68,11 +67,11 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
   ];
 
   const publicationTypes = [
-    { value: 'ARTICLE_JOURNAL', label: 'Article de Journal', icon: FileText },
-    { value: 'CONFERENCE_INT', label: 'Conférence Internationale', icon: Globe },
-    { value: 'CONFERENCE_NAT', label: 'Conférence Nationale', icon: BookOpen },
-    { value: 'CHAPITRE_OUVRAGE', label: 'Chapitre d\'ouvrage', icon: File },
-    { value: 'RAPPORT_TECHNIQUE', label: 'Rapport Technique', icon: ClipboardList },
+    { value: 'ArticleJournal' as ApiPublicationType, label: 'Article de Journal', icon: FileText },
+    { value: 'ConferenceInternational' as ApiPublicationType, label: 'Conférence Internationale', icon: Globe },
+    { value: 'ConferenceNational' as ApiPublicationType, label: 'Conférence Nationale', icon: BookOpen },
+    { value: 'ChapterBook' as ApiPublicationType, label: "Chapitre d'ouvrage", icon: File },
+    { value: 'TechnicalReport' as ApiPublicationType, label: 'Rapport Technique', icon: ClipboardList },
   ];
 
   const handleAddKeyword = () => {
@@ -125,9 +124,79 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
     setFormData({ ...formData, authors: newAuthors });
   };
 
+  const buildApiRequest = (): CreateDashboardPublicationRequest => {
+    const base: CreateDashboardPublicationRequest = {
+      researchAxisId: formData.researchAxisId,
+      title: formData.title,
+      abstract: formData.abstract || null,
+      keywords: formData.keywords,
+      doi: formData.doi || null,
+      venue: formData.venue || null,
+      type: formData.type,
+      visibility: formData.visibility,
+      year: formData.year,
+      authors: formData.authors,
+      journalArticle: null,
+      technicalReport: null,
+      bookChapter: null,
+      nationalConference: null,
+      internationalConference: null,
+    };
+
+    if (formData.type === 'ArticleJournal') {
+      base.journalArticle = {
+        journalName: formData.journalName,
+        volume: formData.volume || undefined,
+        number: formData.number || undefined,
+        pages: formData.pages || undefined,
+        ranking: formData.ranking || undefined,
+      };
+    } else if (formData.type === 'ConferenceInternational') {
+      base.internationalConference = {
+        conferenceName: formData.conferenceName,
+        location: formData.location || undefined,
+        pages: formData.pages || undefined,
+        ranking: formData.coreRanking || undefined,
+      };
+    } else if (formData.type === 'ConferenceNational') {
+      base.nationalConference = {
+        conferenceName: formData.conferenceName,
+        location: formData.location || undefined,
+        pages: formData.pages || undefined,
+      };
+    } else if (formData.type === 'ChapterBook') {
+      base.bookChapter = {
+        bookTitle: formData.bookTitle,
+        publisher: formData.publisher || undefined,
+        isbn: formData.isbn || undefined,
+        pages: formData.pages || undefined,
+      };
+    } else if (formData.type === 'TechnicalReport') {
+      base.technicalReport = {
+        reportNumber: formData.reportNumber || undefined,
+        institution: formData.institution || undefined,
+      };
+    }
+
+    return base;
+  };
+
   const handleSubmit = () => {
-    onSubmit(formData);
-    toast.success('Publication créée avec succès!');
+    if (!formData.title.trim()) {
+      toast.error('Le titre est requis');
+      return;
+    }
+    if (!formData.researchAxisId) {
+      toast.error("Veuillez sélectionner un axe de recherche");
+      return;
+    }
+    if (formData.authors.length === 0) {
+      toast.error('Au moins un auteur est requis');
+      return;
+    }
+
+    const request = buildApiRequest();
+    onSubmit(request, initialData?.id);
     onClose();
   };
 
@@ -164,7 +233,7 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                     return (
                       <button
                         key={type.value}
-                        onClick={() => setFormData({ ...formData, type: type.value as PublicationType })}
+                        onClick={() => setFormData({ ...formData, type: type.value })}
                         className={clsx(
                           'p-4 border-2 rounded-lg transition-all text-left',
                           formData.type === type.value
@@ -209,19 +278,18 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   <label className="block text-sm font-medium mb-2">Visibilité</label>
                   <select
                     value={formData.visibility}
-                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, visibility: e.target.value as ApiVisibility })}
                     className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
                   >
-                    <option value="PUBLIQUE">Publique</option>
-                    <option value="PRIVEE">Privée</option>
+                    <option value="Public">Publique</option>
+                    <option value="Private">Privée</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-2">Résumé / Abstract *</label>
+                <label className="block text-sm font-medium mb-2">Résumé / Abstract</label>
                 <textarea
-                  required
                   value={formData.abstract}
                   onChange={(e) => setFormData({ ...formData, abstract: e.target.value })}
                   rows={6}
@@ -259,23 +327,32 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 <label className="block text-sm font-medium mb-2">Axe de recherche *</label>
                 <select
                   required
-                  value={formData.axes[0] || ''}
-                  onChange={(e) => setFormData({ ...formData, axes: e.target.value ? [e.target.value] : [] })}
+                  value={formData.researchAxisId}
+                  onChange={(e) => setFormData({ ...formData, researchAxisId: e.target.value })}
                   className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
                 >
                   <option value="">Sélectionner un axe de recherche</option>
-                  <option value="Intelligence Artificielle et Apprentissage Automatique">Intelligence Artificielle et Apprentissage Automatique</option>
-                  <option value="Sécurité Informatique et Cryptographie">Sécurité Informatique et Cryptographie</option>
-                  <option value="Systèmes Distribués et Cloud Computing">Systèmes Distribués et Cloud Computing</option>
-                  <option value="Traitement d'Images et Vision par Ordinateur">Traitement d'Images et Vision par Ordinateur</option>
-                  <option value="Big Data et Science des Données">Big Data et Science des Données</option>
+                  {axes.map((axis) => (
+                    <option key={axis.id} value={axis.id}>{axis.title}</option>
+                  ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">DOI</label>
+                <input
+                  type="text"
+                  value={formData.doi}
+                  onChange={(e) => setFormData({ ...formData, doi: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  placeholder="10.1234/example"
+                />
               </div>
             </div>
           )}
 
           {/* Step 2: Type-specific details */}
-          {step === 2 && formData.type === 'ARTICLE_JOURNAL' && (
+          {step === 2 && formData.type === 'ArticleJournal' && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-navy dark:text-white">Détails de l'article</h3>
 
@@ -283,10 +360,20 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 <label className="block text-sm font-medium mb-2">Nom du journal *</label>
                 <input
                   type="text"
-                  required
                   value={formData.journalName}
                   onChange={(e) => setFormData({ ...formData, journalName: e.target.value })}
                   className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Revue / Venue</label>
+                <input
+                  type="text"
+                  value={formData.venue}
+                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  placeholder="Medical Image Analysis, Vol. 84"
                 />
               </div>
 
@@ -304,8 +391,8 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   <label className="block text-sm font-medium mb-2">Numéro</label>
                   <input
                     type="text"
-                    value={formData.issue}
-                    onChange={(e) => setFormData({ ...formData, issue: e.target.value })}
+                    value={formData.number}
+                    onChange={(e) => setFormData({ ...formData, number: e.target.value })}
                     className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
                   />
                 </div>
@@ -321,90 +408,46 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">DOI</label>
-                  <input
-                    type="text"
-                    value={formData.doi}
-                    onChange={(e) => setFormData({ ...formData, doi: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                    placeholder="10.1234/example"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">ISSN</label>
-                  <input
-                    type="text"
-                    value={formData.issn}
-                    onChange={(e) => setFormData({ ...formData, issn: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Facteur d'impact (IF)</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={formData.impactFactor}
-                    onChange={(e) => setFormData({ ...formData, impactFactor: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Quartile Scimago</label>
-                  <select
-                    value={formData.quartile}
-                    onChange={(e) => setFormData({ ...formData, quartile: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  >
-                    <option value="Q1">Q1</option>
-                    <option value="Q2">Q2</option>
-                    <option value="Q3">Q3</option>
-                    <option value="Q4">Q4</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">SNIP</label>
-                  <input
-                    type="number"
-                    step="0.001"
-                    value={formData.snip}
-                    onChange={(e) => setFormData({ ...formData, snip: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Quartile Scimago</label>
+                <select
+                  value={formData.ranking}
+                  onChange={(e) => setFormData({ ...formData, ranking: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="Q1">Q1</option>
+                  <option value="Q2">Q2</option>
+                  <option value="Q3">Q3</option>
+                  <option value="Q4">Q4</option>
+                </select>
               </div>
             </div>
           )}
 
-          {step === 2 && formData.type === 'CONFERENCE_INT' && (
+          {step === 2 && (formData.type === 'ConferenceInternational' || formData.type === 'ConferenceNational') && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-navy dark:text-white">Détails de la conférence</h3>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Nom de la conférence *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.conferenceName}
-                    onChange={(e) => setFormData({ ...formData, conferenceName: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Acronyme</label>
-                  <input
-                    type="text"
-                    value={formData.acronym}
-                    onChange={(e) => setFormData({ ...formData, acronym: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Nom de la conférence *</label>
+                <input
+                  type="text"
+                  value={formData.conferenceName}
+                  onChange={(e) => setFormData({ ...formData, conferenceName: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Venue / Nom court</label>
+                <input
+                  type="text"
+                  value={formData.venue}
+                  onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  placeholder="CVPR 2026"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -418,31 +461,6 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Pays</label>
-                  <input
-                    type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Classement CORE</label>
-                  <select
-                    value={formData.coreRanking}
-                    onChange={(e) => setFormData({ ...formData, coreRanking: e.target.value })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  >
-                    <option value="A*">CORE A*</option>
-                    <option value="A">CORE A</option>
-                    <option value="B">CORE B</option>
-                    <option value="C">CORE C</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium mb-2">Pages</label>
                   <input
                     type="text"
@@ -451,6 +469,97 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                     className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
                   />
                 </div>
+              </div>
+
+              {formData.type === 'ConferenceInternational' && (
+                <div>
+                  <label className="block text-sm font-medium mb-2">Classement CORE</label>
+                  <select
+                    value={formData.coreRanking}
+                    onChange={(e) => setFormData({ ...formData, coreRanking: e.target.value })}
+                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  >
+                    <option value="">Non renseigné</option>
+                    <option value="A*">CORE A*</option>
+                    <option value="A">CORE A</option>
+                    <option value="B">CORE B</option>
+                    <option value="C">CORE C</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 2 && formData.type === 'ChapterBook' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-navy dark:text-white">Détails du chapitre</h3>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Titre du livre *</label>
+                <input
+                  type="text"
+                  value={formData.bookTitle}
+                  onChange={(e) => setFormData({ ...formData, bookTitle: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Éditeur</label>
+                  <input
+                    type="text"
+                    value={formData.publisher}
+                    onChange={(e) => setFormData({ ...formData, publisher: e.target.value })}
+                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">ISBN</label>
+                  <input
+                    type="text"
+                    value={formData.isbn}
+                    onChange={(e) => setFormData({ ...formData, isbn: e.target.value })}
+                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Pages</label>
+                <input
+                  type="text"
+                  value={formData.pages}
+                  onChange={(e) => setFormData({ ...formData, pages: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                  placeholder="123-145"
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 2 && formData.type === 'TechnicalReport' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-bold text-navy dark:text-white">Détails du rapport</h3>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Numéro du rapport</label>
+                <input
+                  type="text"
+                  value={formData.reportNumber}
+                  onChange={(e) => setFormData({ ...formData, reportNumber: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Institution</label>
+                <input
+                  type="text"
+                  value={formData.institution}
+                  onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
+                  className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
+                />
               </div>
             </div>
           )}
@@ -465,7 +574,6 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 </Button>
               </div>
 
-              {/* Add External Author Form */}
               {showAddAuthor && (
                 <div className="p-4 bg-light-gray dark:bg-input-background rounded-lg border border-surface-border space-y-4">
                   <h4 className="font-medium text-navy dark:text-white">Nouvel auteur externe</h4>
@@ -499,15 +607,6 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                       placeholder="Université, Laboratoire..."
                     />
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Email</label>
-                    <input
-                      type="email"
-                      value={newAuthor.email}
-                      onChange={(e) => setNewAuthor({ ...newAuthor, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
-                    />
-                  </div>
                   <div className="flex gap-2 justify-end">
                     <Button onClick={() => { setShowAddAuthor(false); setNewAuthor({ firstName: '', lastName: '', affiliation: '', email: '' }); }} variant="outlined" className="text-sm">
                       Annuler
@@ -519,43 +618,26 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 </div>
               )}
 
-              {/* Selected Authors List */}
               {formData.authors.length > 0 && (
                 <div className="space-y-3">
                   <h4 className="font-medium text-navy dark:text-white">Auteurs sélectionnés ({formData.authors.length})</h4>
                   <div className="space-y-2">
                     {formData.authors.map((author, index) => (
                       <div key={index} className="flex items-center gap-3 p-3 bg-white dark:bg-card border border-surface-border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-accent-blue text-white text-xs flex items-center justify-center font-medium">
-                            {index + 1}
-                          </span>
-                        </div>
+                        <span className="w-6 h-6 rounded-full bg-accent-blue text-white text-xs flex items-center justify-center font-medium">
+                          {index + 1}
+                        </span>
                         <div className="flex-1">
                           <div className="font-medium text-sm">{author}</div>
                         </div>
                         <div className="flex gap-1">
-                          <button
-                            onClick={() => moveAuthorUp(index)}
-                            disabled={index === 0}
-                            className="p-1 hover:bg-light-gray rounded disabled:opacity-30"
-                            title="Monter"
-                          >
+                          <button onClick={() => moveAuthorUp(index)} disabled={index === 0} className="p-1 hover:bg-light-gray rounded disabled:opacity-30" title="Monter">
                             <span className="text-lg">↑</span>
                           </button>
-                          <button
-                            onClick={() => moveAuthorDown(index)}
-                            disabled={index === formData.authors.length - 1}
-                            className="p-1 hover:bg-light-gray rounded disabled:opacity-30"
-                            title="Descendre"
-                          >
+                          <button onClick={() => moveAuthorDown(index)} disabled={index === formData.authors.length - 1} className="p-1 hover:bg-light-gray rounded disabled:opacity-30" title="Descendre">
                             <span className="text-lg">↓</span>
                           </button>
-                          <button
-                            onClick={() => handleRemoveAuthor(author)}
-                            className="p-1.5 hover:bg-error/10 text-error rounded"
-                            title="Retirer"
-                          >
+                          <button onClick={() => handleRemoveAuthor(author)} className="p-1.5 hover:bg-error/10 text-error rounded" title="Retirer">
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -565,42 +647,27 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 </div>
               )}
 
-              {/* Lab Members Selection with Autocomplete */}
               <div className="space-y-3">
                 <h4 className="font-medium text-navy dark:text-white">Membres du laboratoire</h4>
-                <p className="text-sm text-text-secondary">Recherchez et ajoutez des membres comme auteurs</p>
-
-                {/* Autocomplete Search */}
                 <div className="relative">
                   <input
                     type="text"
                     value={authorSearch}
-                    onChange={(e) => {
-                      setAuthorSearch(e.target.value);
-                      setShowAuthorDropdown(true);
-                    }}
+                    onChange={(e) => { setAuthorSearch(e.target.value); setShowAuthorDropdown(true); }}
                     onFocus={() => setShowAuthorDropdown(true)}
                     placeholder="Tapez le nom d'un membre du labo..."
                     className="w-full px-4 py-2.5 pl-10 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background text-sm"
                   />
                   <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
 
-                  {/* Dropdown */}
                   {showAuthorDropdown && authorSearch && (
                     <div className="absolute z-10 w-full mt-1 bg-white dark:bg-card border border-surface-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {labMembers
-                        .filter(m =>
-                          m.name.toLowerCase().includes(authorSearch.toLowerCase()) &&
-                          !formData.authors.includes(m.name)
-                        )
+                        .filter(m => m.name.toLowerCase().includes(authorSearch.toLowerCase()) && !formData.authors.includes(m.name))
                         .map(member => (
                           <button
                             key={member.id}
-                            onClick={() => {
-                              handleAddExistingAuthor(member.name);
-                              setAuthorSearch('');
-                              setShowAuthorDropdown(false);
-                            }}
+                            onClick={() => { handleAddExistingAuthor(member.name); setAuthorSearch(''); setShowAuthorDropdown(false); }}
                             className="w-full p-3 text-left hover:bg-light-gray dark:hover:bg-muted transition-colors border-b border-surface-border last:border-b-0"
                           >
                             <div className="flex items-center gap-2">
@@ -612,13 +679,8 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                             </div>
                           </button>
                         ))}
-                      {labMembers.filter(m =>
-                        m.name.toLowerCase().includes(authorSearch.toLowerCase()) &&
-                        !formData.authors.includes(m.name)
-                      ).length === 0 && (
-                        <div className="p-3 text-sm text-text-muted text-center">
-                          Aucun membre trouvé
-                        </div>
+                      {labMembers.filter(m => m.name.toLowerCase().includes(authorSearch.toLowerCase()) && !formData.authors.includes(m.name)).length === 0 && (
+                        <div className="p-3 text-sm text-text-muted text-center">Aucun membre trouvé</div>
                       )}
                     </div>
                   )}
@@ -631,35 +693,21 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
           {step === 4 && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-navy dark:text-white">Fichiers</h3>
-
               <div>
                 <label className="block text-sm font-medium mb-2">PDF de la publication</label>
                 <div className="border-2 border-dashed border-surface-border rounded-lg p-8 text-center">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    onChange={(e) => setFormData({ ...formData, pdfFile: e.target.files?.[0] || null })}
-                    className="hidden"
-                    id="pdf-upload"
-                  />
-                  <label htmlFor="pdf-upload" className="cursor-pointer">
-                    <FileText size={48} className="mx-auto text-accent-blue mb-3" />
-                    <p className="text-sm font-medium">Glisser-déposer ou cliquer pour choisir un PDF</p>
-                    <p className="text-xs text-text-muted mt-1">Maximum 20MB</p>
-                  </label>
-                  {formData.pdfFile && (
-                    <p className="text-sm text-success mt-3">✓ {formData.pdfFile.name}</p>
-                  )}
+                  <FileText size={48} className="mx-auto text-accent-blue mb-3" />
+                  <p className="text-sm font-medium">Le PDF peut être ajouté après création via la page de détail</p>
+                  <p className="text-xs text-text-muted mt-1">Formats acceptés: PDF (max 20MB)</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Step 5: Validation */}
+          {/* Step 5: Summary */}
           {step === 5 && (
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-navy dark:text-white">Résumé</h3>
-
               <div className="p-6 bg-light-gray dark:bg-input-background rounded-lg space-y-4">
                 <div>
                   <div className="text-sm text-text-secondary">Type</div>
@@ -667,7 +715,7 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                 </div>
                 <div>
                   <div className="text-sm text-text-secondary">Titre</div>
-                  <div className="font-medium">{formData.title}</div>
+                  <div className="font-medium">{formData.title || '—'}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -676,8 +724,16 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   </div>
                   <div>
                     <div className="text-sm text-text-secondary">Visibilité</div>
-                    <div className="font-medium">{formData.visibility}</div>
+                    <div className="font-medium">{formData.visibility === 'Public' ? 'Publique' : 'Privée'}</div>
                   </div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-secondary">Axe de recherche</div>
+                  <div className="font-medium">{axes.find(a => a.id === formData.researchAxisId)?.title || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-text-secondary">Auteurs</div>
+                  <div className="font-medium">{formData.authors.join(', ') || '—'}</div>
                 </div>
                 {formData.keywords.length > 0 && (
                   <div>
@@ -690,21 +746,6 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   </div>
                 )}
               </div>
-
-              {canPublishDirectly && (
-                <div>
-                  <label className="block text-sm font-medium mb-2">Statut</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as PublicationStatus })}
-                    className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
-                  >
-                    <option value="BROUILLON">Brouillon</option>
-                    <option value="SOUMIS">Soumis</option>
-                    <option value="PUBLIE">Publié</option>
-                  </select>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -722,7 +763,7 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
               <Button onClick={() => setStep(step + 1)}>Suivant</Button>
             ) : (
               <Button onClick={handleSubmit}>
-                {canPublishDirectly ? 'Publier' : 'Soumettre'}
+                {initialData ? 'Enregistrer' : (canPublishDirectly ? 'Publier' : 'Soumettre')}
               </Button>
             )}
           </div>

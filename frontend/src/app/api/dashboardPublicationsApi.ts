@@ -103,8 +103,12 @@ interface DashboardPublicationStatusResponse {
   Status?: string;
   message?: string;
   Message?: string;
-  extra?: string;
-  Extra?: string;
+  // validate response
+  validatedBy?: string;
+  ValidatedBy?: string;
+  // reject response
+  rejectionReason?: string;
+  RejectionReason?: string;
 }
 
 export interface DashboardPublicationResearchAxisRequest {
@@ -198,7 +202,6 @@ const unwrapStatus = (response: DashboardPublicationStatusResponse) => ({
   id: response.id ?? response.Id ?? '',
   status: response.status ?? response.Status ?? '',
   message: response.message ?? response.Message ?? '',
-  extra: response.extra ?? response.Extra ?? '',
 });
 
 const unwrapBaseMessage = (response: DashboardBaseResponse) => response.message ?? response.Message ?? '';
@@ -207,7 +210,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardPublications: builder.query<DashboardPublicationsListDto, DashboardPublicationsQueryParams | void>({
       query: (params) => ({
-        url: 'publications',
+        url: 'v1/publications',
         method: 'GET',
         params: params ?? undefined,
       }),
@@ -217,7 +220,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     getDashboardPublicationById: builder.query<DashboardPublicationDetailDto | null, string>({
       query: (id) => ({
-        url: `publications/${id}`,
+        url: `v1/publications/${id}`,
         method: 'GET',
       }),
       transformResponse: (response: DashboardPublicationDetailResponse | DashboardPublicationDetailDto) => unwrapDetail(response),
@@ -226,7 +229,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     createDashboardPublication: builder.mutation<{ id: string; status?: string | null } | null, CreateDashboardPublicationRequest>({
       query: (body) => ({
-        url: 'publications',
+        url: 'v1/publications',
         method: 'POST',
         body,
       }),
@@ -236,7 +239,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     updateDashboardPublication: builder.mutation<{ success: boolean; message: string }, { id: string; body: UpdateDashboardPublicationRequest }>({
       query: ({ id, body }) => ({
-        url: `publications/${id}`,
+        url: `v1/publications/${id}`,
         method: 'PUT',
         body,
       }),
@@ -249,7 +252,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     deleteDashboardPublication: builder.mutation<{ success: boolean; message: string }, string>({
       query: (id) => ({
-        url: `publications/${id}`,
+        url: `v1/publications/${id}`,
         method: 'DELETE',
       }),
       transformResponse: (response: DashboardBaseResponse) => ({
@@ -261,7 +264,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     addDashboardPublicationPdf: builder.mutation<{ pdfUrl: string | null; message: string }, { id: string; body: PdfRequest }>({
       query: ({ id, body }) => ({
-        url: `publications/${id}/pdf`,
+        url: `v1/publications/${id}/pdf`,
         method: 'POST',
         body,
       }),
@@ -274,7 +277,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     removeDashboardPublicationPdf: builder.mutation<{ success: boolean; message: string }, { id: string; body: PdfRequest }>({
       query: ({ id, body }) => ({
-        url: `publications/${id}/pdf`,
+        url: `v1/publications/${id}/pdf`,
         method: 'DELETE',
         body,
       }),
@@ -287,7 +290,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     submitDashboardPublication: builder.mutation<{ id: string; status: string; message: string }, string>({
       query: (id) => ({
-        url: `publications/${id}/submit`,
+        url: `v1/publications/${id}/submit`,
         method: 'POST',
       }),
       transformResponse: (response: DashboardPublicationStatusResponse) => ({
@@ -301,25 +304,25 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 
     validateDashboardPublication: builder.mutation<{ id: string; status: string; message: string; validatedBy?: string }, string>({
       query: (id) => ({
-        url: `publications/${id}/validate`,
+        url: `v1/publications/${id}/validate`,
         method: 'POST',
       }),
       transformResponse: (response: DashboardPublicationStatusResponse) => ({
         ...unwrapStatus(response),
-        validatedBy: response.extra ?? response.Extra,
+        validatedBy: response.validatedBy ?? response.ValidatedBy,
       }),
       invalidatesTags: (_result, _error, id) => ['Publication', { type: 'Publication', id }],
     }),
 
     rejectDashboardPublication: builder.mutation<{ id: string; status: string; message: string; rejectionReason?: string }, { id: string; body: RejectPublicationRequest }>({
       query: ({ id, body }) => ({
-        url: `publications/${id}/reject`,
+        url: `v1/publications/${id}/reject`,
         method: 'POST',
         body,
       }),
       transformResponse: (response: DashboardPublicationStatusResponse) => ({
         ...unwrapStatus(response),
-        rejectionReason: response.extra ?? response.Extra,
+        rejectionReason: response.rejectionReason ?? response.RejectionReason,
       }),
       invalidatesTags: (_result, _error, { id }) => ['Publication', { type: 'Publication', id }],
     }),
