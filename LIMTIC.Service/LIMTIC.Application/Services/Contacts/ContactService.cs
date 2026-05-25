@@ -1,4 +1,5 @@
 using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Contacts;
 using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Contracts.Commands.Contacts;
@@ -9,6 +10,7 @@ using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Contacts;
 using Microsoft.Extensions.Options;
 using LIMTIC.Application.Settings;
+using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Contacts
 {
@@ -18,17 +20,23 @@ namespace LIMTIC.Application.Services.Contacts
         private readonly IEmailService _emailService;
         private readonly IValidator<SendContactMessageCommand> _validator;
         private readonly EmailSettings _emailSettings;
+        private readonly IAuditLogsRepository _auditLogsRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public ContactService(
             IContactRepository contactRepository,
             IEmailService emailService,
             IValidator<SendContactMessageCommand> validator,
-            IOptions<EmailSettings> emailSettings)
+            IOptions<EmailSettings> emailSettings,
+            IAuditLogsRepository auditLogsRepository,
+            ICurrentUserService currentUserService)
         {
             _contactRepository = contactRepository;
             _emailService = emailService;
             _validator = validator;
             _emailSettings = emailSettings.Value;
+            _auditLogsRepository = auditLogsRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<string>> SendContactMessageAsync(SendContactMessageCommand command)
@@ -59,6 +67,9 @@ namespace LIMTIC.Application.Services.Contacts
                 Message = contact.Message,
                 SentAt = sentAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
             });
+
+            var contactLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Contact);
+            await _auditLogsRepository.AddLog(contactLog);
 
             return Result<string>.SuccessResult("Contact message sent successfully.");
         }

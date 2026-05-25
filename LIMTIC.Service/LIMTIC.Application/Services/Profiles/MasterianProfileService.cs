@@ -19,6 +19,7 @@ namespace LIMTIC.Application.Services.Profiles
         private readonly IProfileMapper _profileMapper;
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<UpdateMasterianProfileCommand> _updateValidator;
+        private readonly IAuditLogsRepository _auditLogsRepository;
 
         public MasterianProfileService(
             IMasterianRepository masterianRepository,
@@ -26,7 +27,8 @@ namespace LIMTIC.Application.Services.Profiles
             IUserRepository userRepository,
             IProfileMapper profileMapper,
             ICurrentUserService currentUserService,
-            IValidator<UpdateMasterianProfileCommand> updateValidator)
+            IValidator<UpdateMasterianProfileCommand> updateValidator,
+            IAuditLogsRepository auditLogsRepository)
         {
             _masterianRepository = masterianRepository;
             _researcherRepository = researcherRepository;
@@ -34,6 +36,7 @@ namespace LIMTIC.Application.Services.Profiles
             _profileMapper = profileMapper;
             _currentUserService = currentUserService;
             _updateValidator = updateValidator;
+            _auditLogsRepository = auditLogsRepository;
         }
 
         public async Task<Result<List<MasterianProfileDto>>> GetAllAsync()
@@ -91,6 +94,9 @@ namespace LIMTIC.Application.Services.Profiles
             // Reload to get updated supervisor navigation
             var updated = await _masterianRepository.GetByUserIdAsync(command.UserId);
 
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            await _auditLogsRepository.AddLog(profileLog);
+
             return Result<MasterianProfileCommandResponse>.SuccessResult(new MasterianProfileCommandResponse
             {
                 Profile = _profileMapper.MapToMasterianProfileDto(updated!)
@@ -116,6 +122,9 @@ namespace LIMTIC.Application.Services.Profiles
                 if (!updated)
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
+
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.User);
+            await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);
         }
