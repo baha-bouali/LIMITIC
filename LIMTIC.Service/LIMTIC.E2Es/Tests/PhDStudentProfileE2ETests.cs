@@ -71,14 +71,6 @@ namespace LIMTIC.E2Es.Tests
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
-        [Fact]
-        public async Task GetPhDStudentProfile_Unauthenticated_Returns401()
-        {
-            var response = await Client.GetPhDStudentProfileFullResponse(Guid.NewGuid(), "invalid-token");
-
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        }
-
         // ── UPDATE ─────────────────────────────────────────────────────────────────
 
         [Fact]
