@@ -7,6 +7,12 @@ interface AxisResponse {
   message?: string;
 }
 
+interface AxesListResponse {
+  success: boolean;
+  researchAxes?: ResearchAxisDto[];
+  message?: string;
+}
+
 export interface AxisUpsertBody {
   title: string;
   description: string;
@@ -18,6 +24,18 @@ export interface AxisUpsertBody {
 
 export const axesApi = api.injectEndpoints({
   endpoints: (builder) => ({
+
+    getAllAxes: builder.query<ResearchAxisDto[], void>({
+      query: () => ({ url: 'research-axes', skipAuth: true }),
+      transformResponse: (response: AxesListResponse) => response.researchAxes || [],
+      providesTags: ['Axis'],
+    }),
+
+    getAxisById: builder.query<ResearchAxisDto, string>({
+      query: (id) => ({ url: `research-axes/${id}`, skipAuth: true }),
+      transformResponse: (response: AxisResponse) => response.researchAxis!,
+      providesTags: (_result, _error, id) => [{ type: 'Axis', id }],
+    }),
 
     createAxis: builder.mutation<ResearchAxisDto, AxisUpsertBody>({
       query: (body) => ({ url: 'research-axes', method: 'POST', body }),
@@ -41,6 +59,8 @@ export const axesApi = api.injectEndpoints({
 });
 
 export const {
+  useGetAllAxesQuery,
+  useGetAxisByIdQuery,
   useCreateAxisMutation,
   useUpdateAxisMutation,
   useDeleteAxisMutation,

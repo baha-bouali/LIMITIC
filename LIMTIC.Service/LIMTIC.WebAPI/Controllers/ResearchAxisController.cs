@@ -18,7 +18,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetAll()
         {
             var result = await _researchAxisService.GetAllAsync();
@@ -26,7 +26,7 @@ namespace LIMTIC.WebAPI.Controllers
         }
 
         [HttpGet("{id:guid}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(Guid id)
         {
             var result = await _researchAxisService.GetByIdAsync(id);
