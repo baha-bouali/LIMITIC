@@ -9,8 +9,8 @@ const DAYS_BACK = 15;
 function getFromUtc(): string {
   const d = new Date();
   d.setUTCDate(d.getUTCDate() - DAYS_BACK);
-  d.setUTCHours(0, 0, 0, 0);
-  return d.toISOString();
+  // Date-only format avoids colon URL-encoding issues with .NET DateTime model binder
+  return d.toISOString().slice(0, 10); // "YYYY-MM-DD"
 }
 
 type BadgeVariant = 'success' | 'info' | 'error' | 'default';
@@ -43,7 +43,10 @@ function formatTimestamp(iso: string): string {
 
 export default function SuperAdminAudit() {
   const fromUtc = useMemo(() => getFromUtc(), []);
-  const { data: logs = [], isLoading, isError } = useGetAuditLogsQuery({ fromUtc });
+  const { data: logs = [], isLoading, isError } = useGetAuditLogsQuery(
+    { fromUtc },
+    { refetchOnMountOrArgChange: true },
+  );
 
   return (
     <div className="space-y-6">
