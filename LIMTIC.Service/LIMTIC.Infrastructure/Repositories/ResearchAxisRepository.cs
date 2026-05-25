@@ -15,12 +15,14 @@ namespace LIMTIC.Infrastructure.Repositories
             => await _dbContext.ResearchAxes
                 .Include(a => a.Responsible).ThenInclude(r => r!.User)
                 .Include(a => a.Researchers).ThenInclude(r => r.User)
+                .Include(a => a.Publications)
                 .ToListAsync();
 
         public async Task<ResearchAxisEntity?> GetByIdAsync(Guid id)
             => await _dbContext.ResearchAxes
                 .Include(a => a.Responsible).ThenInclude(r => r!.User)
                 .Include(a => a.Researchers).ThenInclude(r => r.User)
+                .Include(a => a.Publications)
                 .FirstOrDefaultAsync(a => a.Id == id);
 
         public async Task<List<ResearchAxisEntity>> GetByIdsAsync(List<Guid> ids)

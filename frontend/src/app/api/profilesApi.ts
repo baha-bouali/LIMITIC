@@ -1,5 +1,11 @@
 import { api } from './baseApi';
 
+export interface AxisMemberDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface ResearchAxisDto {
   id: string;
   title: string;
@@ -7,6 +13,9 @@ export interface ResearchAxisDto {
   themes: string[];
   color?: string;
   responsibleId?: string | null;
+  responsibleName?: string | null;
+  publicationsCount?: number;
+  members?: AxisMemberDto[];
 }
 
 export interface ResearcherProfileDto {
@@ -147,6 +156,7 @@ export const profilesApi = api.injectEndpoints({
     getResearchAxes: builder.query<ResearchAxisDto[], void>({
       query: () => ({ url: 'research-axes', method: 'GET' }),
       transformResponse: (response: ResearchAxesListResponse) => response.researchAxes,
+      providesTags: ['Axis'],
     }),
 
     // ── Profile update mutations ──────────────────────────────────────────

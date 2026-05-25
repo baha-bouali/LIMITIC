@@ -4,96 +4,52 @@ import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { ConfirmDialog } from '../../../components/shared/ConfirmDialog';
-import { Target, Pencil, Trash2, X, Users, BookOpen, Plus } from 'lucide-react';
+import { Target, Pencil, Trash2, X, Users, BookOpen, Plus, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../../contexts/LanguageContext';
-
-interface Axe {
-  id: string;
-  title: string;
-  description: string;
-  responsible: {
-    id: string;
-    name: string;
-  };
-  themes: string[];
-  members: number;
-  publications: number;
-  color: string;
-}
+import { useGetResearchAxesQuery, useGetAllResearchersQuery, type ResearchAxisDto } from '../../../api/profilesApi';
+import { useCreateAxisMutation, useUpdateAxisMutation, useDeleteAxisMutation, type AxisUpsertBody } from '../../../api/axesApi';
 
 export default function SuperAdminAxes() {
   const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingAxe, setEditingAxe] = useState<Axe | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState<Axe | null>(null);
+  const [editingAxe, setEditingAxe] = useState<ResearchAxisDto | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<ResearchAxisDto | null>(null);
 
-  const allAxes: Axe[] = [
-    {
-      id: '1',
-      title: 'Intelligence Artificielle et Apprentissage Automatique',
-      description: 'Recherche avancée en IA, machine learning, deep learning et leurs applications dans divers domaines.',
-      responsible: { id: '1', name: 'Dr. Ahmed Ben Salem' },
-      themes: ['Machine Learning', 'Deep Learning', 'NLP', 'Computer Vision', 'Reinforcement Learning'],
-      members: 8,
-      publications: 45,
-      color: 'accent-blue'
-    },
-    {
-      id: '2',
-      title: 'Sécurité Informatique et Cryptographie',
-      description: 'Étude des mécanismes de sécurité, cryptographie, blockchain et protection des systèmes d\'information.',
-      responsible: { id: '2', name: 'Dr. Fatma Gharbi' },
-      themes: ['Cryptographie', 'Blockchain', 'Sécurité Réseau', 'Cybersécurité', 'Protection des Données'],
-      members: 6,
-      publications: 32,
-      color: 'error'
-    },
-    {
-      id: '3',
-      title: 'Systèmes Distribués et Cloud Computing',
-      description: 'Développement et optimisation de systèmes distribués, cloud computing et architectures scalables.',
-      responsible: { id: '3', name: 'Dr. Mohamed Mezghani' },
-      themes: ['Cloud Computing', 'Microservices', 'Container Orchestration', 'Edge Computing'],
-      members: 5,
-      publications: 28,
-      color: 'teal'
-    },
-    {
-      id: '4',
-      title: 'Traitement d\'Images et Vision par Ordinateur',
-      description: 'Traitement et analyse d\'images, reconnaissance de formes et vision artificielle.',
-      responsible: { id: '4', name: 'Dr. Leila Ammar' },
-      themes: ['Traitement d\'Image', 'Vision par Ordinateur', 'Reconnaissance de Formes', 'Imagerie Médicale'],
-      members: 7,
-      publications: 38,
-      color: 'success'
-    },
-    {
-      id: '5',
-      title: 'Big Data et Science des Données',
-      description: 'Analyse de données massives, data mining, visualisation et aide à la décision.',
-      responsible: { id: '5', name: 'Dr. Karim Jebali' },
-      themes: ['Big Data', 'Data Mining', 'Data Visualization', 'Business Intelligence', 'Data Analytics'],
-      members: 6,
-      publications: 35,
-      color: 'warning'
-    },
-  ];
+  const { data: allAxes = [], isLoading, refetch } = useGetResearchAxesQuery();
+  const [deleteAxis, { isLoading: isDeleting }] = useDeleteAxisMutation();
 
-  const filteredAxes = allAxes.filter(axe => {
-    return searchQuery === '' ||
-      axe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      axe.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      axe.themes.some(t => t.toLowerCase().includes(searchQuery.toLowerCase()));
-  });
+  const filteredAxes = allAxes.filter(axe =>
+    searchQuery === '' ||
+    axe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    axe.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    axe.themes.some(th => th.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
 
-  const handleDelete = (axe: Axe) => {
-    toast.success(t('axes.axisDeleted'));
+  const handleDelete = async (axe: ResearchAxisDto) => {
+    try {
+      await deleteAxis(axe.id).unwrap();
+      toast.success(t('axes.axisDeleted'));
+      refetch();
+    } catch (err: any) {
+      if (err?.status === 422) {
+        toast.error(t('axes.cannotDeleteWithPublications') || 'Cannot delete: axis has linked publications');
+      } else {
+        toast.error(t('users.errorOccurred'));
+      }
+    }
     setDeleteConfirm(null);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 size={32} className="animate-spin text-accent-blue" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -108,20 +64,17 @@ export default function SuperAdminAxes() {
         </Button>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold text-navy dark:text-white">
-              {allAxes.length}
-            </div>
+            <div className="text-2xl font-bold text-navy dark:text-white">{allAxes.length}</div>
             <div className="text-sm text-text-secondary">{t('axes.axesCount')}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-accent-blue">
-              {allAxes.reduce((sum, axe) => sum + axe.members, 0)}
+              {allAxes.reduce((sum, axe) => sum + (axe.members?.length ?? 0), 0)}
             </div>
             <div className="text-sm text-text-secondary">{t('axes.totalMembers')}</div>
           </CardContent>
@@ -129,38 +82,32 @@ export default function SuperAdminAxes() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-success">
-              {allAxes.reduce((sum, axe) => sum + axe.publications, 0)}
+              {allAxes.reduce((sum, axe) => sum + (axe.publicationsCount ?? 0), 0)}
             </div>
             <div className="text-sm text-text-secondary">{t('axes.totalPublications')}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search */}
       <SearchFilter
         onSearchChange={setSearchQuery}
         filterGroups={[]}
         searchPlaceholder={t('pub.searchPlaceholder')}
       />
 
-      {/* Axes List */}
       {filteredAxes.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <Target size={64} className="mx-auto text-text-muted mb-4" />
-            <h3 className="text-xl font-bold text-navy dark:text-white mb-2">
-              {t('axes.noAxesFoundGeneric')}
-            </h3>
-            <p className="text-text-secondary">
-              {t('axes.noResults')}
-            </p>
+            <h3 className="text-xl font-bold text-navy dark:text-white mb-2">{t('axes.noAxesFoundGeneric')}</h3>
+            <p className="text-text-secondary">{t('axes.noResults')}</p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 gap-6">
-          {filteredAxes.map((axe) => (
+          {filteredAxes.map(axe => (
             <Card key={axe.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className={clsx('border-l-4', `border-${axe.color}`)}>
+              <CardHeader className={clsx('border-l-4', `border-${axe.color ?? 'accent-blue'}`)}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <h3 className="text-2xl font-bold text-navy dark:text-white mb-2">{axe.title}</h3>
@@ -169,15 +116,18 @@ export default function SuperAdminAxes() {
                     <div className="flex items-center gap-4 text-sm text-text-secondary mb-4">
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-accent-blue" />
-                        <span><strong>{t('axes.responsible')}:</strong> {axe.responsible.name}</span>
+                        <span>
+                          <strong>{t('axes.responsible')}:</strong>{' '}
+                          {axe.responsibleName ?? '—'}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Users size={16} className="text-teal" />
-                        <span>{axe.members} {t('axes.members').toLowerCase()}</span>
+                        <span>{axe.members?.length ?? 0} {t('axes.members').toLowerCase()}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <BookOpen size={16} className="text-success" />
-                        <span>{axe.publications} {t('axes.publicationsCount')}</span>
+                        <span>{axe.publicationsCount ?? 0} {t('axes.publicationsCount')}</span>
                       </div>
                     </div>
 
@@ -192,10 +142,7 @@ export default function SuperAdminAxes() {
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <Button
-                      variant="outlined"
-                      onClick={() => { setEditingAxe(axe); setShowForm(true); }}
-                    >
+                    <Button variant="outlined" onClick={() => { setEditingAxe(axe); setShowForm(true); }}>
                       <Pencil size={16} />
                       {t('common.modify')}
                     </Button>
@@ -215,22 +162,21 @@ export default function SuperAdminAxes() {
         </div>
       )}
 
-      {/* Axe Form Modal */}
       {showForm && (
         <AxeFormModal
           axe={editingAxe}
           onClose={() => { setShowForm(false); setEditingAxe(null); }}
+          onSaved={refetch}
         />
       )}
 
-      {/* Delete Confirmation */}
       {deleteConfirm && (
         <ConfirmDialog
           isOpen={true}
           onClose={() => setDeleteConfirm(null)}
           onConfirm={() => handleDelete(deleteConfirm)}
           title={t('axes.deleteAxis')}
-          description={`${t('axes.deleteMessage')} "${deleteConfirm.title}" ? ${t('axes.deleteWarning')} ${deleteConfirm.members} ${t('axes.membersAnd')} ${deleteConfirm.publications} ${t('axes.publicationsCount')}.`}
+          description={`${t('axes.deleteMessage')} "${deleteConfirm.title}" ? ${t('axes.deleteWarning')} ${deleteConfirm.members?.length ?? 0} ${t('axes.membersAnd')} ${deleteConfirm.publicationsCount ?? 0} ${t('axes.publicationsCount')}.`}
           confirmText={t('common.delete')}
           variant="danger"
         />
@@ -240,45 +186,59 @@ export default function SuperAdminAxes() {
 }
 
 interface AxeFormModalProps {
-  axe: Axe | null;
+  axe: ResearchAxisDto | null;
   onClose: () => void;
+  onSaved: () => void;
 }
 
-function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
+function AxeFormModal({ axe, onClose, onSaved }: AxeFormModalProps) {
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    title: axe?.title || '',
-    description: axe?.description || '',
-    responsibleId: axe?.responsible.id || '',
-    themes: axe?.themes || [],
-    color: axe?.color || 'accent-blue',
+  const [formData, setFormData] = useState<AxisUpsertBody>({
+    title: axe?.title ?? '',
+    description: axe?.description ?? '',
+    responsibleId: axe?.responsibleId ?? null,
+    themes: axe ? [...axe.themes] : [],
+    color: axe?.color ?? 'accent-blue',
   });
-
   const [currentTheme, setCurrentTheme] = useState('');
 
-  const chercheurs = [
-    { id: '1', name: 'Dr. Ahmed Ben Salem' },
-    { id: '2', name: 'Dr. Fatma Gharbi' },
-    { id: '3', name: 'Dr. Mohamed Mezghani' },
-    { id: '4', name: 'Dr. Leila Ammar' },
-    { id: '5', name: 'Dr. Karim Jebali' },
-  ];
+  const { data: researchers = [] } = useGetAllResearchersQuery();
+  const [createAxis, { isLoading: isCreating }] = useCreateAxisMutation();
+  const [updateAxis, { isLoading: isUpdating }] = useUpdateAxisMutation();
+  const isSaving = isCreating || isUpdating;
 
   const handleAddTheme = () => {
-    if (currentTheme.trim() && !formData.themes.includes(currentTheme.trim())) {
-      setFormData({ ...formData, themes: [...formData.themes, currentTheme.trim()] });
+    const trimmed = currentTheme.trim();
+    if (trimmed && !formData.themes?.includes(trimmed)) {
+      setFormData(prev => ({ ...prev, themes: [...(prev.themes ?? []), trimmed] }));
       setCurrentTheme('');
     }
   };
 
   const handleRemoveTheme = (theme: string) => {
-    setFormData({ ...formData, themes: formData.themes.filter(t => t !== theme) });
+    setFormData(prev => ({ ...prev, themes: (prev.themes ?? []).filter(t => t !== theme) }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success(axe ? t('axes.axisModified') : t('axes.axisCreated'));
-    onClose();
+    try {
+      const payload: AxisUpsertBody = {
+        ...formData,
+        responsibleId: formData.responsibleId || null,
+      };
+
+      if (axe) {
+        await updateAxis({ id: axe.id, data: payload }).unwrap();
+        toast.success(t('axes.axisModified'));
+      } else {
+        await createAxis(payload).unwrap();
+        toast.success(t('axes.axisCreated'));
+      }
+      onSaved();
+      onClose();
+    } catch {
+      toast.error(t('users.errorOccurred'));
+    }
   };
 
   return (
@@ -300,7 +260,7 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
               type="text"
               required
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
               className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
               placeholder="Intelligence Artificielle et Apprentissage Automatique"
             />
@@ -311,7 +271,7 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
             <textarea
               required
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
               rows={4}
               className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent resize-none dark:bg-input-background"
               placeholder={t('axes.descriptionPlaceholder')}
@@ -319,16 +279,17 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">{t('axes.responsible')} *</label>
+            <label className="block text-sm font-medium mb-2">{t('axes.responsible')}</label>
             <select
-              required
-              value={formData.responsibleId}
-              onChange={(e) => setFormData({ ...formData, responsibleId: e.target.value })}
+              value={formData.responsibleId ?? ''}
+              onChange={e => setFormData(prev => ({ ...prev, responsibleId: e.target.value || null }))}
               className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
             >
               <option value="">{t('axes.responsibleSelect')}</option>
-              {chercheurs.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+              {researchers.map(r => (
+                <option key={r.id} value={r.id}>
+                  {r.firstName} {r.lastName}
+                </option>
               ))}
             </select>
           </div>
@@ -339,8 +300,8 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
               <input
                 type="text"
                 value={currentTheme}
-                onChange={(e) => setCurrentTheme(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTheme())}
+                onChange={e => setCurrentTheme(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTheme(); } }}
                 className="flex-1 px-4 py-2 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
                 placeholder={t('axes.thematicsPlaceholder')}
               />
@@ -350,10 +311,10 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {formData.themes.map((theme, idx) => (
+              {(formData.themes ?? []).map((theme, idx) => (
                 <Badge key={idx} variant="info" className="flex items-center gap-2">
                   {theme}
-                  <button onClick={() => handleRemoveTheme(theme)} className="hover:text-error">
+                  <button type="button" onClick={() => handleRemoveTheme(theme)} className="hover:text-error">
                     <X size={14} />
                   </button>
                 </Badge>
@@ -365,8 +326,8 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
             <label className="block text-sm font-medium mb-2">{t('axes.color')} *</label>
             <select
               required
-              value={formData.color}
-              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              value={formData.color ?? 'accent-blue'}
+              onChange={e => setFormData(prev => ({ ...prev, color: e.target.value }))}
               className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
             >
               <option value="accent-blue">{t('axes.colorBlue')}</option>
@@ -379,8 +340,13 @@ function AxeFormModal({ axe, onClose }: AxeFormModalProps) {
         </form>
 
         <div className="px-6 py-4 border-t border-surface-border flex justify-end gap-3">
-          <Button onClick={onClose} variant="outlined">{t('common.cancel')}</Button>
-          <Button onClick={handleSubmit}>{axe ? t('common.modify') : t('common.create')}</Button>
+          <Button onClick={onClose} variant="outlined" disabled={isSaving}>
+            {t('common.cancel')}
+          </Button>
+          <Button onClick={handleSubmit as any} disabled={isSaving}>
+            {isSaving && <Loader2 size={16} className="animate-spin" />}
+            {axe ? t('common.modify') : t('common.create')}
+          </Button>
         </div>
       </div>
     </div>

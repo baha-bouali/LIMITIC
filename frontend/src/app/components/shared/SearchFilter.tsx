@@ -90,21 +90,23 @@ export function SearchFilter({
             className="w-full pl-10 pr-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background"
           />
         </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={clsx(
-            'flex items-center gap-2 px-4 py-3 border border-surface-border rounded-lg transition-colors',
-            showFilters ? 'bg-accent-blue text-white border-accent-blue' : 'hover:bg-light-gray dark:hover:bg-input-background'
-          )}
-        >
-          <Filter size={20} />
-          <span className="hidden md:inline">Filtres</span>
-          {activeFilterCount > 0 && (
-            <Badge variant="default" className="!bg-white !text-accent-blue !px-2 !py-0.5">
-              {activeFilterCount}
-            </Badge>
-          )}
-        </button>
+        {filterGroups.length > 0 && (
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={clsx(
+              'flex items-center gap-2 px-4 py-3 border border-surface-border rounded-lg transition-colors',
+              showFilters ? 'bg-accent-blue text-white border-accent-blue' : 'hover:bg-light-gray dark:hover:bg-input-background'
+            )}
+          >
+            <Filter size={20} />
+            <span className="hidden md:inline">Filtres</span>
+            {activeFilterCount > 0 && (
+              <Badge variant="default" className="!bg-white !text-accent-blue !px-2 !py-0.5">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </button>
+        )}
       </div>
 
       {showFilters && filterGroups.length > 0 && (
