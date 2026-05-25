@@ -40,6 +40,7 @@ namespace LIMTIC.WebAPI
                 .AddApplication()
                 .AddInfrastructure(builder.Configuration)
                 .AddMappers()
+                .AddAuthorization()
                 .AddEndpointsApiExplorer()
                 .AddSwaggerDocumentation();
 

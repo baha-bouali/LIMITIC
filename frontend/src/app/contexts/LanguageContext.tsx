@@ -536,6 +536,10 @@ const translations = {
     'axes.colorOrange': 'Orange',
     'axes.axisCreated': 'Axe créé avec succès!',
     'axes.axisModified': 'Axe modifié avec succès!',
+    'axes.errorLoading': 'Erreur lors du chargement des axes',
+    'axes.tryAgainLater': 'Veuillez réessayer plus tard',
+    'axes.notAssigned': 'Non assigné',
+    'axes.viewProfile': 'Voir le profil',
 
     // Contact
     'contact.title': 'Contactez-nous',
@@ -1196,6 +1200,10 @@ const translations = {
     'axes.colorOrange': 'Orange',
     'axes.axisCreated': 'Area created successfully!',
     'axes.axisModified': 'Area modified successfully!',
+    'axes.errorLoading': 'Error loading areas',
+    'axes.tryAgainLater': 'Please try again later',
+    'axes.notAssigned': 'Not assigned',
+    'axes.viewProfile': 'View profile',
 
     // Contact
     'contact.title': 'Contact Us',
