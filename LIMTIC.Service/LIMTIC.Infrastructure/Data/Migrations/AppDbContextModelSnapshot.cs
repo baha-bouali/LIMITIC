@@ -204,6 +204,39 @@ namespace LIMTIC.Infrastructure.Migrations
                 b.ToTable("Speakers");
             });
 
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Logs.AuditLogsEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("ActorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Resource")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorId");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
             {
                 b.Property<Guid>("Id")
@@ -835,6 +868,17 @@ namespace LIMTIC.Infrastructure.Migrations
 
                 b.Navigation("Event");
             });
+
+            modelBuilder.Entity("LIMTIC.Domain.Entities.Logs.AuditLogsEntity", b =>
+                {
+                    b.HasOne("LIMTIC.Domain.Entities.Users.UserEntity", "Actor")
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.Navigation("Actor");
+                });
 
             modelBuilder.Entity("LIMTIC.Domain.Entities.Publications.BookChapterEntity", b =>
             {

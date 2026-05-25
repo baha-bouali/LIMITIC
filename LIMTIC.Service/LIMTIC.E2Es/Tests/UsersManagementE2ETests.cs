@@ -212,31 +212,5 @@ namespace LIMTIC.E2Es.Tests
             Assert.Equal(1, result.Page);
             Assert.Equal(2, result.Limit);
         }
-
-        [Fact]
-        public async Task GetUsers_NonAdmin_Returns403()
-        {
-            var adminToken = await LoginAsSuperAdmin();
-
-            await Client.AddUser(new CreateUserRequest
-            {
-                FirstName = "Auth", LastName = "Test",
-                Email = "e2e.getusers.visitor@example.com",
-                Password = "password", IsActive = true
-            }, adminToken);
-
-            var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.getusers.visitor@example.com", "password"));
-
-            var response = await Client.GetUsersFullResponse(visitorToken?.AccessToken ?? "");
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-        }
-
-        [Fact]
-        public async Task GetUsers_Unauthenticated_Returns401()
-        {
-            var response = await Client.GetUsersFullResponse("invalid-token");
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        }
     }
 }

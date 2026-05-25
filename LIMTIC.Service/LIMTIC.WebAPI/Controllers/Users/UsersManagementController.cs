@@ -38,7 +38,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         /// Query params: role, status (active|inactive), q (search firstName/lastName/email), page, limit
         /// </summary>
         [HttpGet]
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetUsers(
             [FromQuery] UserRole? role,
             [FromQuery] string? status,
@@ -74,6 +74,27 @@ namespace LIMTIC.WebAPI.Controllers.Users
                 Items   = result.Data.Items,
                 Total   = result.Data.Total,
                 Counts  = counts,
+                Page    = result.Data.Page,
+                Limit   = result.Data.Limit
+            });
+        }
+
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicUsers(
+            [FromQuery] UserRole? role,
+            [FromQuery] int page = 1,
+            [FromQuery] int limit = 100)
+        {
+            // Only fetch active team members for public route
+            var result = await _usersManagementService.GetUsersAsync(role, true, null, page, limit);
+            
+            return Ok(new GetUsersResponse
+            {
+                Success = true,
+                Items   = result.Data!.Items,
+                Total   = result.Data.Total,
+                Counts  = new Dictionary<string, int>(),
                 Page    = result.Data.Page,
                 Limit   = result.Data.Limit
             });
@@ -142,7 +163,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         }
 
         [HttpPost("activateUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> ActivateUser(Guid userId)
         {
             var result = await _usersManagementService.ActivateUserAsync(userId);
@@ -165,7 +186,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         }
 
         [HttpPost("deactivateUser/")]
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> DeactivateUser(Guid userId)
         {
             var result = await _usersManagementService.DeactivateUserAsync(userId);
@@ -209,6 +230,19 @@ namespace LIMTIC.WebAPI.Controllers.Users
                     ValidationErrors = result.ValidationErrors
                 });
             }
+        }
+
+        [HttpDelete("{userId:guid}")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
+        public async Task<IActionResult> DeleteUser(Guid userId)
+        {
+            var result = await _usersManagementService.DeleteUserAsync(userId);
+            if (result.Success)
+                return Ok(new BaseResponse { Success = true });
+
+            return result.Message == "User not found"
+                ? NotFound(new BaseResponse { Success = false, Message = result.Message })
+                : BadRequest(new BaseResponse { Success = false, Message = result.Message });
         }
 
         [HttpPost("changePassword")]

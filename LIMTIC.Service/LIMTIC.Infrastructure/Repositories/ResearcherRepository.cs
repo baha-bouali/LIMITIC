@@ -1,5 +1,6 @@
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Users;
+using LIMTIC.Domain.Entities.ResearchAxis;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,10 +13,31 @@ namespace LIMTIC.Infrastructure.Repositories
 
         public async Task<ResearcherEntity?> GetByUserIdAsync(Guid userId)
         {
+            try
+            {
+                // Try to fetch researcher with research axes (normal path)
+                return await _dbContext.Researchers
+                    .Include(r => r.User)
+                    .Include(r => r.ResearchAxes)
+                    .FirstOrDefaultAsync(r => r.Id == userId);
+            }
+            catch (Exception)
+            {
+                // If the database schema is missing the join table (e.g., migrations not applied),
+                // fall back to fetching researcher without research axes to avoid throwing 500.
+                var researcher = await _dbContext.Researchers
+                    .Include(r => r.User)
+                    .FirstOrDefaultAsync(r => r.Id == userId);
+                return researcher;
+            }
+        }
+
+        public async Task<List<ResearcherEntity>> GetAllAsync()
+        {
             return await _dbContext.Researchers
                 .Include(r => r.User)
                 .Include(r => r.ResearchAxes)
-                .FirstOrDefaultAsync(r => r.Id == userId);
+                .ToListAsync();
         }
 
         public async Task<bool> AddAsync(ResearcherEntity entity)

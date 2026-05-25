@@ -22,8 +22,16 @@ namespace LIMTIC.WebAPI.Controllers.Users
             _currentUserService = currentUserService;
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAllProfiles()
+        {
+            var result = await _researcherProfileService.GetAllAsync();
+            return Ok(new ResearchersListResponse { Success = true, Profiles = result.Data });
+        }
+
         [HttpGet("{userId:guid}")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetProfile(Guid userId)
         {
             var result = await _researcherProfileService.GetByUserIdAsync(userId);

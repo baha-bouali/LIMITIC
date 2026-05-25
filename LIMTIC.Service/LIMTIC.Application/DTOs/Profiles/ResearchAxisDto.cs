@@ -8,6 +8,8 @@ namespace LIMTIC.Application.DTOs.Profiles
         public string[] Themes { get; set; } = [];
         public string? Color { get; set; }
         public Guid? ResponsibleId { get; set; }
+        public string? ResponsibleName { get; set; }
+        public int PublicationsCount { get; set; }
         public List<AxisMemberDto> Members { get; set; } = [];
     }
 }

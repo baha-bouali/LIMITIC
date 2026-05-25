@@ -43,6 +43,13 @@ namespace LIMTIC.Application.Services.Profiles
             _auditLogsRepository = auditLogsRepository;
         }
 
+        public async Task<Result<List<PhDStudentProfileDto>>> GetAllAsync()
+        {
+            var students = await _phDStudentRepository.GetAllAsync();
+            var dtos = students.Select(_profileMapper.MapToPhDStudentProfileDto).ToList();
+            return Result<List<PhDStudentProfileDto>>.SuccessResult(dtos);
+        }
+
         public async Task<Result<PhDStudentProfileDto>> GetByUserIdAsync(Guid userId)
         {
             var phDStudent = await _phDStudentRepository.GetByUserIdAsync(userId);

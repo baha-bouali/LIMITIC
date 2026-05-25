@@ -88,7 +88,7 @@ namespace LIMTIC.Application.Services.Auth
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
-            var loginLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGIN, ResourceType.User);
+            var loginLog = AuditLogHelper.CreateAuditLog(user.Id, ActionType.LOGIN, ResourceType.User);
             await _auditLogsRepository.AddLog(loginLog);
 
             return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
@@ -137,7 +137,7 @@ namespace LIMTIC.Application.Services.Auth
                 ExpiryMinutes = _otpTokenSettings.ExpireInMinutes
             });
 
-            var forgetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            var forgetPasswordLog = AuditLogHelper.CreateAuditLog(user.Id, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(forgetPasswordLog);
 
             return Result<string>.SuccessResult("OTP sent to email");

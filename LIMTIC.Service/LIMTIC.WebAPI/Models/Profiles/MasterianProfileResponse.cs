@@ -6,4 +6,9 @@ namespace LIMTIC.WebAPI.Models.Profiles
     {
         public MasterianProfileDto? Profile { get; set; }
     }
+
+    public class MastersListResponse : BaseResponse
+    {
+        public List<MasterianProfileDto>? Profiles { get; set; }
+    }
 }

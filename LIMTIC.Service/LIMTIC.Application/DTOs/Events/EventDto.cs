@@ -10,6 +10,8 @@ namespace LIMTIC.Application.DTOs.Events
         public string Location { get; set; }
         public string Status { get; set; }
         public string Description { get; set; }
+        public string? Program { get; set; }
+        public List<string> PhotoFileNames { get; set; } = [];
         public List<SpeakerDto>? Speakers { get; set; } = new();
     }
 }

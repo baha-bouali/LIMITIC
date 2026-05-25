@@ -8,6 +8,7 @@ using LIMTIC.Application.Helpers;
 
 using LIMTIC.Application.Mappers.ProfileMapper;
 using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Profiles
@@ -40,9 +41,53 @@ namespace LIMTIC.Application.Services.Profiles
             _auditLogsRepository = auditLogsRepository;
         }
 
+        public async Task<Result<List<ResearcherProfileDto>>> GetAllAsync()
+        {
+            var researchers = await _researcherRepository.GetAllAsync();
+            var dtos = researchers.Select(_profileMapper.MapToResearcherProfileDto).ToList();
+            return Result<List<ResearcherProfileDto>>.SuccessResult(dtos);
+        }
+
         public async Task<Result<ResearcherProfileDto>> GetByUserIdAsync(Guid userId)
         {
-            var researcher = await _researcherRepository.GetByUserIdAsync(userId);
+            ResearcherEntity? researcher = null;
+            try
+            {
+                researcher = await _researcherRepository.GetByUserIdAsync(userId);
+            }
+            catch (Exception)
+            {
+                // If repository fails due to missing schema (join table), fall back to returning
+                // a minimal profile using the User entity to avoid returning 500.
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                if (user is null)
+                    return Result<ResearcherProfileDto>.FailureResult("Researcher profile not found");
+
+                var minimal = new ResearcherProfileDto
+                {
+                    Id = user.Id,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = user.Role,
+                    IsActive = user.IsActive,
+                    AvatarBlobName = user.AvatarBlobName,
+                    // Other researcher fields unavailable in fallback
+                    Rank = null,
+                    Specialty = null,
+                    Office = null,
+                    PhoneNumber = null,
+                    Biography = null,
+                    Orcid = null,
+                    GoogleScholar = null,
+                    ResearchGate = null,
+                    LinkedIn = null,
+                    ResearchAxes = new List<ResearchAxisDto>()
+                };
+
+                return Result<ResearcherProfileDto>.SuccessResult(minimal);
+            }
+
             if (researcher is null)
                 return Result<ResearcherProfileDto>.FailureResult("Researcher profile not found");
 

@@ -16,6 +16,7 @@ namespace LIMTIC.Application.Abstractions.UserManagement
         Task<Result<string>> ChangeUserPasswordAsync(ChangeUserPasswordCommand command);
         Task<Result<bool>> ActivateUserAsync(Guid userId);
         Task<Result<bool>> DeactivateUserAsync(Guid userId);
+        Task<Result<bool>> DeleteUserAsync(Guid userId);
         Task<Result<bool>> UpdateUserRoleAsync(UpdateUserRoleCommand command);
         Task<Result<string>> UpdateUserAvatarAsync(Guid userId, Stream fileStream, string fileName, string contentType);
         Task<Result<FileDownloadDto>> GetUserAvatarAsync(Guid userId);

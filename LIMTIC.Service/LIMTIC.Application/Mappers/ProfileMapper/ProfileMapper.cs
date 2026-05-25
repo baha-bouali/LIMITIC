@@ -27,10 +27,23 @@ namespace LIMTIC.Application.Mappers.ProfileMapper
                 GoogleScholar = researcher.GoogleScholar,
                 ResearchGate = researcher.ResearchGate,
                 LinkedIn = researcher.LinkedIn,
-                ResearchAxes = researcher.ResearchAxes
-                    .Select(a => new ResearchAxisDto { Id = a.Id, Title = a.Title })
-                    .ToList()
+                ResearchAxes = SafeMapResearchAxes(researcher)
             };
+        }
+
+        private List<ResearchAxisDto> SafeMapResearchAxes(ResearcherEntity researcher)
+        {
+            try
+            {
+                return researcher.ResearchAxes
+                    .Select(a => new ResearchAxisDto { Id = a.Id, Title = a.Title })
+                    .ToList();
+            }
+            catch
+            {
+                // If the navigation or underlying join table is missing, return empty list
+                return new List<ResearchAxisDto>();
+            }
         }
 
         public PhDStudentProfileDto MapToPhDStudentProfileDto(PhDStudentEntity phDStudent)

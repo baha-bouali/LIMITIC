@@ -198,6 +198,10 @@ namespace LIMTIC.Application.Services.ResearchAxis
             Themes = e.Themes,
             Color = e.Color,
             ResponsibleId = e.ResponsibleId,
+            ResponsibleName = e.Responsible?.User is { } u
+                ? $"{u.FirstName} {u.LastName}".Trim()
+                : null,
+            PublicationsCount = e.Publications.Count,
             Members = e.Researchers.Select(r => new AxisMemberDto
             {
                 Id = r.Id,

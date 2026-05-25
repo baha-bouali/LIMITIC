@@ -6,6 +6,7 @@ namespace LIMTIC.Application.Abstractions.Profiles
 {
     public interface IResearcherProfileService
     {
+        Task<Result<List<ResearcherProfileDto>>> GetAllAsync();
         Task<Result<ResearcherProfileDto>> GetByUserIdAsync(Guid userId);
         Task<Result<ResearcherProfileCommandResponse>> UpdateAsync(UpdateResearcherProfileCommand command);
         Task<Result<bool>> DeleteAsync(Guid userId);
