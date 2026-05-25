@@ -7,6 +7,7 @@ import { useGetAuditLogsQuery } from '../../../api/auditLogsApi';
 import { useGetAllAxesQuery } from '../../../api/axesApi';
 import { useGetEventsQuery } from '../../../api/eventsApi';
 import { useGetUsersQuery } from '../../../api/usersApi';
+import { useGetDashboardPublicationsQuery } from '../../../api/dashboardPublicationsApi';
 
 export default function SuperAdminOverview() {
   const { t } = useLanguage();
@@ -15,9 +16,11 @@ export default function SuperAdminOverview() {
   const { data: axes = [], isLoading: axesLoading } = useGetAllAxesQuery();
   const { data: events = [], isLoading: eventsLoading } = useGetEventsQuery({ limit: 1000 });
   const { data: auditLogs = [], isLoading: logsLoading } = useGetAuditLogsQuery({ fromUtc });
+  const { data: publicationPage, isLoading: publicationsLoading } = useGetDashboardPublicationsQuery({ scope: 'all', limit: 1000 });
 
   const activeMembers = users.filter((user) => user.isActive !== false).length;
-  const publicationsCount = axes.reduce((sum, axis) => sum + (axis.publicationsCount ?? 0), 0);
+  const publications = publicationPage?.items ?? [];
+  const pendingPublications = publications.filter((publication) => publication.status === 'Submitted');
   const upcomingEvents = events
     .filter((event) => event.status === 'A_VENIR')
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
@@ -34,7 +37,7 @@ export default function SuperAdminOverview() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard icon={<Users size={22} />} count={usersLoading ? '...' : activeMembers} label={t('dash.users')} color="accent-blue" href="/dashboard/superadmin/users" />
-        <StatCard icon={<FileText size={22} />} count={axesLoading ? '...' : publicationsCount} label={t('nav.publications')} color="teal" href="/dashboard/superadmin/publications" />
+        <StatCard icon={<FileText size={22} />} count={publicationsLoading ? '...' : publicationPage?.pagination.total ?? publications.length} label={t('nav.publications')} color="teal" href="/dashboard/superadmin/publications" />
         <StatCard icon={<Calendar size={22} />} count={eventsLoading ? '...' : upcomingEvents.length} label={t('dash.events')} color="success" href="/dashboard/superadmin/events" />
         <StatCard icon={<Target size={22} />} count={axesLoading ? '...' : axes.length} label={t('dash.researchAxes')} color="warning" href="/dashboard/superadmin/axes" />
       </div>
@@ -44,13 +47,23 @@ export default function SuperAdminOverview() {
           <div className="p-5 flex items-center justify-between border-b border-surface-border">
             <h3 className="font-bold text-navy dark:text-white flex items-center gap-2">
               {t('dash.pendingPublications')}
-              <Badge variant="default">0</Badge>
+              <Badge variant={pendingPublications.length > 0 ? 'warning' : 'default'}>{publicationsLoading ? '...' : pendingPublications.length}</Badge>
             </h3>
             <Link to="/dashboard/superadmin/publications" className="text-xs text-accent-blue hover:underline flex items-center gap-1">
               {t('dash.viewAll')} <ChevronRight size={13} />
             </Link>
           </div>
-          <EmptyPanel label={t('dash.noPendingPublications')} />
+          <div className="p-5 space-y-3">
+            {publicationsLoading ? (
+              <LoadingPanel />
+            ) : pendingPublications.length === 0 ? (
+              <EmptyPanel label={t('dash.noPendingPublications')} compact />
+            ) : (
+              pendingPublications.slice(0, 3).map((publication) => (
+                <PublicationRow key={publication.id} publication={publication} href="/dashboard/superadmin/publications" />
+              ))
+            )}
+          </div>
         </Card>
 
         <Card>
@@ -161,6 +174,20 @@ function EventRow({ id, title, date, type }: any) {
         <p className="text-sm font-medium text-navy dark:text-white truncate">{title}</p>
         <p className="text-xs text-text-secondary">{type}</p>
       </div>
+    </Link>
+  );
+}
+
+function PublicationRow({ publication, href }: any) {
+  return (
+    <Link to={href} className="flex items-start gap-3 p-3 bg-light-gray dark:bg-muted rounded-lg hover:opacity-80">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-navy dark:text-white truncate">{publication.title}</p>
+        <p className="text-xs text-text-secondary">
+          {[publication.submittedBy, publication.axe?.title, publication.year].filter(Boolean).join(' · ')}
+        </p>
+      </div>
+      <Badge variant="warning" className="flex-shrink-0">Soumis</Badge>
     </Link>
   );
 }

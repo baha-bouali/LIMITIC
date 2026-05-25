@@ -10,12 +10,23 @@ type PublicationStatus = 'BROUILLON' | 'SOUMIS' | 'PUBLIE';
 
 interface PublicationFormProps {
   onClose: () => void;
-  onSubmit: (data: any) => void;
+  onSubmit: (data: any) => void | Promise<void>;
   initialData?: any;
   canPublishDirectly?: boolean;
+  submitMode?: 'auto' | 'manual';
+  axesOptions?: { id: string; title: string }[];
+  labMembersOptions?: { id: string; name: string; role?: string; email?: string }[];
 }
 
-export function PublicationForm({ onClose, onSubmit, initialData, canPublishDirectly = false }: PublicationFormProps) {
+export function PublicationForm({
+  onClose,
+  onSubmit,
+  initialData,
+  canPublishDirectly = false,
+  submitMode = 'auto',
+  axesOptions = [],
+  labMembersOptions = [],
+}: PublicationFormProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     type: initialData?.type || 'ARTICLE_JOURNAL' as PublicationType,
@@ -57,15 +68,7 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
   const [authorSearch, setAuthorSearch] = useState('');
   const [showAuthorDropdown, setShowAuthorDropdown] = useState(false);
 
-  // Mock data for existing lab members
-  const labMembers = [
-    { id: '1', name: 'Dr. Ahmed Ben Salem', role: 'Chercheur', email: 'ahmed.bensalem@limtic.tn' },
-    { id: '2', name: 'Dr. Fatma Gharbi', role: 'Chercheur', email: 'fatma.gharbi@limtic.tn' },
-    { id: '3', name: 'Dr. Mohamed Mezghani', role: 'Chercheur', email: 'mohamed.mezghani@limtic.tn' },
-    { id: '4', name: 'Sarah Trabelsi', role: 'Doctorant', email: 'sarah.trabelsi@limtic.tn' },
-    { id: '5', name: 'Mohamed Najjar', role: 'Doctorant', email: 'mohamed.najjar@limtic.tn' },
-    { id: '6', name: 'Karim Slimi', role: 'Mastérien', email: 'karim.slimi@limtic.tn' },
-  ];
+  const labMembers = labMembersOptions;
 
   const publicationTypes = [
     { value: 'ARTICLE_JOURNAL', label: 'Article de Journal', icon: FileText },
@@ -74,6 +77,16 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
     { value: 'CHAPITRE_OUVRAGE', label: 'Chapitre d\'ouvrage', icon: File },
     { value: 'RAPPORT_TECHNIQUE', label: 'Rapport Technique', icon: ClipboardList },
   ];
+
+  const researchAxisOptions = axesOptions.length > 0
+    ? axesOptions
+    : [
+        { id: 'Intelligence Artificielle et Apprentissage Automatique', title: 'Intelligence Artificielle et Apprentissage Automatique' },
+        { id: 'Sécurité Informatique et Cryptographie', title: 'Sécurité Informatique et Cryptographie' },
+        { id: 'Systèmes Distribués et Cloud Computing', title: 'Systèmes Distribués et Cloud Computing' },
+        { id: 'Traitement d\'Images et Vision par Ordinateur', title: 'Traitement d\'Images et Vision par Ordinateur' },
+        { id: 'Big Data et Science des Données', title: 'Big Data et Science des Données' },
+      ];
 
   const handleAddKeyword = () => {
     if (currentKeyword.trim() && !formData.keywords.includes(currentKeyword.trim())) {
@@ -125,8 +138,13 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
     setFormData({ ...formData, authors: newAuthors });
   };
 
-  const handleSubmit = () => {
-    onSubmit(formData);
+  const handleSubmit = async () => {
+    await Promise.resolve(onSubmit(formData));
+
+    if (submitMode === 'manual') {
+      return;
+    }
+
     toast.success('Publication créée avec succès!');
     onClose();
   };
@@ -264,11 +282,9 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                   className="w-full px-4 py-3 border border-surface-border rounded-lg focus:ring-2 focus:ring-accent-blue focus:border-transparent dark:bg-input-background dark:text-white"
                 >
                   <option value="">Sélectionner un axe de recherche</option>
-                  <option value="Intelligence Artificielle et Apprentissage Automatique">Intelligence Artificielle et Apprentissage Automatique</option>
-                  <option value="Sécurité Informatique et Cryptographie">Sécurité Informatique et Cryptographie</option>
-                  <option value="Systèmes Distribués et Cloud Computing">Systèmes Distribués et Cloud Computing</option>
-                  <option value="Traitement d'Images et Vision par Ordinateur">Traitement d'Images et Vision par Ordinateur</option>
-                  <option value="Big Data et Science des Données">Big Data et Science des Données</option>
+                  {researchAxisOptions.map((axis) => (
+                    <option key={axis.id} value={axis.id}>{axis.title}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -607,7 +623,7 @@ export function PublicationForm({ onClose, onSubmit, initialData, canPublishDire
                               <User size={14} className="text-accent-blue" />
                               <div>
                                 <div className="font-medium text-sm">{member.name}</div>
-                                <div className="text-xs text-text-muted">{member.role} • {member.email}</div>
+                                <div className="text-xs text-text-muted">{[member.role, member.email].filter(Boolean).join(' • ')}</div>
                               </div>
                             </div>
                           </button>

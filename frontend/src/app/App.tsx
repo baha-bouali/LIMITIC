@@ -37,6 +37,7 @@ import AdminOverview from './pages/dashboard/admin/Overview';
 import AdminProfile from './pages/dashboard/admin/Profile';
 import AdminNotifications from './pages/dashboard/admin/Notifications';
 import AdminEvents from './pages/dashboard/admin/Events';
+import AdminPublications from './pages/dashboard/admin/Publications';
 
 // Chercheur pages
 import ChercheurOverview from './pages/dashboard/chercheur/Overview';
@@ -165,7 +166,7 @@ export default function App() {
                   <Route path="admin" element={<AdminOverview />} />
                   <Route path="admin/users" element={<SuperAdminUsers />} />
                   <Route path="admin/members" element={<SuperAdminUsers />} />
-                  <Route path="admin/publications" element={<SuperAdminPublications />} />
+                  <Route path="admin/publications" element={<AdminPublications />} />
                   <Route path="admin/events" element={<AdminEvents />} />
                   <Route path="admin/axes" element={<SuperAdminAxes />} />
                   <Route path="admin/statistics" element={<SuperAdminStatistics />} />

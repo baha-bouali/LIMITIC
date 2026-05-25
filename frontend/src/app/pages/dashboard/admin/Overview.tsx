@@ -7,20 +7,24 @@ import { useLanguage } from '../../../contexts/LanguageContext';
 import { useGetAllAxesQuery } from '../../../api/axesApi';
 import { useGetEventsQuery } from '../../../api/eventsApi';
 import { useGetUsersQuery } from '../../../api/usersApi';
+import { useGetDashboardPublicationsQuery } from '../../../api/dashboardPublicationsApi';
 
 export default function AdminOverview() {
   const { t } = useLanguage();
   const { data: axes = [], isLoading: axesLoading } = useGetAllAxesQuery();
   const { data: events = [], isLoading: eventsLoading } = useGetEventsQuery({ limit: 1000 });
   const { data: users = [], isLoading: usersLoading } = useGetUsersQuery({ status: 'active', limit: 1000 });
+  const { data: publicationPage, isLoading: publicationsLoading } = useGetDashboardPublicationsQuery({ scope: 'all', limit: 1000 });
 
   const activeMembers = users.filter((user) => user.isActive !== false).length;
+  const publications = publicationPage?.items ?? [];
+  const pendingPublications = publications.filter((publication) => publication.status === 'Submitted');
   const upcomingEvents = events
     .filter((event) => event.status === 'A_VENIR')
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
   const stats = [
-    { label: t('dash.pendingPublicationsCount'), value: 0, icon: Clock, color: 'bg-warning/10 text-warning', link: '/dashboard/admin/publications' },
+    { label: t('dash.pendingPublicationsCount'), value: publicationsLoading ? '...' : pendingPublications.length, icon: Clock, color: 'bg-warning/10 text-warning', link: '/dashboard/admin/publications' },
     { label: t('dash.upcomingEvents'), value: eventsLoading ? '...' : upcomingEvents.length, icon: Calendar, color: 'bg-accent-blue/10 text-accent-blue', link: '/dashboard/admin/events' },
     { label: t('dash.activeMembers'), value: usersLoading ? '...' : activeMembers, icon: Users, color: 'bg-teal/10 text-teal', link: '/dashboard/admin/users' },
     { label: t('dash.researchAxes'), value: axesLoading ? '...' : axes.length, icon: Target, color: 'bg-success/10 text-success', link: '/dashboard/admin/axes' },
@@ -62,13 +66,31 @@ export default function AdminOverview() {
               <h2 className="text-lg font-bold text-navy dark:text-white flex items-center gap-2">
                 <FileText size={20} className="text-accent-blue" />
                 {t('dash.pendingPublications')}
-                <Badge variant="default">0</Badge>
+                <Badge variant={pendingPublications.length > 0 ? 'warning' : 'default'}>{publicationsLoading ? '...' : pendingPublications.length}</Badge>
               </h2>
               <Link to="/dashboard/admin/publications" className="text-sm text-accent-blue hover:underline flex items-center gap-1">
                 {t('dash.viewAll')} <ArrowRight size={14} />
               </Link>
             </div>
-            <EmptyPanel label={t('dash.noPendingPublications')} />
+            <div className="space-y-3">
+              {publicationsLoading ? (
+                <LoadingPanel />
+              ) : pendingPublications.length === 0 ? (
+                <EmptyPanel label={t('dash.noPendingPublications')} />
+              ) : (
+                pendingPublications.slice(0, 3).map((publication) => (
+                  <Link key={publication.id} to="/dashboard/admin/publications" className="flex items-start gap-3 p-3 bg-light-gray dark:bg-muted rounded-xl hover:opacity-80">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm text-navy dark:text-white truncate">{publication.title}</p>
+                      <p className="text-xs text-text-muted mt-0.5">
+                        {[publication.submittedBy, publication.axe?.title, publication.year].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <Badge variant="warning" className="flex-shrink-0">Soumis</Badge>
+                  </Link>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
 
