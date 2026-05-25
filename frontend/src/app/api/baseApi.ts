@@ -27,6 +27,15 @@ const rawBaseQuery = fetchBaseQuery({
   },
 });
 
+const publicRawBaseQuery = fetchBaseQuery({
+  baseUrl: apiBaseUrl,
+  credentials: 'omit',
+  prepareHeaders: (headers) => {
+    headers.set('accept', 'application/json');
+    return headers;
+  },
+});
+
 export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -44,10 +53,16 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
     }
   }
 
-  let result = await rawBaseQuery(args, api, extraOptions);
+  const requestArgs = typeof args === 'string' ? args : (args as FetchArgs & { skipAuth?: boolean });
+  const skipAuth = typeof args !== 'string' && Boolean(requestArgs.skipAuth);
+  const sanitizedArgs = typeof args === 'string'
+    ? args
+    : (({ skipAuth: _skipAuth, ...rest }) => rest)(requestArgs);
 
-  const requestUrl = typeof args === 'string' ? args : (args as FetchArgs).url;
-  if (result.error?.status === 401 && requestUrl && !String(requestUrl).includes('auth/refreshToken')) {
+  let result = await (skipAuth ? publicRawBaseQuery : rawBaseQuery)(sanitizedArgs, api, extraOptions);
+
+  const requestUrl = typeof args === 'string' ? args : (requestArgs as FetchArgs).url;
+  if (!skipAuth && result.error?.status === 401 && requestUrl && !String(requestUrl).includes('auth/refreshToken')) {
     // try to get a new token
     const refreshResult = await rawBaseQuery({ url: 'auth/refreshToken', method: 'POST' }, api, extraOptions);
 
@@ -55,7 +70,7 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
     if (accessToken) {
       setAccessToken(accessToken);
       // retry original query
-      result = await rawBaseQuery(args, api, extraOptions);
+        result = await rawBaseQuery(sanitizedArgs, api, extraOptions);
     } else {
       clearAccessToken();
     }

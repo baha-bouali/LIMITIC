@@ -5,6 +5,8 @@ import { Toaster } from 'sonner';
 import HomePage from './pages/public/HomePage';
 import TeamPage from './pages/public/TeamPage';
 import ResearcherPage from './pages/public/ResearcherPage';
+import DoctorantPage from './pages/public/DoctorantPage';
+import MasterianPage from './pages/public/MasterianPage';
 import PublicationsPage from './pages/public/PublicationsPage';
 import PublicationDetailPage from './pages/public/PublicationDetailPage';
 import EventsPage from './pages/public/EventsPage';
@@ -127,6 +129,8 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/equipe" element={<TeamPage />} />
               <Route path="/chercheurs/:id" element={<ResearcherPage />} />
+              <Route path="/doctorants/:id" element={<DoctorantPage />} />
+              <Route path="/masteriens/:id" element={<MasterianPage />} />
               <Route path="/publications" element={<PublicationsPage />} />
               <Route path="/publications/:id" element={<PublicationDetailPage />} />
               <Route path="/axes-recherche" element={<AxesPage />} />

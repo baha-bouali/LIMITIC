@@ -7,6 +7,7 @@ namespace LIMTIC.Application.Abstractions.Events
     public interface IEventsService
     {
         Task<Result<(List<EventDto> Items, int Total)>> GetEventsAsync(string? status, string? type, int page, int limit, string? q);
+        Task<Result<EventDto>> GetEventByIdAsync(Guid eventId);
         Task<Result<EventDto>> CreateEventAsync(CreateEventCommand command);
         Task<Result<EventDto>> UpdateEventAsync(UpdateEventCommand command);
         Task<Result<bool>> DeleteEventAsync(Guid eventId);

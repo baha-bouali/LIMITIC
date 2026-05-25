@@ -2,9 +2,11 @@ using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Contracts.Commands.Events;
 using LIMTIC.Application.DTOs.Events;
 using LIMTIC.Domain.Enums;
+using LIMTIC.WebAPI.Models;
 using LIMTIC.WebAPI.Models.Events.AddSpeaker;
 using LIMTIC.WebAPI.Models.Events.CreateEvent;
 using LIMTIC.WebAPI.Models.Events.GetEvents;
+using LIMTIC.WebAPI.Models.Events.GetEventById;
 using LIMTIC.WebAPI.Models.Events.UpdateEvent;
 using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using Microsoft.AspNetCore.Authorization;
@@ -58,6 +60,28 @@ namespace LIMTIC.WebAPI.Controllers
                     Limit = limit
                 });
             }
+        }
+
+        [HttpGet("{id:guid}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetEventById(Guid id)
+        {
+            var result = await _eventsService.GetEventByIdAsync(id);
+
+            if (result.Success)
+            {
+                return Ok(new GetEventResponse
+                {
+                    Success = true,
+                    Event = result.Data
+                });
+            }
+
+            return NotFound(new GetEventResponse
+            {
+                Success = false,
+                Message = result.Message
+            });
         }
 
         [HttpPost("")]

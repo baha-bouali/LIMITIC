@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { PublicNavbar } from '../../components/layout/PublicNavbar';
 import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
@@ -7,106 +7,22 @@ import { MapPin, Calendar, Users, Image } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useGetEventsQuery, type EventDto } from '../../api/eventsApi';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
-
-interface Event {
-  id: string;
-  type: string;
-  title: string;
-  date: string;
-  endDate?: string;
-  location: string;
-  status: EventStatus;
-  description: string;
-  speakers: number;
-  photoCount: number;
-  hasPhotos: boolean;
-}
 
 export default function EventsPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<EventStatus>('A_VENIR');
+  const { data: allEvents = [], isLoading, isError } = useGetEventsQuery({ limit: 1000 });
 
-  const allEvents: Event[] = [
-    {
-      id: '1',
-      type: 'SÉMINAIRE',
-      title: 'Intelligence Artificielle et Santé',
-      date: '15 Juin 2026, 09h00',
-      endDate: '15 Juin 2026, 17h00',
-      location: 'Amphithéâtre A, ISI',
-      status: 'A_VENIR',
-      description: 'Exploration des applications de l\'IA dans le domaine de la santé avec des experts internationaux.',
-      speakers: 5,
-      photoCount: 0,
-      hasPhotos: false
-    },
-    {
-      id: '2',
-      type: 'ATELIER',
-      title: 'Introduction au Deep Learning',
-      date: '22 Juin 2026, 14h00',
-      endDate: '22 Juin 2026, 18h00',
-      location: 'Salle B12, ISI',
-      status: 'A_VENIR',
-      description: 'Atelier pratique pour les débutants en apprentissage profond.',
-      speakers: 2,
-      photoCount: 0,
-      hasPhotos: false
-    },
-    {
-      id: '3',
-      type: 'CONFÉRENCE',
-      title: 'LIMTIC Research Day 2026',
-      date: '05 Juillet 2026',
-      location: 'Campus Universitaire',
-      status: 'A_VENIR',
-      description: 'Journée de présentation des travaux de recherche du laboratoire.',
-      speakers: 12,
-      photoCount: 0,
-      hasPhotos: false
-    },
-    {
-      id: '4',
-      type: 'SÉMINAIRE',
-      title: 'Blockchain et Sécurité',
-      date: '20 Mai 2026, 10h00',
-      endDate: '20 Mai 2026, 16h00',
-      location: 'Amphithéâtre B, ISI',
-      status: 'PASSE',
-      description: 'Séminaire sur les applications de la blockchain en sécurité informatique.',
-      speakers: 4,
-      photoCount: 25,
-      hasPhotos: true
-    },
-    {
-      id: '5',
-      type: 'ATELIER',
-      title: 'Big Data et Analytics',
-      date: '10 Mai 2026',
-      location: 'Salle C5, ISI',
-      status: 'PASSE',
-      description: 'Formation pratique sur les outils de Big Data.',
-      speakers: 3,
-      photoCount: 18,
-      hasPhotos: true
-    },
-    {
-      id: '6',
-      type: 'JOURNÉE D\'ÉTUDE',
-      title: 'IoT et Smart Cities',
-      date: '25 Avril 2026',
-      location: 'Campus Universitaire',
-      status: 'PASSE',
-      description: 'Journée dédiée à l\'Internet des Objets et aux villes intelligentes.',
-      speakers: 8,
-      photoCount: 42,
-      hasPhotos: true
-    }
-  ];
+  const filteredEvents = useMemo(
+    () => allEvents.filter((event) => event.status === activeTab),
+    [allEvents, activeTab],
+  );
 
-  const filteredEvents = allEvents.filter(event => event.status === activeTab);
+  const getSpeakersCount = (event: EventDto) => event.speakers?.length ?? 0;
+  const getPhotoCount = (event: EventDto) => event.photoFileNames?.length ?? 0;
 
   const getStatusBadge = (status: EventStatus) => {
     const config = {
@@ -148,7 +64,7 @@ export default function EventsPage() {
               <div className="text-white/80">{t('eventPage.past')}</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">{allEvents.reduce((sum, e) => sum + e.photoCount, 0)}</div>
+              <div className="text-3xl font-bold">{allEvents.reduce((sum, e) => sum + (e.photoFileNames?.length ?? 0), 0)}</div>
               <div className="text-white/80">{t('eventPage.photos')}</div>
             </div>
           </div>
@@ -184,7 +100,17 @@ export default function EventsPage() {
 
       {/* Content */}
       <div className="max-w-[var(--content-max-width)] mx-auto px-6 py-12">
-        {filteredEvents.length === 0 ? (
+        {isLoading ? (
+          <Card>
+            <CardContent className="p-12 text-center text-text-secondary">Loading events...</CardContent>
+          </Card>
+        ) : isError ? (
+          <Card>
+            <CardContent className="p-12 text-center text-red-500">
+              {t('common.error') || 'Error loading events.'}
+            </CardContent>
+          </Card>
+        ) : filteredEvents.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
               <Calendar size={64} className="mx-auto text-text-muted mb-4" />
@@ -203,11 +129,11 @@ export default function EventsPage() {
                 {/* Event Image/Placeholder - Only show for past events */}
                 {event.status === 'PASSE' && (
                   <div className="h-48 relative overflow-hidden">
-                    {event.hasPhotos && event.photoCount > 0 ? (
+                    {getPhotoCount(event) > 0 ? (
                       <div className="absolute inset-0 bg-gradient-to-br from-navy to-accent-blue flex items-center justify-center">
                         <div className="text-center text-white">
                           <Image size={48} className="mx-auto mb-2" />
-                          <div className="text-sm">{event.photoCount} {t('eventPage.photos').toLowerCase()}</div>
+                          <div className="text-sm">{getPhotoCount(event)} {t('eventPage.photos').toLowerCase()}</div>
                         </div>
                       </div>
                     ) : (
@@ -218,9 +144,9 @@ export default function EventsPage() {
                     <div className="absolute top-3 right-3">
                       <Badge
                         variant={getStatusBadge(event.status).variant}
-                        style={event.status === 'PASSE' && event.hasPhotos ? { backgroundColor: '#059669', color: 'white' } : {}}
+                        style={event.status === 'PASSE' && getPhotoCount(event) > 0 ? { backgroundColor: '#059669', color: 'white' } : {}}
                       >
-                        {event.status === 'PASSE' && event.hasPhotos ? (
+                        {event.status === 'PASSE' && getPhotoCount(event) > 0 ? (
                           <><Image size={12} className="mr-1" /> {t('eventPage.photosAvailable')}</>
                         ) : (
                           getStatusBadge(event.status).label
@@ -239,7 +165,11 @@ export default function EventsPage() {
                   <div className="space-y-2 text-sm text-text-secondary">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="flex-shrink-0 text-accent-blue" />
-                      <span>{event.date}</span>
+                      <span>{new Date(event.startDate).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric',
+                      })}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <MapPin size={16} className="flex-shrink-0 text-accent-blue" />
@@ -247,7 +177,7 @@ export default function EventsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Users size={16} className="flex-shrink-0 text-accent-blue" />
-                      <span>{event.speakers} {event.speakers > 1 ? t('eventPage.speakers_plural') : t('eventPage.speakers')}</span>
+                      <span>{getSpeakersCount(event)} {getSpeakersCount(event) > 1 ? t('eventPage.speakers_plural') : t('eventPage.speakers')}</span>
                     </div>
                   </div>
                 </CardHeader>

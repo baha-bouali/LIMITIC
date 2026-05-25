@@ -37,27 +37,7 @@ namespace LIMTIC.Application.Services.Events
             {
                 var events = await _eventsRepository.GetEventsAsync(status, type, page, limit, q);
 
-                var eventDtos = events.Select(e => new EventDto
-                {
-                    Id = e.Id.ToString(),
-                    Type = e.Type.ToString(),
-                    Title = e.Title,
-                    StartDate = e.StartDate,
-                    EndDate = e.EndDate,
-                    Location = e.Location,
-                    Status = e.Status.ToString(),
-                    Description = e.Description,
-                    Speakers = e.Speakers?.Select(s => new SpeakerDto
-                    {
-                        Id = s.Id.ToString(),
-                        FirstName = s.FirstName,
-                        LastName = s.LastName,
-                        Email = s.Email,
-                        Institution = s.Institution,
-                        Role = s.Role,
-                        Subject = s.Subject,
-                    }).ToList()
-                }).ToList();
+                var eventDtos = events.Select(MapEvent).ToList();
 
                 var total = await _eventsRepository.GetTotalEventsCountAsync(status, type, q);
 
@@ -66,6 +46,24 @@ namespace LIMTIC.Application.Services.Events
             catch (Exception ex)
             {
                 return Result<(List<EventDto>, int)>.FailureResult($"Error retrieving events: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<EventDto>> GetEventByIdAsync(Guid eventId)
+        {
+            try
+            {
+                var eventEntity = await _eventsRepository.GetEventByIdAsync(eventId);
+                if (eventEntity == null)
+                {
+                    return Result<EventDto>.FailureResult("Event not found");
+                }
+
+                return Result<EventDto>.SuccessResult(MapEvent(eventEntity));
+            }
+            catch (Exception ex)
+            {
+                return Result<EventDto>.FailureResult($"Error retrieving event: {ex.Message}");
             }
         }
 
@@ -220,6 +218,8 @@ namespace LIMTIC.Application.Services.Events
                 Location = eventEntity.Location,
                 Status = eventEntity.Status.ToString(),
                 Description = eventEntity.Description,
+                Program = eventEntity.Program,
+                PhotoFileNames = eventEntity.PhotoFileNames ?? [],
                 Speakers = eventEntity.Speakers?.Select(MapSpeaker).ToList()
             };
         }
