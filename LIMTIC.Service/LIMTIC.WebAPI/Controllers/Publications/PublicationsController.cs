@@ -1,6 +1,5 @@
 using LIMTIC.Application.Abstractions.Publication;
 using LIMTIC.Application.Contracts.Commands.Publications;
-using LIMTIC.WebAPI.Models;
 using LIMTIC.WebAPI.Models.Publications.Common;
 using LIMTIC.WebAPI.Models.Publications.Public.GetPublication;
 using LIMTIC.WebAPI.Models.Publications.Public.GetPublications;
@@ -123,7 +122,7 @@ namespace LIMTIC.WebAPI.Controllers.Publications
 
             var result = await _publicationService.GetPublicPublicationByIdAsync(command, ct);
             if (!result.Success)
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
             var p = result.Data!;
             var response = new PublicPublicationDetailResponse

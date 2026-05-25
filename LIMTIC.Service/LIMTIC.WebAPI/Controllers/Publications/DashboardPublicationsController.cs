@@ -1,7 +1,6 @@
 using LIMTIC.Application.Abstractions.Publication;
 using LIMTIC.Application.Contracts.Commands.Publications;
 using LIMTIC.Domain.Enums;
-using LIMTIC.WebAPI.Models;
 using LIMTIC.WebAPI.Models.Publications.Common;
 using LIMTIC.WebAPI.Models.Publications.Dashboard.CreatePublication;
 using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublication;
@@ -165,9 +164,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
             if (!result.Success)
             {
                 if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                    return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                    return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-                return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+                return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
             }
 
             var detail = result.Data!;
@@ -267,9 +266,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
                 return Ok(new BaseResponse { Success = true, Message = "Publication updated successfully" });
 
             if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-            return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
         }
 
         [HttpDelete("{id:guid}")]
@@ -282,9 +281,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
                 return Ok(new BaseResponse { Success = true, Message = "Publication deleted successfully" });
 
             if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-            return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
         }
 
         [HttpPost("{id:guid}/pdf")]
@@ -300,9 +299,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
                 return Ok(new PdfUploadResponse { Message = "PDF uploaded successfully", PdfUrl = result.Data! });
 
             if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-            return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
         }
 
         [HttpDelete("{id:guid}/pdf")]
@@ -318,9 +317,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
                 return Ok(new PdfRemoveResponse { Message = "PDF removed" });
 
             if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-            return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
         }
 
         [HttpPost("{id:guid}/submit")]
@@ -338,9 +337,9 @@ namespace LIMTIC.WebAPI.Controllers.Publications
                 });
 
             if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new ErrorResponse { Error = "NOT_FOUND", Message = result.Message ?? "Publication not found." });
+                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
 
-            return StatusCode(403, new ErrorResponse { Error = "FORBIDDEN", Message = result.Message ?? "Access denied." });
+            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
         }
 
         [HttpPost("{id:guid}/validate")]
