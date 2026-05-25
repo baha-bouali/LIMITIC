@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query';
 
@@ -53,15 +55,16 @@ export const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, Fetch
     }
   }
 
-  const requestArgs = typeof args === 'string' ? args : (args as FetchArgs & { skipAuth?: boolean });
-  const skipAuth = typeof args !== 'string' && Boolean(requestArgs.skipAuth);
+  type AuthFetchArgs = FetchArgs & { skipAuth?: boolean };
+  const requestArgs = typeof args === 'string' ? undefined : (args as AuthFetchArgs);
+  const skipAuth = Boolean(requestArgs?.skipAuth);
   const sanitizedArgs = typeof args === 'string'
     ? args
-    : (({ skipAuth: _skipAuth, ...rest }) => rest)(requestArgs);
+    : (({ skipAuth: _skipAuth, ...rest }: AuthFetchArgs) => rest)(requestArgs!);
 
   let result = await (skipAuth ? publicRawBaseQuery : rawBaseQuery)(sanitizedArgs, api, extraOptions);
 
-  const requestUrl = typeof args === 'string' ? args : (requestArgs as FetchArgs).url;
+  const requestUrl = typeof args === 'string' ? args : requestArgs!.url;
   if (!skipAuth && result.error?.status === 401 && requestUrl && !String(requestUrl).includes('auth/refreshToken')) {
     // try to get a new token
     const refreshResult = await rawBaseQuery({ url: 'auth/refreshToken', method: 'POST' }, api, extraOptions);

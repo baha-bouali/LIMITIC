@@ -11,12 +11,14 @@ import { motion } from 'motion/react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useGetAllAxesQuery } from '../../api/axesApi';
 import { useGetEventsQuery } from '../../api/eventsApi';
+import { useGetRecentPublicPublicationsQuery } from '../../api/publicationsApi';
 import { useGetPublicUsersQuery } from '../../api/usersApi';
 
 export default function HomePage() {
   const { t } = useLanguage();
   const { data: axes = [], isLoading: axesLoading } = useGetAllAxesQuery();
   const { data: events = [], isLoading: eventsLoading } = useGetEventsQuery({ limit: 1000 });
+  const { data: recentPublications = [], isLoading: publicationsLoading } = useGetRecentPublicPublicationsQuery(3);
   const { data: users = [], isLoading: usersLoading } = useGetPublicUsersQuery({ status: 'active', limit: 1000 });
 
   const researchersCount = users.filter((user) => user.role === 3).length;
@@ -26,11 +28,7 @@ export default function HomePage() {
     .filter((event) => event.status === 'A_VENIR')
     .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   const featuredAxes = axes.slice(0, 3);
-  const featuredPublicationAxes = [...axes]
-    .filter((axis) => (axis.publicationsCount ?? 0) > 0)
-    .sort((a, b) => (b.publicationsCount ?? 0) - (a.publicationsCount ?? 0))
-    .slice(0, 3);
-  const isStatsLoading = axesLoading || eventsLoading || usersLoading;
+  const isStatsLoading = axesLoading || eventsLoading || usersLoading || publicationsLoading;
 
   return (
     <div className="min-h-screen bg-white dark:bg-background">
@@ -136,14 +134,14 @@ export default function HomePage() {
               {t('home.viewAll')} <ArrowRight size={20} />
             </Link>
           </div>
-          {axesLoading ? (
+          {publicationsLoading ? (
             <LoadingBlock label={t('common.loading') || 'Loading'} />
-          ) : featuredPublicationAxes.length === 0 ? (
+          ) : recentPublications.length === 0 ? (
             <EmptyBlock label={t('pubPage.noPublications') || 'No publications found'} />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {featuredPublicationAxes.map((axis) => (
-                <PublicationAxisCard key={axis.id} axis={axis} />
+              {recentPublications.map((publication) => (
+                <RecentPublicationCard key={publication.id} publication={publication} />
               ))}
             </div>
           )}
@@ -279,25 +277,25 @@ function AxeCard({ id, title, description, responsible, themes, color }: any) {
   );
 }
 
-function PublicationAxisCard({ axis }: any) {
+function RecentPublicationCard({ publication }: any) {
   const { t } = useLanguage();
+  const ranking = publication.ranking || publication.coreRanking;
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>
         <div className="flex items-center gap-2 mb-3">
-          <Badge variant="info">{axis.publicationsCount ?? 0} {t('axes.publicationsCount')}</Badge>
+          <Badge variant="info">{publication.year}</Badge>
+          {ranking ? <Badge variant="default">{ranking}</Badge> : null}
         </div>
-        <h4 className="text-base font-bold text-navy dark:text-white line-clamp-2 mb-2">{axis.title}</h4>
-        <p className="text-sm text-text-secondary line-clamp-3">{axis.description}</p>
+        <h4 className="text-base font-bold text-navy dark:text-white line-clamp-2 mb-2">{publication.title}</h4>
+        <p className="text-sm text-text-secondary line-clamp-3">{publication.authors.join(', ')}</p>
+        {publication.venue ? <p className="text-sm text-text-secondary italic line-clamp-2 mt-2">{publication.venue}</p> : null}
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
-          <Link to={`/axes-recherche/${axis.id}`} className="text-accent-blue hover:underline text-sm">
+          <Link to={`/publications/${publication.id}`} className="text-accent-blue hover:underline text-sm">
             {t('home.publications.read')} <ArrowRight size={14} className="inline" />
-          </Link>
-          <Link to={`/publications?axe=${axis.id}`} className="text-accent-blue hover:underline text-sm">
-            {t('home.viewAll')} <ArrowRight size={14} className="inline" />
           </Link>
         </div>
       </CardContent>
