@@ -342,6 +342,7 @@ export const dashboardPublicationsApi = api.injectEndpoints({
 export const {
   useGetDashboardPublicationsQuery,
   useGetDashboardPublicationByIdQuery,
+  useLazyGetDashboardPublicationByIdQuery,
   useCreateDashboardPublicationMutation,
   useUpdateDashboardPublicationMutation,
   useDeleteDashboardPublicationMutation,
