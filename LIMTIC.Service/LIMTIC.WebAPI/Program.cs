@@ -53,6 +53,7 @@ namespace LIMTIC.WebAPI
             }
 
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseCors("AllowLocalDev");
             app.UseAuthentication();
             app.UseAuthorization();

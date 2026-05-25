@@ -19,6 +19,7 @@ import {
   useAddSpeakerMutation,
   useUpdateSpeakerMutation,
   useDeleteSpeakerMutation,
+  useUploadEventPhotosMutation,
   EVENT_TYPE_OPTIONS,
   toBackendEventType,
   type EventDto,
@@ -550,7 +551,7 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
   // ── Form state ──────────────────────────────────────────────────────────────
   const [formData, setFormData] = useState<EventFormState>({
     type: toBackendEventType(event?.type ?? 'SÉMINAIRE'),
-    researchAxisId: '',
+    researchAxisId: event?.researchAxisId ?? '',
     title: event?.title ?? '',
     startDate: toDateInputValue(event?.startDate),
     endDate: toDateInputValue(event?.endDate),
@@ -584,8 +585,9 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
   const [updateEvent, { isLoading: isUpdating }] = useUpdateEventMutation();
   const [addSpeaker] = useAddSpeakerMutation();
   const [deleteSpeakerMutation] = useDeleteSpeakerMutation();
+  const [uploadPhotos, { isLoading: isUploading }] = useUploadEventPhotosMutation();
 
-  const isSaving = isCreating || isUpdating;
+  const isSaving = isCreating || isUpdating || isUploading;
 
   // ── Speaker helpers ─────────────────────────────────────────────────────────
   const handleAddSpeaker = () => {
@@ -666,6 +668,11 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
           await addSpeaker({ eventId: event.id, body: speakerBody }).unwrap();
         }
 
+        // Upload photos if any were selected
+        if (photos.length > 0) {
+          await uploadPhotos({ eventId: event.id, files: photos }).unwrap();
+        }
+
         toast.success('Événement modifié avec succès !');
       } else {
         // ── CREATE ──────────────────────────────────────────────────────────
@@ -690,7 +697,13 @@ function EventFormModal({ event, onClose }: EventFormModalProps) {
           speakers: allSpeakers,
         };
 
-        await createEvent(createBody).unwrap();
+        const createdEvent = await createEvent(createBody).unwrap();
+
+        // Upload photos if any were selected
+        if (photos.length > 0) {
+          await uploadPhotos({ eventId: createdEvent.id, files: photos }).unwrap();
+        }
+
         toast.success('Événement créé avec succès !');
       }
 

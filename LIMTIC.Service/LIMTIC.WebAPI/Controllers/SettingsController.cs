@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 namespace LIMTIC.WebAPI.Controllers
 {
     [ApiController]
-    [Route("dashboard/superadmin/settings")]
+    [Route("api/settings")]
     public class SettingsController : ControllerBase
     {
         private readonly ISettingsService _settingsService;

@@ -14,5 +14,6 @@ namespace LIMTIC.Application.Abstractions.Events
         Task<Result<SpeakerDto>> AddSpeakerAsync(CreateSpeakerCommand command);
         Task<Result<SpeakerDto>> UpdateSpeakerAsync(UpdateSpeakerCommand command);
         Task<Result<bool>> DeleteSpeakerAsync(Guid eventId, Guid speakerId);
+        Task<Result<EventDto>> AddPhotosAsync(Guid eventId, List<string> fileNames);
     }
 }

@@ -234,6 +234,22 @@ namespace LIMTIC.Application.Services.Events
             return Result<bool>.SuccessResult(true);
         }
 
+        public async Task<Result<EventDto>> AddPhotosAsync(Guid eventId, List<string> fileNames)
+        {
+            var existingEvent = await _eventsRepository.GetEventByIdAsync(eventId);
+            if (existingEvent == null)
+                return Result<EventDto>.FailureResult("Event not found");
+
+            existingEvent.PhotoFileNames ??= [];
+            existingEvent.PhotoFileNames.AddRange(fileNames);
+
+            var updated = await _eventsRepository.UpdateEventAsync(existingEvent);
+            if (!updated)
+                return Result<EventDto>.FailureResult("Failed to update event photos");
+
+            return Result<EventDto>.SuccessResult(MapEvent(existingEvent));
+        }
+
         private static EventDto MapEvent(EventEntity eventEntity)
         {
             return new EventDto
@@ -248,7 +264,8 @@ namespace LIMTIC.Application.Services.Events
                 Description = eventEntity.Description,
                 Program = eventEntity.Program,
                 PhotoFileNames = eventEntity.PhotoFileNames ?? [],
-                Speakers = eventEntity.Speakers?.Select(MapSpeaker).ToList()
+                Speakers = eventEntity.Speakers?.Select(MapSpeaker).ToList(),
+                ResearchAxisId = eventEntity.ResearchAxisId.ToString()
             };
         }
 

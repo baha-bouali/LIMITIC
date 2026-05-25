@@ -41,7 +41,16 @@ namespace LIMTIC.Infrastructure.Repositories
                 .ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(status))
-                events = events.Where(e => e.Status.ToString().ToLower() == status.ToLower()).ToList();
+            {
+                var normalizedStatus = status.ToUpper() switch
+                {
+                    "A_VENIR"  or "UPCOMING" => "Upcoming",
+                    "EN_COURS" or "ONGOING"  => "Ongoing",
+                    "PASSE"    or "PAST"     => "Past",
+                    _ => status
+                };
+                events = events.Where(e => e.Status.ToString().Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
 
             // Apply pagination after filtering
             var paginatedEvents = events
@@ -75,7 +84,16 @@ namespace LIMTIC.Infrastructure.Repositories
             var events = await query.ToListAsync();
 
             if (!string.IsNullOrWhiteSpace(status))
-                events = events.Where(e => e.Status.ToString().ToLower() == status.ToLower()).ToList();
+            {
+                var normalizedStatus = status.ToUpper() switch
+                {
+                    "A_VENIR"  or "UPCOMING" => "Upcoming",
+                    "EN_COURS" or "ONGOING"  => "Ongoing",
+                    "PASSE"    or "PAST"     => "Past",
+                    _ => status
+                };
+                events = events.Where(e => e.Status.ToString().Equals(normalizedStatus, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
 
             return events.Count;
         }

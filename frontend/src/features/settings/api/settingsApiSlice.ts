@@ -47,12 +47,12 @@ export interface TestSmtpResponse {
 export const settingsApiSlice = api.injectEndpoints({
   endpoints: (builder) => ({
     getSettings: builder.query<SettingsResponse, void>({
-      query: () => '/dashboard/superadmin/settings',
+      query: () => 'settings',
       providesTags: ['Settings'],
     }),
     updateSettings: builder.mutation<UpdateSettingsResponse, UpdateSettingsRequest>({
       query: (body) => ({
-        url: '/dashboard/superadmin/settings',
+        url: 'settings',
         method: 'PUT',
         body,
       }),
@@ -60,7 +60,7 @@ export const settingsApiSlice = api.injectEndpoints({
     }),
     testSmtp: builder.mutation<TestSmtpResponse, { testEmail: string }>({
       query: (body) => ({
-        url: '/dashboard/superadmin/settings/smtp/test',
+        url: 'settings/smtp/test',
         method: 'POST',
         body,
       }),

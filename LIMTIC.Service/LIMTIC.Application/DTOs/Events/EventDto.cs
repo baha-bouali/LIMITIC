@@ -13,5 +13,6 @@ namespace LIMTIC.Application.DTOs.Events
         public string? Program { get; set; }
         public List<string> PhotoFileNames { get; set; } = [];
         public List<SpeakerDto>? Speakers { get; set; } = new();
+        public string ResearchAxisId { get; set; }
     }
 }

@@ -268,6 +268,35 @@ namespace LIMTIC.WebAPI.Controllers
             });
         }
 
+        [HttpPost("{id:guid}/photos")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> UploadPhotos(Guid id, [FromForm] IFormFileCollection files)
+        {
+            if (files == null || files.Count == 0)
+                return BadRequest(new { Success = false, Message = "No files uploaded" });
+
+            var uploadDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "events");
+            Directory.CreateDirectory(uploadDir);
+
+            var savedFileNames = new List<string>();
+            foreach (var file in files)
+            {
+                if (file.Length == 0) continue;
+                var ext = Path.GetExtension(file.FileName);
+                var fileName = $"{Guid.NewGuid()}{ext}";
+                var filePath = Path.Combine(uploadDir, fileName);
+                await using var stream = System.IO.File.Create(filePath);
+                await file.CopyToAsync(stream);
+                savedFileNames.Add(fileName);
+            }
+
+            var result = await _eventsService.AddPhotosAsync(id, savedFileNames);
+            if (result.Success)
+                return Ok(new { Success = true, Event = result.Data });
+
+            return BadRequest(new { Success = false, Message = result.Message });
+        }
+
         [HttpDelete("{id:guid}/speakers/{speakerId:guid}")]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> DeleteSpeaker(Guid id, Guid speakerId)

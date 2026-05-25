@@ -62,6 +62,7 @@ export interface EventDto {
   program?: string | null;
   photoFileNames: string[];
   speakers?: SpeakerDto[];
+  researchAxisId?: string;
 }
 
 const normalizeEventStatus = (status: string): EventDto['status'] => {
@@ -344,6 +345,24 @@ export const eventsApi = api.injectEndpoints({
         if (!response.success) throw new Error(response.message ?? 'Failed to delete speaker');
       },
     }),
+
+    uploadEventPhotos: builder.mutation<EventDto, { eventId: string; files: File[] }>({
+      query: ({ eventId, files }) => {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+        return {
+          url: `events/${eventId}/photos`,
+          method: 'POST',
+          body: formData,
+        };
+      },
+      invalidatesTags: (_result, _error, { eventId }) => ['Event', { type: 'Event', id: eventId }],
+      transformResponse: (response: { success: boolean; event?: EventDto; Event?: EventDto; message?: string }) => {
+        const event = response.event ?? response.Event;
+        if (!event) throw new Error(response.message ?? 'Failed to upload photos');
+        return normalizeEvent(event);
+      },
+    }),
   }),
   overrideExisting: false,
 });
@@ -357,4 +376,5 @@ export const {
   useAddSpeakerMutation,
   useUpdateSpeakerMutation,
   useDeleteSpeakerMutation,
+  useUploadEventPhotosMutation,
 } = eventsApi;
