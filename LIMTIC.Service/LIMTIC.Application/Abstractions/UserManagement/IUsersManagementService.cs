@@ -3,6 +3,7 @@ using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs;
+using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Domain.Enums;
 
@@ -17,6 +18,7 @@ namespace LIMTIC.Application.Abstractions.UserManagement
         Task<Result<bool>> DeactivateUserAsync(Guid userId);
         Task<Result<bool>> UpdateUserRoleAsync(UpdateUserRoleCommand command);
         Task<Result<string>> UpdateUserAvatarAsync(Guid userId, Stream fileStream, string fileName, string contentType);
+        Task<Result<FileDownloadDto>> GetUserAvatarAsync(Guid userId);
         Task<Result<GetUsersResult>> GetUsersAsync(UserRole? role, bool? isActive, string? search, int page, int limit);
     }
 }

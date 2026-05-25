@@ -14,7 +14,7 @@ namespace LIMTIC.E2Es.Tests
     public class UpdateUserRoleE2ETests : BaseE2ETests
     {
         public UpdateUserRoleE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture)
-            : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
+            : base(dbfixture: dbfixture, mailHogFixture: mailFixture)
         {
         }
 

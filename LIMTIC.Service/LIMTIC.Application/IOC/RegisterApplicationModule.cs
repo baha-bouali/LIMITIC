@@ -7,6 +7,7 @@ using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Abstractions.Contacts;
 using LIMTIC.Application.Abstractions.Settings;
 using LIMTIC.Application.Abstractions.Profiles;
+using LIMTIC.Application.Abstractions.Publications;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Services.AuditLogs;
 using LIMTIC.Application.Services.Auth;
@@ -16,6 +17,7 @@ using LIMTIC.Application.Services.Profiles;
 using LIMTIC.Application.Services.ResearchAxis;
 using LIMTIC.Application.Services.UserManagement;
 using LIMTIC.Application.Services.Settings;
+using LIMTIC.Application.Services.Publications;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LIMTIC.Application.IOC
@@ -32,6 +34,7 @@ namespace LIMTIC.Application.IOC
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<IAuditLogsService, AuditLogsService>();
+            services.AddScoped<IPublicationAttachmentsService, PublicationAttachmentsService>();
 
             // Profile services
             services.AddScoped<IResearcherProfileService, ResearcherProfileService>();

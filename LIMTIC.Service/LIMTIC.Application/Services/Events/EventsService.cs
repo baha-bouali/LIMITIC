@@ -1,13 +1,16 @@
 using FluentValidation;
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Events;
+using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Contracts.Commands.Events;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Events;
+using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Enums;
+using System.IO;
 
 namespace LIMTIC.Application.Services.Events
 {
@@ -20,6 +23,7 @@ namespace LIMTIC.Application.Services.Events
         private readonly IValidator<UpdateSpeakerCommand> _updateSpeakerCommandValidator;
         private readonly IAuditLogsRepository _auditLogsRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IBlobStorageService _blobStorageService;
 
         public EventsService(
             IEventsRepository eventsRepository,
@@ -28,7 +32,8 @@ namespace LIMTIC.Application.Services.Events
             IValidator<CreateSpeakerCommand> createSpeakerCommandValidator,
             IValidator<UpdateSpeakerCommand> updateSpeakerCommandValidator,
             IAuditLogsRepository auditLogsRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IBlobStorageService blobStorageService)
         {
             _eventsRepository = eventsRepository;
             _createEventCommandValidator = createEventCommandValidator;
@@ -37,6 +42,7 @@ namespace LIMTIC.Application.Services.Events
             _updateSpeakerCommandValidator = updateSpeakerCommandValidator;
             _auditLogsRepository = auditLogsRepository;
             _currentUserService = currentUserService;
+            _blobStorageService = blobStorageService;
         }
 
         public async Task<Result<(List<EventDto> Items, int Total)>> GetEventsAsync(string? status, string? type, int page, int limit, string? q)
@@ -236,6 +242,59 @@ namespace LIMTIC.Application.Services.Events
             return Result<bool>.SuccessResult(true);
         }
 
+        public async Task<Result<bool>> UploadEventPhotosAsync(Guid eventId, List<(Stream Stream, string FileName)> files)
+        {
+            if (files == null || files.Count == 0)
+                return Result<bool>.FailureResult("No files provided");
+
+            var eventEntity = await _eventsRepository.GetEventByIdAsync(eventId);
+            if (eventEntity == null)
+                return Result<bool>.FailureResult("Event not found");
+
+            foreach (var file in files)
+            {
+                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (ext is not (".jpg" or ".jpeg" or ".png" or ".webp" or ".gif"))
+                    return Result<bool>.FailureResult($"Unsupported image format: {file.FileName}");
+
+                var blobName = $"events/{eventId}/photos/{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                var uploaded = await _blobStorageService.UploadStreamAsync(file.Stream, "media", blobName, overwrite: true);
+                if (!uploaded)
+                    return Result<bool>.FailureResult($"Failed to upload photo: {file.FileName}");
+
+                eventEntity.PhotoFileNames.Add(blobName);
+            }
+
+            var updated = await _eventsRepository.UpdateEventAsync(eventEntity);
+            return updated
+                ? Result<bool>.SuccessResult(true)
+                : Result<bool>.FailureResult("Failed to save event photo references");
+        }
+
+        public async Task<Result<FileDownloadDto>> GetEventPhotoAsync(Guid eventId, int index)
+        {
+            var eventEntity = await _eventsRepository.GetEventByIdAsync(eventId);
+            if (eventEntity == null || eventEntity.PhotoFileNames == null || index < 0 || index >= eventEntity.PhotoFileNames.Count)
+                return Result<FileDownloadDto>.FailureResult("Photo not found");
+
+            var blobName = eventEntity.PhotoFileNames[index];
+            try
+            {
+                var stream = await _blobStorageService.GetStreamAsync("media", blobName);
+                var fileName = Path.GetFileName(blobName);
+                return Result<FileDownloadDto>.SuccessResult(new FileDownloadDto
+                {
+                    Stream = stream,
+                    FileName = fileName,
+                    ContentType = ResolveContentType(fileName)
+                });
+            }
+            catch (FileNotFoundException)
+            {
+                return Result<FileDownloadDto>.FailureResult("Photo file not found in blob storage");
+            }
+        }
+
         private static EventDto MapEvent(EventEntity eventEntity)
         {
             return new EventDto
@@ -263,6 +322,19 @@ namespace LIMTIC.Application.Services.Events
                 Institution = speaker.Institution,
                 Role = speaker.Role,
                 Subject = speaker.Subject
+            };
+        }
+
+        private static string ResolveContentType(string fileName)
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
+            {
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".webp" => "image/webp",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream"
             };
         }
     }

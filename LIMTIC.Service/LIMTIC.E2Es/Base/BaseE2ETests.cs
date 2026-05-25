@@ -1,4 +1,5 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Extensions;
@@ -18,6 +19,8 @@ namespace LIMTIC.E2Es.Base
         protected readonly CustomWebApplicationFactory Factory;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
+        protected IBlobStorageService BlobStorageService => Factory.Services
+           .GetRequiredService<IBlobStorageService>();
 
         public BaseE2ETests(PostgresFixture dbfixture, MailHogFixture mailHogFixture, bool useShortTokenExpiry = false)
         {

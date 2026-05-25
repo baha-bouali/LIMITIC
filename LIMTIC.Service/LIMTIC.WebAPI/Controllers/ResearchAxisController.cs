@@ -1,4 +1,5 @@
 using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Publications;
 using LIMTIC.Application.Contracts.Commands.ResearchAxis;
 using LIMTIC.WebAPI.Models.ResearchAxis;
 using Microsoft.AspNetCore.Authorization;
@@ -11,10 +12,14 @@ namespace LIMTIC.WebAPI.Controllers
     public class ResearchAxisController : ControllerBase
     {
         private readonly IResearchAxisService _researchAxisService;
+        private readonly IPublicationAttachmentsService _publicationAttachmentsService;
 
-        public ResearchAxisController(IResearchAxisService researchAxisService)
+        public ResearchAxisController(
+            IResearchAxisService researchAxisService,
+            IPublicationAttachmentsService publicationAttachmentsService)
         {
             _researchAxisService = researchAxisService;
+            _publicationAttachmentsService = publicationAttachmentsService;
         }
 
         [HttpGet]
@@ -132,6 +137,43 @@ namespace LIMTIC.WebAPI.Controllers
                 return Ok(new BaseResponse { Success = true });
 
             return NotFound(new BaseResponse { Success = false, Message = result.Message });
+        }
+
+        [HttpPost("/api/publications/{id:guid}/attachments")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> UploadPublicationAttachments(Guid id, List<IFormFile> files)
+        {
+            if (files == null || files.Count == 0)
+                return BadRequest(new BaseResponse { Success = false, Message = "No files provided" });
+
+            var filePayloads = new List<(Stream Stream, string FileName)>();
+            foreach (var file in files.Where(f => f != null && f.Length > 0))
+                filePayloads.Add((file.OpenReadStream(), file.FileName));
+
+            try
+            {
+                var result = await _publicationAttachmentsService.UploadAttachmentsAsync(id, filePayloads);
+                if (!result.Success)
+                    return BadRequest(new BaseResponse { Success = false, Message = result.Message });
+
+                return Ok(new BaseResponse { Success = true });
+            }
+            finally
+            {
+                foreach (var payload in filePayloads)
+                    payload.Stream.Dispose();
+            }
+        }
+
+        [HttpGet("/api/publications/{id:guid}/attachments/{index:int}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicationAttachment(Guid id, int index)
+        {
+            var result = await _publicationAttachmentsService.GetAttachmentAsync(id, index);
+            if (!result.Success || result.Data == null)
+                return NotFound(new BaseResponse { Success = false, Message = result.Message });
+
+            return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName);
         }
     }
 }
