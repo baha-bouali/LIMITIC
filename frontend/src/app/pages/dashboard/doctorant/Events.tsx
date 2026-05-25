@@ -6,7 +6,7 @@ import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { PhotoGallery } from '../../../components/shared/PhotoGallery';
 import { Calendar, MapPin, Users, X, Eye, Mail, Briefcase, AlertCircle, Loader } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useGetEventsQuery } from '@/app/api';
+import { formatEventDateRange, useGetEventsQuery, EVENT_TYPE_OPTIONS, toBackendEventType } from '@/app/api';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SEMINAIRE' | 'CONFERENCE' | 'WORKSHOP' | 'SOUTENANCE' | 'JOURNEE_PORTES_OUVERTES';
@@ -24,7 +24,7 @@ interface LabEvent {
   title: string;
   type: EventType;
   status: EventStatus;
-  date: string;
+  startDate: string;
   endDate?: string;
   location: string;
   description: string;
@@ -40,29 +40,23 @@ const statusConfig: Record<EventStatus, { label: string; variant: any; color: st
   PASSE: { label: 'Passé', variant: 'default', color: 'bg-text-muted' },
 };
 
-const typeLabels: Record<EventType, string> = {
-  SEMINAIRE: 'Séminaire',
-  CONFERENCE: 'Conférence',
-  WORKSHOP: 'Workshop',
-  SOUTENANCE: 'Soutenance',
-  JOURNEE_PORTES_OUVERTES: 'Journée Portes Ouvertes',
-};
+const getFilterValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+const getTypeLabel = (type: string) => EVENT_TYPE_OPTIONS.find((option: { value: string; label: string }) => option.value === toBackendEventType(type))?.label ?? type;
 
 export default function DoctorantEvents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
   const [detailEvent, setDetailEvent] = useState<LabEvent | null>(null);
 
-  // RTK Query hook
   const { data: eventsResponse, isLoading, error } = useGetEventsQuery({
     page: 1,
     limit: 100,
-    status: typeof activeFilters.status === 'string' ? activeFilters.status : undefined,
-    type: typeof activeFilters.type === 'string' ? activeFilters.type : undefined,
+    status: getFilterValue(activeFilters.status) as EventStatus | undefined,
+    type: getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined,
     q: searchQuery,
   });
 
-  const events: LabEvent[] = (eventsResponse?.items || []) as LabEvent[];
+  const events: LabEvent[] = (eventsResponse ?? []) as LabEvent[];
 
   const filterGroups = [
     {
@@ -73,22 +67,16 @@ export default function DoctorantEvents() {
       ]
     },
     {
-      id: 'type', label: 'Type', options: [
-        { id: 't1', label: 'Séminaire', value: 'SEMINAIRE' },
-        { id: 't2', label: 'Conférence', value: 'CONFERENCE' },
-        { id: 't3', label: 'Workshop', value: 'WORKSHOP' },
-        { id: 't4', label: 'Soutenance', value: 'SOUTENANCE' },
-        { id: 't5', label: 'Journée Portes Ouvertes', value: 'JOURNEE_PORTES_OUVERTES' },
-      ]
+      id: 'type', label: 'Type', options: EVENT_TYPE_OPTIONS.map((option: { value: string; label: string }) => ({ id: option.value, label: option.label, value: option.value })),
     },
   ];
 
   const filtered = events.filter(e => {
     const q = searchQuery.toLowerCase();
     const matchQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q);
-    const statusF = activeFilters.status as string;
-    const typeF = activeFilters.type as string;
-    return matchQ && (!statusF || e.status === statusF) && (!typeF || e.type === typeF);
+    const statusF = getFilterValue(activeFilters.status) as EventStatus | undefined;
+    const typeF = getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined;
+    return matchQ && (!statusF || e.status === statusF) && (!typeF || toBackendEventType(e.type) === typeF);
   });
 
   const upcoming = filtered.filter(e => e.status === 'A_VENIR' || e.status === 'EN_COURS');
@@ -198,9 +186,8 @@ export default function DoctorantEvents() {
                   <Calendar size={18} className="text-accent-blue flex-shrink-0 mt-0.5" />
                   <div>
                     <div className="text-xs font-medium text-text-muted mb-0.5">Date</div>
-                    <div className="font-medium text-navy dark:text-white">
-                      {new Date(detailEvent.date).toLocaleDateString('fr-FR')}
-                      {detailEvent.endDate && ` — ${new Date(detailEvent.endDate).toLocaleDateString('fr-FR')}`}
+                    <div className="font-medium text-navy dark:text-white leading-snug break-words">
+                      {formatEventDateRange(detailEvent.startDate, detailEvent.endDate)}
                     </div>
                   </div>
                 </div>
@@ -294,9 +281,9 @@ function EventCard({ event, onViewDetails }: { event: LabEvent; onViewDetails: (
         <p className="text-sm text-text-secondary mb-3 line-clamp-2">{event.description}</p>
 
         <div className="space-y-2 mb-4 text-xs text-text-secondary">
-          <div className="flex items-center gap-2">
-            <Calendar size={14} />
-            <span>{new Date(event.date).toLocaleDateString('fr-FR')}</span>
+          <div className="flex items-start gap-2 leading-snug">
+            <Calendar size={14} className="mt-0.5 flex-shrink-0" />
+            <span className="whitespace-normal break-words">{formatEventDateRange(event.startDate, event.endDate)}</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin size={14} />

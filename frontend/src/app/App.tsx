@@ -164,6 +164,7 @@ export default function App() {
                 <Route element={<DashboardRoleGuard allowedRoles={DASHBOARD_ACCESS.admin} />}>
                   <Route path="admin" element={<AdminOverview />} />
                   <Route path="admin/users" element={<SuperAdminUsers />} />
+                  <Route path="admin/members" element={<SuperAdminUsers />} />
                   <Route path="admin/publications" element={<SuperAdminPublications />} />
                   <Route path="admin/events" element={<AdminEvents />} />
                   <Route path="admin/axes" element={<SuperAdminAxes />} />

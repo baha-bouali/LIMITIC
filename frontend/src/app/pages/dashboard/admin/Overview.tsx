@@ -22,7 +22,7 @@ export default function AdminOverview() {
   const stats = [
     { label: t('dash.pendingPublicationsCount'), value: 0, icon: Clock, color: 'bg-warning/10 text-warning', link: '/dashboard/admin/publications' },
     { label: t('dash.upcomingEvents'), value: eventsLoading ? '...' : upcomingEvents.length, icon: Calendar, color: 'bg-accent-blue/10 text-accent-blue', link: '/dashboard/admin/events' },
-    { label: t('dash.activeMembers'), value: usersLoading ? '...' : activeMembers, icon: Users, color: 'bg-teal/10 text-teal', link: '/dashboard/admin/members' },
+    { label: t('dash.activeMembers'), value: usersLoading ? '...' : activeMembers, icon: Users, color: 'bg-teal/10 text-teal', link: '/dashboard/admin/users' },
     { label: t('dash.researchAxes'), value: axesLoading ? '...' : axes.length, icon: Target, color: 'bg-success/10 text-success', link: '/dashboard/admin/axes' },
   ];
 
@@ -117,7 +117,7 @@ export default function AdminOverview() {
             <Link to="/dashboard/admin/events">
               <Button variant="outlined" className="flex items-center gap-2"><Calendar size={16} /> {t('dash.manageEvents')}</Button>
             </Link>
-            <Link to="/dashboard/admin/members">
+            <Link to="/dashboard/admin/users">
               <Button variant="outlined" className="flex items-center gap-2"><Users size={16} /> {t('dash.manageMembers')}</Button>
             </Link>
             <Link to="/dashboard/admin/axes">

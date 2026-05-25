@@ -6,7 +6,7 @@ import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { PhotoGallery } from '../../../components/shared/PhotoGallery';
 import { Calendar, MapPin, Users, X, Eye, Mail, Briefcase, AlertCircle, Loader } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useGetEventsQuery } from '@/app/api';
+import { formatEventDateRange, useGetEventsQuery, EVENT_TYPE_OPTIONS, toBackendEventType } from '@/app/api';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SEMINAIRE' | 'CONFERENCE' | 'WORKSHOP' | 'SOUTENANCE' | 'JOURNEE_PORTES_OUVERTES';
@@ -24,7 +24,7 @@ interface LabEvent {
   title: string;
   type: EventType;
   status: EventStatus;
-  date: string;
+  startDate: string;
   endDate?: string;
   location: string;
   description?: string;
@@ -34,13 +34,22 @@ interface LabEvent {
   photos?: string[];
 }
 
+const getFilterValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+const getTypeLabel = (type: string) => EVENT_TYPE_OPTIONS.find((option: { value: string; label: string }) => option.value === toBackendEventType(type))?.label ?? type;
+
 export default function ChercheurEvents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
   const [detailEvent, setDetailEvent] = useState<LabEvent | null>(null);
 
-  const { data: eventsResponse, isLoading, error } = useGetEventsQuery({ page: 1, limit: 100, status: typeof activeFilters.status === 'string' ? activeFilters.status : undefined, type: typeof activeFilters.type === 'string' ? activeFilters.type : undefined, q: searchQuery });
-  const events: LabEvent[] = (eventsResponse?.items || []) as LabEvent[];
+  const { data: eventsResponse, isLoading, error } = useGetEventsQuery({
+    page: 1,
+    limit: 100,
+    status: getFilterValue(activeFilters.status) as EventStatus | undefined,
+    type: getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined,
+    q: searchQuery,
+  });
+  const events: LabEvent[] = (eventsResponse ?? []) as LabEvent[];
 
   const statusConfig: Record<EventStatus, { label: string; variant: any }> = {
     A_VENIR: { label: 'À venir', variant: 'info' },
@@ -58,15 +67,15 @@ export default function ChercheurEvents() {
 
   const filterGroups = [
     { id: 'status', label: 'Statut', options: [ { id: 's1', label: 'À venir', value: 'A_VENIR' }, { id: 's2', label: 'En cours', value: 'EN_COURS' }, { id: 's3', label: 'Passé', value: 'PASSE' } ] },
-    { id: 'type', label: 'Type', options: [ { id: 't1', label: 'Séminaire', value: 'SEMINAIRE' }, { id: 't2', label: 'Conférence', value: 'CONFERENCE' }, { id: 't3', label: 'Workshop', value: 'WORKSHOP' } ] },
+    { id: 'type', label: 'Type', options: EVENT_TYPE_OPTIONS.map((option: { value: string; label: string }) => ({ id: option.value, label: option.label, value: option.value })) },
   ];
 
   const filtered = events.filter(e => {
     const q = searchQuery.toLowerCase();
     const matchQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q);
-    const statusF = activeFilters.status as string;
-    const typeF = activeFilters.type as string;
-    return matchQ && (!statusF || e.status === statusF) && (!typeF || e.type === typeF);
+    const statusF = getFilterValue(activeFilters.status) as EventStatus | undefined;
+    const typeF = getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined;
+    return matchQ && (!statusF || e.status === statusF) && (!typeF || toBackendEventType(e.type) === typeF);
   });
 
   const upcoming = filtered.filter(e => e.status === 'A_VENIR' || e.status === 'EN_COURS');
@@ -115,7 +124,8 @@ export default function ChercheurEvents() {
                     <div className="space-y-1">
                       <div className="text-sm font-medium text-text-secondary">{statusConfig[detailEvent.status].label}</div>
                       <h4 className="text-xl font-bold">{detailEvent.title}</h4>
-                      <div className="text-sm text-text-secondary">{new Date(detailEvent.date).toLocaleDateString('fr-FR')} — {detailEvent.location}</div>
+                      <div className="text-sm text-text-secondary leading-snug break-words">{formatEventDateRange(detailEvent.startDate, detailEvent.endDate)}</div>
+                      <div className="text-sm text-text-secondary leading-snug break-words">{detailEvent.location}</div>
                     </div>
                   </div>
 
@@ -158,11 +168,14 @@ function EventCard({ event, onViewDetails }: { event: LabEvent; onViewDetails: (
       <CardContent className="p-0">
         <div className="h-28 bg-gradient-to-br from-navy to-accent-blue flex items-center justify-center text-white text-5xl font-bold">{event.type.charAt(0)}</div>
         <div className="p-4">
-          <Badge className="mb-2">{typeLabels[event.type]}</Badge>
+          <Badge className="mb-2">{getTypeLabel(event.type)}</Badge>
           <h3 className="font-bold text-lg mb-1">{event.title}</h3>
           <p className="text-sm text-text-secondary mb-3 line-clamp-2">{event.description}</p>
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-text-secondary"><Calendar size={14} /> {new Date(event.date).toLocaleDateString('fr-FR')}</div>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2 text-sm text-text-secondary leading-snug min-w-0">
+              <Calendar size={14} className="mt-0.5 flex-shrink-0" />
+              <span className="whitespace-normal break-words">{formatEventDateRange(event.startDate, event.endDate)}</span>
+            </div>
             <Button variant="ghost" onClick={onViewDetails}><Eye size={14} /></Button>
           </div>
         </div>

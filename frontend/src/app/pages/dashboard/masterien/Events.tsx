@@ -6,7 +6,7 @@ import { SearchFilter } from '../../../components/shared/SearchFilter';
 import { PhotoGallery } from '../../../components/shared/PhotoGallery';
 import { Calendar, MapPin, Clock, Users, ExternalLink, X, Eye, Info, Mail, Briefcase, AlertCircle, Loader } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useGetEventsQuery } from '@/app/api';
+import { formatEventDateRange, useGetEventsQuery, EVENT_TYPE_OPTIONS, toBackendEventType } from '@/app/api';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SEMINAIRE' | 'CONFERENCE' | 'WORKSHOP' | 'SOUTENANCE' | 'JOURNEE_PORTES_OUVERTES';
@@ -24,7 +24,7 @@ interface LabEvent {
   title: string;
   type: EventType;
   status: EventStatus;
-  date: string;
+  startDate: string;
   endDate?: string;
   location: string;
   description: string;
@@ -48,6 +48,9 @@ const typeLabels: Record<EventType, string> = {
   JOURNEE_PORTES_OUVERTES: 'Journée Portes Ouvertes',
 };
 
+const getFilterValue = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+const getTypeLabel = (type: string) => EVENT_TYPE_OPTIONS.find((option: { value: string; label: string }) => option.value === toBackendEventType(type))?.label ?? type;
+
 export default function MasterienEvents() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
@@ -57,12 +60,12 @@ export default function MasterienEvents() {
   const { data: eventsResponse, isLoading, error } = useGetEventsQuery({
     page: 1,
     limit: 100,
-    status: typeof activeFilters.status === 'string' ? activeFilters.status : undefined,
-    type: typeof activeFilters.type === 'string' ? activeFilters.type : undefined,
+    status: getFilterValue(activeFilters.status) as EventStatus | undefined,
+    type: getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined,
     q: searchQuery,
   });
 
-  const events: LabEvent[] = (eventsResponse?.items || []) as LabEvent[];
+  const events: LabEvent[] = (eventsResponse ?? []) as LabEvent[];
 
   const filterGroups = [
     {
@@ -74,11 +77,7 @@ export default function MasterienEvents() {
     },
     {
       id: 'type', label: 'Type', options: [
-        { id: 't1', label: 'Séminaire', value: 'SEMINAIRE' },
-        { id: 't2', label: 'Conférence', value: 'CONFERENCE' },
-        { id: 't3', label: 'Workshop', value: 'WORKSHOP' },
-        { id: 't4', label: 'Soutenance', value: 'SOUTENANCE' },
-        { id: 't5', label: 'Journée Portes Ouvertes', value: 'JOURNEE_PORTES_OUVERTES' },
+        ...EVENT_TYPE_OPTIONS.map((option: { value: string; label: string }) => ({ id: option.value, label: option.label, value: option.value })),
       ]
     },
   ];
@@ -86,9 +85,9 @@ export default function MasterienEvents() {
   const filtered = events.filter(e => {
     const q = searchQuery.toLowerCase();
     const matchQ = !q || e.title.toLowerCase().includes(q) || e.location.toLowerCase().includes(q);
-    const statusF = activeFilters.status as string;
-    const typeF = activeFilters.type as string;
-    return matchQ && (!statusF || e.status === statusF) && (!typeF || e.type === typeF);
+    const statusF = getFilterValue(activeFilters.status) as EventStatus | undefined;
+    const typeF = getFilterValue(activeFilters.type) ? toBackendEventType(getFilterValue(activeFilters.type) as string) : undefined;
+    return matchQ && (!statusF || e.status === statusF) && (!typeF || toBackendEventType(e.type) === typeF);
   });
 
   const upcoming = filtered.filter(e => e.status === 'A_VENIR' || e.status === 'EN_COURS');
@@ -171,7 +170,7 @@ export default function MasterienEvents() {
               Aucun événement trouvé
             </h3>
             <p className="text-text-secondary">
-              {searchQuery || Object.values(activeFilters).some(v => v.length > 0)
+              {searchQuery || Object.values(activeFilters).some(v => (Array.isArray(v) ? v.length > 0 : !!v))
                 ? 'Aucun résultat ne correspond à vos critères'
                 : 'Aucun événement disponible'}
             </p>
@@ -208,8 +207,7 @@ export default function MasterienEvents() {
                   <div>
                     <div className="text-xs font-medium text-text-muted mb-0.5">Date</div>
                     <div className="font-medium text-navy dark:text-white">
-                      {new Date(detailEvent.date).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                      {detailEvent.endDate && ` — ${new Date(detailEvent.endDate).toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
+                      {formatEventDateRange(detailEvent.startDate, detailEvent.endDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
                   </div>
                 </div>
@@ -317,7 +315,7 @@ function EventCard({ event, onViewDetails }: { event: LabEvent; onViewDetails: (
 
         <div className="p-4">
           <Badge className="mb-2 bg-accent-blue/10 text-accent-blue border-accent-blue/20">
-            {typeLabels[event.type]}
+            {getTypeLabel(event.type)}
           </Badge>
           <h3 className="font-bold text-navy dark:text-white mb-2 line-clamp-2 text-lg">
             {event.title}
@@ -325,9 +323,9 @@ function EventCard({ event, onViewDetails }: { event: LabEvent; onViewDetails: (
           <p className="text-sm text-text-secondary mb-3 line-clamp-2">{event.description}</p>
 
           <div className="space-y-2 mb-4">
-            <div className="flex items-center gap-2 text-xs text-text-secondary">
-              <Calendar size={14} />
-              <span>{new Date(event.date).toLocaleDateString('fr-FR')}</span>
+            <div className="flex items-start gap-2 text-xs text-text-secondary leading-snug min-w-0">
+              <Calendar size={14} className="mt-0.5 flex-shrink-0" />
+              <span className="whitespace-normal break-words">{formatEventDateRange(event.startDate, event.endDate)}</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-text-secondary">
               <MapPin size={14} />
