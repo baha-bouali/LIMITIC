@@ -65,7 +65,8 @@ namespace LIMTIC.Application.Services.Profiles
             // Authorization: only admin or the masterian themselves
             var currentUserId = _currentUserService.UserId;
             var currentRole = _currentUserService.Role;
-            var isAdmin = currentRole is UserRole.SuperAdmin or UserRole.Admin;
+            var isAdmin = Enum.TryParse<UserRole>(currentRole, out var role) &&
+                (role is UserRole.SuperAdmin or UserRole.Admin);
 
             if (!isAdmin && currentUserId != command.UserId)
                 return Result<MasterianProfileCommandResponse>.FailureResult("You are not authorized to update this profile");

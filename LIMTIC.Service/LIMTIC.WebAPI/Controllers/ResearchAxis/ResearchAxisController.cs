@@ -4,7 +4,7 @@ using LIMTIC.WebAPI.Models.ResearchAxis;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.ResearchAxis
 {
     [ApiController]
     [Route("api/research-axes")]

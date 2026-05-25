@@ -3,7 +3,7 @@ using LIMTIC.Application.Contracts.Commands.Contacts;
 using LIMTIC.WebAPI.Models.Contact;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Contact
 {
     [ApiController]
     [Route("api/contact")]

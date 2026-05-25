@@ -5,20 +5,20 @@ using LIMTIC.WebAPI.Models.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Users
 {
     [ApiController]
-    [Route("api/profiles/phd-students")]
-    public class PhDStudentProfileController : ControllerBase
+    [Route("api/profiles/researchers")]
+    public class ResearcherProfileController : ControllerBase
     {
-        private readonly IPhDStudentProfileService _phDStudentProfileService;
+        private readonly IResearcherProfileService _researcherProfileService;
         private readonly ICurrentUserService _currentUserService;
 
-        public PhDStudentProfileController(
-            IPhDStudentProfileService phDStudentProfileService,
+        public ResearcherProfileController(
+            IResearcherProfileService researcherProfileService,
             ICurrentUserService currentUserService)
         {
-            _phDStudentProfileService = phDStudentProfileService;
+            _researcherProfileService = researcherProfileService;
             _currentUserService = currentUserService;
         }
 
@@ -26,19 +26,19 @@ namespace LIMTIC.WebAPI.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetAllProfiles()
         {
-            var result = await _phDStudentProfileService.GetAllAsync();
-            return Ok(new PhDStudentsListResponse { Success = true, Profiles = result.Data });
+            var result = await _researcherProfileService.GetAllAsync();
+            return Ok(new ResearchersListResponse { Success = true, Profiles = result.Data });
         }
 
         [HttpGet("{userId:guid}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetProfile(Guid userId)
         {
-            var result = await _phDStudentProfileService.GetByUserIdAsync(userId);
+            var result = await _researcherProfileService.GetByUserIdAsync(userId);
             if (result.Success)
-                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data });
+                return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data });
 
-            return NotFound(new PhDStudentProfileResponse
+            return NotFound(new ResearcherProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -47,7 +47,7 @@ namespace LIMTIC.WebAPI.Controllers
 
         [HttpPut("{userId:guid}")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile(Guid userId, UpdatePhDStudentProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(Guid userId, UpdateResearcherProfileRequest request)
         {
             var currentUserId = _currentUserService.UserId;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
@@ -55,28 +55,34 @@ namespace LIMTIC.WebAPI.Controllers
             if (!isAdmin && currentUserId != userId)
                 return Forbid();
 
-            var command = new UpdatePhDStudentProfileCommand
+            var command = new UpdateResearcherProfileCommand
             {
                 UserId = userId,
-                ThesisSubject = request.ThesisSubject,
-                EnrollmentYear = request.EnrollmentYear,
-                SupervisorId = request.SupervisorId,
+                Rank = request.Rank,
+                Specialty = request.Specialty,
+                Office = request.Office,
+                PhoneNumber = request.PhoneNumber,
+                Biography = request.Biography,
+                Orcid = request.Orcid,
+                GoogleScholar = request.GoogleScholar,
+                ResearchGate = request.ResearchGate,
+                LinkedIn = request.LinkedIn,
                 ResearchAxisIds = request.ResearchAxisIds
             };
 
-            var result = await _phDStudentProfileService.UpdateAsync(command);
+            var result = await _researcherProfileService.UpdateAsync(command);
             if (result.Success)
-                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data?.Profile });
+                return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data?.Profile });
 
             if (result.ValidationErrors != null)
-                return BadRequest(new PhDStudentProfileResponse
+                return BadRequest(new ResearcherProfileResponse
                 {
                     Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
 
-            return NotFound(new PhDStudentProfileResponse
+            return NotFound(new ResearcherProfileResponse
             {
                 Success = false,
                 Message = result.Message
@@ -87,7 +93,7 @@ namespace LIMTIC.WebAPI.Controllers
         [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> DeleteProfile(Guid userId)
         {
-            var result = await _phDStudentProfileService.DeleteAsync(userId);
+            var result = await _researcherProfileService.DeleteAsync(userId);
             if (result.Success)
                 return Ok(new BaseResponse { Success = true });
 

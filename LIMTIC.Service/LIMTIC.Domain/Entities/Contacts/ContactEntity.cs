@@ -1,5 +1,4 @@
-﻿using System;
-using LIMTIC.Domain.Shared;
+﻿using LIMTIC.Domain.Shared;
 
 namespace LIMTIC.Domain.Entities.Contacts
 {

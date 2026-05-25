@@ -12,7 +12,7 @@ using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LIMTIC.WebAPI.Controllers
+namespace LIMTIC.WebAPI.Controllers.Events
 {
     [ApiController]
     [Route("api/events/")]
