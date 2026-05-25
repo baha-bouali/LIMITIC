@@ -7,7 +7,7 @@ import { MapPin, Calendar, Users, Image, AlertCircle, Loader } from 'lucide-reac
 import { Link } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useGetEventsQuery } from '@/app/api';
+import { formatEventDate, useGetEventsQuery } from '@/app/api';
 
 type EventStatus = 'A_VENIR' | 'EN_COURS' | 'PASSE';
 type EventType = 'SEMINAIRE' | 'CONFERENCE' | 'WORKSHOP' | 'SOUTENANCE' | 'JOURNEE_PORTES_OUVERTES';
@@ -18,7 +18,7 @@ export default function EventsPage() {
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState<EventStatus>('A_VENIR');
   const { data: eventsResponse, isLoading, error } = useGetEventsQuery({ page: 1, limit: 100 });
-  const allEvents: Event[] = (eventsResponse?.items || []) as Event[];
+  const allEvents: Event[] = (eventsResponse ?? []) as Event[];
   const filteredEvents = useMemo(() => allEvents.filter((event) => event.status === activeTab), [allEvents, activeTab]);
 
   const getSpeakersCount = (event: Event) => event.speakers?.length ?? 0;
@@ -183,7 +183,7 @@ export default function EventsPage() {
                   <div className="space-y-2 text-sm text-text-secondary">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="flex-shrink-0 text-accent-blue" />
-                      <span>{new Date(event.startDate).toLocaleDateString('fr-FR', {
+                      <span>{formatEventDate(event.startDate, {
                         day: '2-digit',
                         month: 'long',
                         year: 'numeric',

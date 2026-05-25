@@ -7,7 +7,7 @@ import { Badge } from '../../components/ui/Badge';
 import { Calendar, MapPin, Users, Download, Mail, Briefcase, Image as ImageIcon } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { useGetEventByIdQuery } from '../../api/eventsApi';
+import { formatEventDate, useGetEventByIdQuery } from '../../api/eventsApi';
 import jsPDF from 'jspdf';
 
 export default function EventDetailPage() {
@@ -36,8 +36,7 @@ export default function EventDetailPage() {
   const photoFileNames = event?.photoFileNames ?? [];
 
   const formatDate = (dateValue?: string) => {
-    if (!dateValue) return '—';
-    return new Date(dateValue).toLocaleDateString('fr-FR', {
+    return formatEventDate(dateValue, {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
@@ -47,8 +46,7 @@ export default function EventDetailPage() {
   };
 
   const formatDay = (dateValue?: string) => {
-    if (!dateValue) return '—';
-    return new Date(dateValue).toLocaleDateString('fr-FR', {
+    return formatEventDate(dateValue, {
       day: '2-digit',
       month: 'long',
       year: 'numeric',
