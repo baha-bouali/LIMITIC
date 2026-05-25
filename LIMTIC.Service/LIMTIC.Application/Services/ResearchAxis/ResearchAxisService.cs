@@ -6,6 +6,8 @@ using LIMTIC.Application.DTOs.Profiles;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.ResearchAxis;
+using LIMTIC.Domain.Entities.Users;
+using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.ResearchAxis
 {
@@ -15,17 +17,23 @@ namespace LIMTIC.Application.Services.ResearchAxis
         private readonly IResearcherRepository _researcherRepository;
         private readonly IValidator<CreateResearchAxisCommand> _createValidator;
         private readonly IValidator<UpdateResearchAxisCommand> _updateValidator;
+        private readonly IAuditLogsRepository _auditLogsRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public ResearchAxisService(
             IResearchAxisRepository researchAxisRepository,
             IResearcherRepository researcherRepository,
             IValidator<CreateResearchAxisCommand> createValidator,
-            IValidator<UpdateResearchAxisCommand> updateValidator)
+            IValidator<UpdateResearchAxisCommand> updateValidator,
+            IAuditLogsRepository auditLogsRepository,
+            ICurrentUserService currentUserService)
         {
             _researchAxisRepository = researchAxisRepository;
             _researcherRepository = researcherRepository;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
+            _auditLogsRepository = auditLogsRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<List<ResearchAxisDto>>> GetAllAsync()
@@ -74,6 +82,9 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!added)
                 return Result<ResearchAxisDto>.FailureResult("Failed to create research axis");
 
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Axe);
+            await _auditLogsRepository.AddLog(axisLog);
+
             var created = await _researchAxisRepository.GetByIdAsync(entity.Id);
             return Result<ResearchAxisDto>.SuccessResult(MapToDto(created!));
         }
@@ -106,9 +117,13 @@ namespace LIMTIC.Application.Services.ResearchAxis
             }
 
             var updated = await _researchAxisRepository.UpdateAsync(entity);
-            return updated
-                ? Result<ResearchAxisDto>.SuccessResult(MapToDto(entity))
-                : Result<ResearchAxisDto>.FailureResult("Failed to update research axis");
+            if (!updated)
+                return Result<ResearchAxisDto>.FailureResult("Failed to update research axis");
+
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            await _auditLogsRepository.AddLog(axisLog);
+
+            return Result<ResearchAxisDto>.SuccessResult(MapToDto(entity));
         }
 
         public async Task<Result<bool>> DeleteAsync(Guid id)
@@ -121,9 +136,13 @@ namespace LIMTIC.Application.Services.ResearchAxis
                 return Result<bool>.FailureResult("Cannot delete axis with associated publications");
 
             var deleted = await _researchAxisRepository.DeleteAsync(entity);
-            return deleted
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Failed to delete research axis");
+            if (!deleted)
+                return Result<bool>.FailureResult("Failed to delete research axis");
+
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Axe);
+            await _auditLogsRepository.AddLog(axisLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
         public async Task<Result<bool>> AddMemberAsync(Guid axisId, Guid userId)
@@ -135,9 +154,13 @@ namespace LIMTIC.Application.Services.ResearchAxis
                 return Result<bool>.FailureResult("User is not a researcher");
 
             var added = await _researchAxisRepository.AddMemberAsync(axisId, userId);
-            return added
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Failed to add member");
+            if (!added)
+                return Result<bool>.FailureResult("Failed to add member");
+
+            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            await _auditLogsRepository.AddLog(memberLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
         public async Task<Result<bool>> RemoveMemberAsync(Guid axisId, Guid userId)
@@ -146,14 +169,18 @@ namespace LIMTIC.Application.Services.ResearchAxis
                 return Result<bool>.FailureResult("Research axis not found");
 
             var removed = await _researchAxisRepository.RemoveMemberAsync(axisId, userId);
-            return removed
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Member not found in this axis");
+            if (!removed)
+                return Result<bool>.FailureResult("Member not found in this axis");
+
+            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            await _auditLogsRepository.AddLog(memberLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
-        private async Task<ICollection<Domain.Entities.Users.ResearcherEntity>?> LoadResearchersAsync(List<Guid> ids)
+        private async Task<ICollection<ResearcherEntity>?> LoadResearchersAsync(List<Guid> ids)
         {
-            var researchers = new List<Domain.Entities.Users.ResearcherEntity>();
+            var researchers = new List<ResearcherEntity>();
             foreach (var id in ids)
             {
                 var r = await _researcherRepository.GetByUserIdAsync(id);

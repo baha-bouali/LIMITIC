@@ -1,4 +1,5 @@
 using FluentValidation;
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Contracts.Commands.Events;
 using LIMTIC.Application.DTOs;
@@ -6,6 +7,7 @@ using LIMTIC.Application.DTOs.Events;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Events;
+using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Events
 {
@@ -16,19 +18,25 @@ namespace LIMTIC.Application.Services.Events
         private readonly IValidator<UpdateEventCommand> _updateEventCommandValidator;
         private readonly IValidator<CreateSpeakerCommand> _createSpeakerCommandValidator;
         private readonly IValidator<UpdateSpeakerCommand> _updateSpeakerCommandValidator;
+        private readonly IAuditLogsRepository _auditLogsRepository;
+        private readonly ICurrentUserService _currentUserService;
 
         public EventsService(
             IEventsRepository eventsRepository,
             IValidator<CreateEventCommand> createEventCommandValidator,
             IValidator<UpdateEventCommand> updateEventCommandValidator,
             IValidator<CreateSpeakerCommand> createSpeakerCommandValidator,
-            IValidator<UpdateSpeakerCommand> updateSpeakerCommandValidator)
+            IValidator<UpdateSpeakerCommand> updateSpeakerCommandValidator,
+            IAuditLogsRepository auditLogsRepository,
+            ICurrentUserService currentUserService)
         {
             _eventsRepository = eventsRepository;
             _createEventCommandValidator = createEventCommandValidator;
             _updateEventCommandValidator = updateEventCommandValidator;
             _createSpeakerCommandValidator = createSpeakerCommandValidator;
             _updateSpeakerCommandValidator = updateSpeakerCommandValidator;
+            _auditLogsRepository = auditLogsRepository;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<(List<EventDto> Items, int Total)>> GetEventsAsync(string? status, string? type, int page, int limit, string? q)
@@ -102,6 +110,9 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<EventDto>.FailureResult("Failed to create event");
 
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(eventLog);
+
             return Result<EventDto>.SuccessResult(MapEvent(eventEntity));
         }
 
@@ -128,6 +139,9 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<EventDto>.FailureResult("Failed to update event");
 
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(eventLog);
+
             return Result<EventDto>.SuccessResult(MapEvent(existingEvent));
         }
 
@@ -138,9 +152,13 @@ namespace LIMTIC.Application.Services.Events
                 return Result<bool>.FailureResult("Event not found");
 
             var deleted = await _eventsRepository.DeleteEventAsync(existingEvent);
-            return deleted
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Failed to delete event");
+            if (!deleted)
+                return Result<bool>.FailureResult("Failed to delete event");
+
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(eventLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
         public async Task<Result<SpeakerDto>> AddSpeakerAsync(CreateSpeakerCommand command)
@@ -169,6 +187,9 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<SpeakerDto>.FailureResult("Failed to create speaker");
 
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(speakerLog);
+
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(speaker));
         }
 
@@ -193,6 +214,9 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<SpeakerDto>.FailureResult("Failed to update speaker");
 
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(speakerLog);
+
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(existingSpeaker));
         }
 
@@ -203,9 +227,13 @@ namespace LIMTIC.Application.Services.Events
                 return Result<bool>.FailureResult("Speaker not found");
 
             var deleted = await _eventsRepository.DeleteSpeakerAsync(existingSpeaker);
-            return deleted
-                ? Result<bool>.SuccessResult(true)
-                : Result<bool>.FailureResult("Failed to delete speaker");
+            if (!deleted)
+                return Result<bool>.FailureResult("Failed to delete speaker");
+
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            await _auditLogsRepository.AddLog(speakerLog);
+
+            return Result<bool>.SuccessResult(true);
         }
 
         private static EventDto MapEvent(EventEntity eventEntity)

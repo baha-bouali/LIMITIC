@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using FluentValidation;
+using LIMTIC.Application.Abstractions.AuditLogs;
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Auth;
 using LIMTIC.Application.Abstractions.Events;
@@ -7,6 +8,7 @@ using LIMTIC.Application.Abstractions.Contacts;
 using LIMTIC.Application.Abstractions.Settings;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Abstractions.UserManagement;
+using LIMTIC.Application.Services.AuditLogs;
 using LIMTIC.Application.Services.Auth;
 using LIMTIC.Application.Services.Events;
 using LIMTIC.Application.Services.Contacts;
@@ -29,6 +31,7 @@ namespace LIMTIC.Application.IOC
             services.AddScoped<IEventsService, EventsService>();
             services.AddScoped<ISettingsService, SettingsService>();
             services.AddScoped<IContactService, ContactService>();
+            services.AddScoped<IAuditLogsService, AuditLogsService>();
 
             // Profile services
             services.AddScoped<IResearcherProfileService, ResearcherProfileService>();
