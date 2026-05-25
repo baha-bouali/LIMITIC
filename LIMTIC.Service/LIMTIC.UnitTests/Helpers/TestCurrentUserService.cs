@@ -1,5 +1,6 @@
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Domain.Enums;
+using System.Security.Claims;
 
 namespace LIMTIC.UnitTests.Helpers
 {
@@ -10,6 +11,6 @@ namespace LIMTIC.UnitTests.Helpers
     public class TestCurrentUserService : ICurrentUserService
     {
         public Guid UserId => Guid.Empty;
-        public UserRole? Role => UserRole.SuperAdmin;
+        public string? Role => UserRole.SuperAdmin.ToString();
     }
 }
