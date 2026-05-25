@@ -50,17 +50,29 @@ namespace LIMTIC.UnitTests.Tests
 
             var repo = ServiceProvider.GetRequiredService<IAuditLogsRepository>();
 
-            var before = DateTime.UtcNow.AddHours(-3);
-            var inRangeA = DateTime.UtcNow.AddHours(-2);
-            var inRangeB = DateTime.UtcNow.AddHours(-1);
-            var after = DateTime.UtcNow;
+            var baseTime = DateTime.UtcNow;
+            var before = baseTime.AddHours(-5);
+            var inRangeA = baseTime.AddHours(-2);
+            var inRangeB = baseTime.AddHours(-1);
+            var after = baseTime.AddHours(1);
+
+            var user = new Domain.Entities.Users.UserEntity
+            {
+                Id = Guid.NewGuid(),
+                FirstName = "Test",
+                LastName = "User",
+                Email = "Test@User.com",
+                PasswordHash = "hashedpassword",
+                Role = UserRole.Admin
+            };
+            await UserRepository.AddUserAsync(user);
 
             var logs = new[]
             {
                 new AuditLogsEntity
                 {
                     Id = Guid.NewGuid(),
-                    ActorId = Guid.NewGuid(),
+                    ActorId = user.Id,
                     Action = ActionType.LOGIN,
                     Resource = ResourceType.User,
                     Timestamp = before
@@ -68,7 +80,7 @@ namespace LIMTIC.UnitTests.Tests
                 new AuditLogsEntity
                 {
                     Id = Guid.NewGuid(),
-                    ActorId = Guid.NewGuid(),
+                    ActorId = user.Id,
                     Action = ActionType.CREATE,
                     Resource = ResourceType.Contact,
                     Timestamp = inRangeA
@@ -76,7 +88,7 @@ namespace LIMTIC.UnitTests.Tests
                 new AuditLogsEntity
                 {
                     Id = Guid.NewGuid(),
-                    ActorId = Guid.NewGuid(),
+                    ActorId = user.Id,
                     Action = ActionType.UPDATE,
                     Resource = ResourceType.User,
                     Timestamp = inRangeB
@@ -84,7 +96,7 @@ namespace LIMTIC.UnitTests.Tests
                 new AuditLogsEntity
                 {
                     Id = Guid.NewGuid(),
-                    ActorId = Guid.NewGuid(),
+                    ActorId = user.Id,
                     Action = ActionType.LOGOUT,
                     Resource = ResourceType.User,
                     Timestamp = after
@@ -94,8 +106,8 @@ namespace LIMTIC.UnitTests.Tests
             DbContext.AuditLogs.AddRange(logs);
             await DbContext.SaveChangesAsync();
 
-            var from = DateTime.UtcNow.AddHours(-2).AddMinutes(-5);
-            var to = DateTime.UtcNow.AddMinutes(-5);
+            var from = baseTime.AddHours(-3);
+            var to = baseTime;
             var result = await repo.GetLogsByPeriodAsync(from, to);
 
             Assert.Equal(2, result.Count);
