@@ -1,4 +1,4 @@
-import { api } from '@app/api/apiSlice'
+import { api } from '../../../app/api/baseApi'
 
 export interface Identity {
   labName: string
@@ -17,6 +17,7 @@ export interface SmtpResponse {
 }
 
 export interface SettingsResponse {
+  success: boolean
   identity: Identity
   smtp: SmtpResponse
 }
@@ -34,13 +35,22 @@ export interface UpdateSettingsRequest {
   smtp: SmtpUpdateRequest
 }
 
+export interface UpdateSettingsResponse {
+  success: boolean
+}
+
+export interface TestSmtpResponse {
+  success: boolean
+  message?: string
+}
+
 export const settingsApiSlice = api.injectEndpoints({
   endpoints: (builder) => ({
     getSettings: builder.query<SettingsResponse, void>({
       query: () => '/dashboard/superadmin/settings',
       providesTags: ['Settings'],
     }),
-    updateSettings: builder.mutation<void, UpdateSettingsRequest>({
+    updateSettings: builder.mutation<UpdateSettingsResponse, UpdateSettingsRequest>({
       query: (body) => ({
         url: '/dashboard/superadmin/settings',
         method: 'PUT',
@@ -48,7 +58,7 @@ export const settingsApiSlice = api.injectEndpoints({
       }),
       invalidatesTags: ['Settings'],
     }),
-    testSmtp: builder.mutation<void, { testEmail: string }>({
+    testSmtp: builder.mutation<TestSmtpResponse, { testEmail: string }>({
       query: (body) => ({
         url: '/dashboard/superadmin/settings/smtp/test',
         method: 'POST',
