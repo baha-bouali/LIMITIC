@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { FileText, Loader2, CheckCircle2, XCircle, Trash2, Pencil } from 'lucide-react';
+import { FileText, Loader2, CheckCircle2, XCircle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { clsx } from 'clsx';
 
@@ -15,12 +15,9 @@ import {
   useCreateDashboardPublicationMutation,
   useDeleteDashboardPublicationMutation,
   useGetDashboardPublicationsQuery,
-  useLazyGetDashboardPublicationByIdQuery,
   useRejectDashboardPublicationMutation,
-  useUpdateDashboardPublicationMutation,
   useValidateDashboardPublicationMutation,
   type CreateDashboardPublicationRequest,
-  type DashboardPublicationDetailDto,
   type DashboardPublicationSummaryDto,
   type DashboardPublicationsQueryParams,
 } from '../../../api/dashboardPublicationsApi';
@@ -74,36 +71,6 @@ const typeLabels: Record<string, string> = {
   TechnicalReport: 'Rapport technique',
 };
 
-const normalizeStatus = (status?: string): PublicationStatus => {
-  const normalized = status?.toLowerCase();
-  if (normalized === 'draft' || normalized === 'brouillon') return 'Draft';
-  if (normalized === 'submitted' || normalized === 'soumis') return 'Submitted';
-  if (normalized === 'published' || normalized === 'publie' || normalized === 'publié') return 'Published';
-  if (normalized === 'rejected' || normalized === 'rejete' || normalized === 'rejeté') return 'Rejected';
-  return 'Draft';
-};
-
-const toFormType = (type?: string): PublicationType => {
-  const map: Record<string, PublicationType> = {
-    ArticleJournal: 'ARTICLE_JOURNAL',
-    ConferenceInternational: 'CONFERENCE_INT',
-    ConferenceNational: 'CONFERENCE_NAT',
-    ChapterBook: 'CHAPITRE_OUVRAGE',
-    TechnicalReport: 'RAPPORT_TECHNIQUE',
-  };
-
-  return map[type ?? ''] ?? (type as PublicationType) ?? 'ARTICLE_JOURNAL';
-};
-
-const toCoreRanking = (ranking?: string | null): 'A*' | 'A' | 'B' | 'C' => {
-  if (ranking === 'APlus' || ranking === 'A*') return 'A*';
-  if (ranking === 'A' || ranking === 'B' || ranking === 'C') return ranking;
-  return 'A';
-};
-
-const toVisibility = (visibility?: string | null): PublicationVisibility =>
-  visibility === 'Private' || visibility === 'PRIVEE' ? 'PRIVEE' : 'PUBLIQUE';
-
 const roleLabel = (role?: number) => {
   if (role === 1) return 'Super Admin';
   if (role === 2) return 'Admin';
@@ -116,7 +83,6 @@ const roleLabel = (role?: number) => {
 export default function SuperAdminPublications() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingPublication, setEditingPublication] = useState<DashboardPublicationDetailDto | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<DashboardPublicationSummaryDto | null>(null);
   const [activeFilters, setActiveFilters] = useState<Record<string, string | string[]>>({});
 
@@ -149,8 +115,6 @@ export default function SuperAdminPublications() {
   const { data: publicationPage, isLoading, isFetching, isError, refetch } = useGetDashboardPublicationsQuery(queryParams);
 
   const [createPublication, { isLoading: isCreating }] = useCreateDashboardPublicationMutation();
-  const [updatePublication, { isLoading: isUpdating }] = useUpdateDashboardPublicationMutation();
-  const [loadPublicationById, { isFetching: isLoadingPublicationDetail }] = useLazyGetDashboardPublicationByIdQuery();
   const [validatePublication, { isLoading: isValidating }] = useValidateDashboardPublicationMutation();
   const [rejectPublication, { isLoading: isRejecting }] = useRejectDashboardPublicationMutation();
   const [deletePublication, { isLoading: isDeleting }] = useDeleteDashboardPublicationMutation();
@@ -196,10 +160,10 @@ export default function SuperAdminPublications() {
   ];
 
   const stats = {
-    published: publications.filter((publication) => normalizeStatus(publication.status) === 'Published').length,
-    submitted: publications.filter((publication) => normalizeStatus(publication.status) === 'Submitted').length,
-    draft: publications.filter((publication) => normalizeStatus(publication.status) === 'Draft').length,
-    rejected: publications.filter((publication) => normalizeStatus(publication.status) === 'Rejected').length,
+    published: publications.filter((publication) => publication.status === 'Published').length,
+    submitted: publications.filter((publication) => publication.status === 'Submitted').length,
+    draft: publications.filter((publication) => publication.status === 'Draft').length,
+    rejected: publications.filter((publication) => publication.status === 'Rejected').length,
   };
 
   const toBackendRequest = (data: PublicationFormData): CreateDashboardPublicationRequest | null => {
@@ -279,68 +243,6 @@ export default function SuperAdminPublications() {
     return request;
   };
 
-  const toFormInitialData = (publication: DashboardPublicationDetailDto) => ({
-    type: toFormType(publication.type || publication.publicationType),
-    title: publication.title,
-    year: publication.year,
-    abstract: publication.abstract_ ?? '',
-    keywords: publication.keywords ?? [],
-    visibility: toVisibility(publication.visibility),
-    axes: publication.axe?.id ? [publication.axe.id] : [],
-    journalName: publication.journalName ?? publication.venue ?? '',
-    volume: publication.volume ?? '',
-    issue: publication.number ?? '',
-    pages: publication.pages ?? '',
-    doi: publication.doi ?? '',
-    quartile: (publication.quartile ?? 'Q1') as 'Q1' | 'Q2' | 'Q3' | 'Q4',
-    conferenceName: publication.venue ?? '',
-    location: publication.location ?? '',
-    coreRanking: toCoreRanking(publication.coreRanking),
-    bookTitle: publication.bookTitle ?? '',
-    editor: publication.publisher ?? '',
-    isbn: publication.isbn ?? '',
-    reportNumber: publication.reportNumber ?? '',
-    institution: publication.institution ?? '',
-    authors: publication.authors ?? [],
-    status: normalizeStatus(publication.status) === 'Published' ? 'PUBLIE' : normalizeStatus(publication.status) === 'Submitted' ? 'SOUMIS' : 'BROUILLON',
-  });
-
-  const handleOpenCreate = () => {
-    setEditingPublication(null);
-    setShowForm(true);
-  };
-
-  const handleOpenEdit = async (publication: DashboardPublicationSummaryDto) => {
-    try {
-      const detail = await loadPublicationById(publication.id).unwrap();
-      if (!detail) {
-        toast.error('Publication introuvable.');
-        return;
-      }
-
-      setEditingPublication(detail);
-      setShowForm(true);
-    } catch {
-      toast.error('Impossible de charger la publication.');
-    }
-  };
-
-  const handleSavePublication = async (data: PublicationFormData) => {
-    const request = toBackendRequest(data);
-    if (!request) return;
-
-    if (editingPublication) {
-      await updatePublication({ id: editingPublication.id, body: request }).unwrap();
-      toast.success('Publication modifiée avec succès');
-    } else {
-      const result = await createPublication(request).unwrap();
-      toast.success(result?.status === 'Published' ? 'Publication publiée avec succès' : 'Publication soumise pour validation');
-    }
-
-    setEditingPublication(null);
-    setShowForm(false);
-  };
-
   const handleCreatePublication = async (data: PublicationFormData) => {
     const request = toBackendRequest(data);
     if (!request) return;
@@ -369,7 +271,7 @@ export default function SuperAdminPublications() {
     setDeleteConfirm(null);
   };
 
-  const busy = isCreating || isUpdating || isValidating || isRejecting || isDeleting || isLoadingPublicationDetail;
+  const busy = isCreating || isValidating || isRejecting || isDeleting;
 
   return (
     <div className="space-y-6">
@@ -379,7 +281,7 @@ export default function SuperAdminPublications() {
           <p className="text-text-secondary">Gérer toutes les publications du laboratoire</p>
         </div>
 
-        <Button onClick={handleOpenCreate} disabled={busy}>
+        <Button onClick={() => setShowForm(true)} disabled={busy}>
           <FileText size={18} />
           Créer une publication
         </Button>
@@ -423,10 +325,10 @@ export default function SuperAdminPublications() {
         <Card>
           <CardContent className="p-6 space-y-4">
             {publications.map((publication) => (
-              <div key={publication.id} className={clsx('p-5 border rounded-lg transition-all hover:shadow-md', normalizeStatus(publication.status) === 'Submitted' ? 'border-warning bg-warning/5' : 'border-surface-border')}>
+              <div key={publication.id} className={clsx('p-5 border rounded-lg transition-all hover:shadow-md', (publication.status as PublicationStatus) === 'Submitted' ? 'border-warning bg-warning/5' : 'border-surface-border')}>
                 {(() => {
-                  const publicationStatus = normalizeStatus(publication.status);
-                  const publicationType = publication.type;
+                  const publicationStatus = publication.status as PublicationStatus;
+                  const publicationType = publication.type as PublicationType;
 
                   return (
                     <div className="flex items-start justify-between gap-4">
@@ -444,18 +346,17 @@ export default function SuperAdminPublications() {
                       <div><span className="font-medium">Auteurs:</span> {publication.authors.join(', ')}</div>
                       <div><span className="font-medium">Axe de recherche:</span> {publication.axe?.title ?? 'N/A'}</div>
                       {publication.submittedBy && <div className="text-accent-blue"><span className="font-medium">Soumis par:</span> {publication.submittedBy}</div>}
-                      {publicationStatus === 'Rejected' && publication.rejectionReason && <div className="p-3 bg-error/5 border border-error/20 rounded-lg text-error mt-3"><span className="font-medium">Raison du rejet:</span> {publication.rejectionReason}</div>}
+                      {publication.status === 'Rejected' && publication.rejectionReason && <div className="p-3 bg-error/5 border border-error/20 rounded-lg text-error mt-3"><span className="font-medium">Raison du rejet:</span> {publication.rejectionReason}</div>}
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    {publicationStatus === 'Submitted' && (
+                    {publication.status === 'Submitted' && (
                       <>
                         <Button onClick={() => handleApprove(publication)} disabled={busy} className="whitespace-nowrap text-xs"><CheckCircle2 size={14} />Approuver</Button>
                         <Button variant="outlined" className="whitespace-nowrap text-xs text-error hover:bg-error/5" onClick={() => handleReject(publication)} disabled={busy}><XCircle size={14} />Rejeter</Button>
                       </>
                     )}
-                    <Button variant="outlined" className="whitespace-nowrap text-xs" onClick={() => handleOpenEdit(publication)} disabled={busy}><Pencil size={14} />Modifier</Button>
                     <Button variant="outlined" className="whitespace-nowrap text-xs text-error hover:bg-error/5" onClick={() => setDeleteConfirm(publication)} disabled={busy}><Trash2 size={14} />Supprimer</Button>
                   </div>
                 </div>
@@ -469,12 +370,8 @@ export default function SuperAdminPublications() {
 
       {showForm && (
         <PublicationForm
-          onClose={() => {
-            setEditingPublication(null);
-            setShowForm(false);
-          }}
-          onSubmit={handleSavePublication}
-          initialData={editingPublication ? toFormInitialData(editingPublication) : undefined}
+          onClose={() => setShowForm(false)}
+          onSubmit={handleCreatePublication}
           canPublishDirectly={true}
           submitMode="manual"
           axesOptions={researchAxes.map((axis) => ({ id: axis.id, title: axis.title }))}
