@@ -256,7 +256,6 @@ const translations = {
     'dash.manageEvents': 'Gérer les événements',
     'dash.manageMembers': 'Gérer les membres',
     'dash.manageAxes': 'Gérer les axes',
-    'dash.members': 'membres',
     'dash.expectedParticipants': 'participants attendus',
 
     // Profile
@@ -920,7 +919,6 @@ const translations = {
     'dash.manageEvents': 'Manage events',
     'dash.manageMembers': 'Manage members',
     'dash.manageAxes': 'Manage areas',
-    'dash.members': 'members',
     'dash.expectedParticipants': 'expected participants',
 
     // Profile
