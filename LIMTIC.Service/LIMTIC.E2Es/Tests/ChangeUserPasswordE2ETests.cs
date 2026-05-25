@@ -10,7 +10,7 @@ namespace LIMTIC.E2Es.Tests
     [Collection("E2E collection")]
     public class ChangeUserPasswordE2ETests : BaseE2ETests
     {
-        public ChangeUserPasswordE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
+        public ChangeUserPasswordE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture)
         {
         }
 

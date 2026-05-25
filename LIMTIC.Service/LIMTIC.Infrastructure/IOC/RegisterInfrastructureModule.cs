@@ -1,11 +1,16 @@
 ﻿using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Settings;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Azure.Storage.Blobs;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.Emails;
 using LIMTIC.Infrastructure.Persistence;
 using LIMTIC.Infrastructure.Repositories;
+using LIMTIC.Infrastructure.Services;
 using LIMTIC.Infrastructure.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +42,7 @@ namespace LIMTIC.Infrastructure.IOC
             // configure reset token settings
             services.Configure<ResetPasswordTokenSettings>(configuration.GetSection("ResetPasswordToken"));
             services.Configure<EmailSettings>(configuration.GetSection("Email"));
+            services.Configure<BlobStorageSettings>(configuration.GetSection("BlobStorage"));
 
             var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()!;
 
@@ -66,6 +72,7 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddScoped<IContactRepository, ContactRepository>();
             services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
             services.AddScoped<IEventsRepository, EventsRepository>();
+            services.AddScoped<IPublicationRepository, PublicationRepository>();
             services.AddSingleton<IPasswordHasher, PasswordHasher>();
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IResetPasswordRepository, ResetPasswordRepository>();
@@ -77,6 +84,24 @@ namespace LIMTIC.Infrastructure.IOC
             services.AddScoped<IJournalArticleRepository, JournalArticleRepository>();
             services.AddScoped<INationalConferenceRepository, NationalConferenceRepository>();
             services.AddScoped<ITechnicalReportRepository, TechnicalReportRepository>();
+
+            services.AddSingleton(sp =>
+            {
+                var blobSettings = configuration.GetSection("BlobStorage").Get<BlobStorageSettings>()!;
+                var keyVaultUri = configuration.GetValue<string>("KeyvaultUri");
+                if (string.IsNullOrWhiteSpace(keyVaultUri))
+                    throw new InvalidOperationException("KeyvaultUri is not configured.");
+
+                var secretClient = new SecretClient(new Uri(keyVaultUri), new DefaultAzureCredential());
+                var secretName = blobSettings.ConnectionStringSecretName;
+
+                var connectionString = secretClient.GetSecret(secretName).Value.Value;
+                if (string.IsNullOrWhiteSpace(connectionString))
+                    throw new InvalidOperationException($"Key Vault secret '{secretName}' is empty.");
+                return new BlobServiceClient(connectionString);
+            });
+
+            services.AddSingleton<IBlobStorageService, BlobStorageService>();
 
             // profile repositories
             services.AddScoped<IResearcherRepository, ResearcherRepository>();

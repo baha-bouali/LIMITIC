@@ -9,6 +9,7 @@ using LIMTIC.WebAPI.Models.Events.UpdateEvent;
 using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IO;
 
 namespace LIMTIC.WebAPI.Controllers.Events
 {
@@ -263,6 +264,43 @@ namespace LIMTIC.WebAPI.Controllers.Events
                 Message = result.Message,
                 ValidationErrors = result.ValidationErrors
             });
+        }
+
+        [HttpPost("{id:guid}/photos")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> UploadEventPhotos(Guid id, List<IFormFile> files)
+        {
+            if (files == null || files.Count == 0)
+                return BadRequest(new BaseResponse { Success = false, Message = "No files provided" });
+
+            var filePayloads = new List<(Stream Stream, string FileName)>();
+            foreach (var file in files.Where(f => f != null && f.Length > 0))
+                filePayloads.Add((file.OpenReadStream(), file.FileName));
+
+            try
+            {
+                var result = await _eventsService.UploadEventPhotosAsync(id, filePayloads);
+                if (!result.Success)
+                    return BadRequest(new BaseResponse { Success = false, Message = result.Message });
+
+                return Ok(new BaseResponse { Success = true });
+            }
+            finally
+            {
+                foreach (var payload in filePayloads)
+                    payload.Stream.Dispose();
+            }
+        }
+
+        [HttpGet("{id:guid}/photos/{index:int}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetEventPhoto(Guid id, int index)
+        {
+            var result = await _eventsService.GetEventPhotoAsync(id, index);
+            if (!result.Success || result.Data == null)
+                return NotFound(new BaseResponse { Success = false, Message = result.Message });
+
+            return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName);
         }
     }
 }

@@ -1,6 +1,7 @@
 using LIMTIC.Application.Contracts.Commands.Events;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Events;
+using LIMTIC.Application.DTOs.Storage;
 
 namespace LIMTIC.Application.Abstractions.Events
 {
@@ -13,5 +14,7 @@ namespace LIMTIC.Application.Abstractions.Events
         Task<Result<SpeakerDto>> AddSpeakerAsync(CreateSpeakerCommand command);
         Task<Result<SpeakerDto>> UpdateSpeakerAsync(UpdateSpeakerCommand command);
         Task<Result<bool>> DeleteSpeakerAsync(Guid eventId, Guid speakerId);
+        Task<Result<bool>> UploadEventPhotosAsync(Guid eventId, List<(Stream Stream, string FileName)> files);
+        Task<Result<FileDownloadDto>> GetEventPhotoAsync(Guid eventId, int index);
     }
 }

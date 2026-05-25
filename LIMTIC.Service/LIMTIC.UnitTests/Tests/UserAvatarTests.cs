@@ -37,7 +37,7 @@ namespace LIMTIC.UnitTests.Tests
 
             Assert.True(result.Success);
             Assert.NotNull(result.Data);
-            Assert.Contains("avatars/", result.Data);
+            Assert.Contains("avatar/", result.Data);
             Assert.Contains("photo.jpg", result.Data);
 
             // Verify the AvatarBlobName was persisted

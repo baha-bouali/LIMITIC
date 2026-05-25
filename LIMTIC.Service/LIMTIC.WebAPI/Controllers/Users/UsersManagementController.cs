@@ -260,5 +260,16 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
             return BadRequest(new BaseResponse { Success = false, Message = result.Message });
         }
+
+        [HttpGet("{userId:guid}/avatar")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAvatar(Guid userId)
+        {
+            var result = await _usersManagementService.GetUserAvatarAsync(userId);
+            if (!result.Success || result.Data == null)
+                return NotFound(new BaseResponse { Success = false, Message = result.Message });
+
+            return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName);
+        }
     }
 }

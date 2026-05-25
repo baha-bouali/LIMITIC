@@ -1,4 +1,4 @@
-﻿using LIMTIC.Domain.Entities.Publications;
+using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Domain.Abstractions

@@ -1,12 +1,14 @@
 using FluentValidation;
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Security;
+using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.DTOs;
+using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.UserMapper;
@@ -14,6 +16,7 @@ using LIMTIC.Application.Validations;
 using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
+using System.IO;
 
 namespace LIMTIC.Application.Services.UserManagement
 {
@@ -29,6 +32,7 @@ namespace LIMTIC.Application.Services.UserManagement
         private readonly IResearchAxisRepository _researchAxisRepository;
         private readonly IAuditLogsRepository _auditLogsRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IBlobStorageService _blobStorageService;
 
         public UsersManagementService(
             IUserRepository userRepository,
@@ -40,7 +44,8 @@ namespace LIMTIC.Application.Services.UserManagement
             IMasterianRepository masterianRepository,
             IResearchAxisRepository researchAxisRepository,
             IAuditLogsRepository auditLogsRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IBlobStorageService blobStorageService)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
@@ -52,6 +57,7 @@ namespace LIMTIC.Application.Services.UserManagement
             _researchAxisRepository = researchAxisRepository;
             _auditLogsRepository = auditLogsRepository;
             _currentUserService = currentUserService;
+            _blobStorageService = blobStorageService;
         }
 
         public async Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command)
@@ -198,14 +204,41 @@ namespace LIMTIC.Application.Services.UserManagement
             if (user == null)
                 return Result<string>.FailureResult("User not found");
 
-            // Generate a unique blob name: userId/filename
-            var blobName = $"avatars/{userId}/{Guid.NewGuid()}_{fileName}";
+            var sanitizedFileName = Path.GetFileName(fileName);
+            var blobName = $"users/{userId}/avatar/{Guid.NewGuid()}_{sanitizedFileName}";
+            var uploaded = await _blobStorageService.UploadStreamAsync(fileStream, "media", blobName, overwrite: true);
+            if (!uploaded)
+                return Result<string>.FailureResult("Failed to upload avatar");
+
             user.AvatarBlobName = blobName;
 
             var updated = await _userRepository.UpdateUserAsync(user);
             return updated
                 ? Result<string>.SuccessResult(blobName)
                 : Result<string>.FailureResult("Failed to update avatar");
+        }
+
+        public async Task<Result<FileDownloadDto>> GetUserAvatarAsync(Guid userId)
+        {
+            var user = await _userRepository.GetUserByIdAsync(userId);
+            if (user == null || string.IsNullOrWhiteSpace(user.AvatarBlobName))
+                return Result<FileDownloadDto>.FailureResult("Avatar not found");
+
+            try
+            {
+                var stream = await _blobStorageService.GetStreamAsync("media", user.AvatarBlobName);
+                var fileName = Path.GetFileName(user.AvatarBlobName);
+                return Result<FileDownloadDto>.SuccessResult(new FileDownloadDto
+                {
+                    Stream = stream,
+                    FileName = fileName,
+                    ContentType = ResolveContentType(fileName)
+                });
+            }
+            catch (FileNotFoundException)
+            {
+                return Result<FileDownloadDto>.FailureResult("Avatar file not found in blob storage");
+            }
         }
 
         public async Task<Result<GetUsersResult>> GetUsersAsync(UserRole? role, bool? isActive, string? search, int page, int limit)
@@ -323,6 +356,19 @@ namespace LIMTIC.Application.Services.UserManagement
                     if (masterian != null) await _masterianRepository.DeleteAsync(masterian);
                     break;
             }
+        }
+
+        private static string ResolveContentType(string fileName)
+        {
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            return ext switch
+            {
+                ".png" => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".webp" => "image/webp",
+                ".gif" => "image/gif",
+                _ => "application/octet-stream"
+            };
         }
     }
 }
