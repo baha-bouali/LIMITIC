@@ -601,6 +601,7 @@ namespace LIMTIC.E2Es.Extensions
             var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Delete, accessToken);
             req.Content = JsonContent.Create(body);
             return await client.SendAsync(req);
+        }
         public static async Task<GetAuditLogsResponse?> GetAuditLogs(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
         {
             var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
