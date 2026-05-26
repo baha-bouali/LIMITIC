@@ -86,10 +86,10 @@ import { getDashboardPathForRole, type UserRole } from './auth/session';
 const DASHBOARD_ACCESS: Record<string, UserRole[]> = {
   superadmin: ['SUPER_ADMIN'],
   admin: ['SUPER_ADMIN', 'ADMIN'],
-  chercheur: ['SUPER_ADMIN', 'CHERCHEUR'],
-  doctorant: ['SUPER_ADMIN', 'DOCTORANT'],
-  masterien: ['SUPER_ADMIN', 'MASTERIEN'],
-  visitor: ['SUPER_ADMIN', 'VISITOR'],
+  chercheur: ['SUPER_ADMIN', 'ADMIN', 'CHERCHEUR'],
+  doctorant: ['SUPER_ADMIN', 'ADMIN', 'DOCTORANT'],
+  masterien: ['SUPER_ADMIN', 'ADMIN', 'MASTERIEN'],
+  visitor: ['SUPER_ADMIN', 'ADMIN', 'VISITOR'],
 };
 
 function DashboardRoleGuard({ allowedRoles }: { allowedRoles: UserRole[] }) {

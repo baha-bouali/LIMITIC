@@ -66,6 +66,7 @@ const translations = {
 
     // Publications
     'pub.title': 'Publications Scientifiques',
+    'pub.publications': 'Publications',
     'pub.myPublications': 'Mes publications',
     'pub.labPublications': 'Publications du labo',
     'pub.labPublicationsLong': 'Publications du laboratoire',
@@ -729,6 +730,7 @@ const translations = {
 
     // Publications
     'pub.title': 'Scientific Publications',
+    'pub.publications': 'Publications',
     'pub.myPublications': 'My publications',
     'pub.labPublications': 'Lab publications',
     'pub.labPublicationsLong': 'Laboratory publications',

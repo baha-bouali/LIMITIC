@@ -4,7 +4,7 @@ import { PublicFooter } from '../../components/layout/PublicFooter';
 import { Card, CardContent, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { SearchFilter } from '../../components/shared/SearchFilter';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { FileText } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useGetPublicPublicationsQuery } from '../../api/publicationsApi';
@@ -38,12 +38,16 @@ const getRankingLabel = (value: string) => {
 
 export default function PublicationsPage() {
   const { t } = useLanguage();
+  const [searchParams] = useSearchParams();
+  
+  const axeId = searchParams.get('axe');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
   const { data, isLoading, isError } = useGetPublicPublicationsQuery({
     page: 1,
     limit: 100,
     search: searchQuery || undefined,
+    axeId: axeId || undefined,
   });
 
   const allPublications = data?.items ?? [];

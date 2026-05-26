@@ -50,21 +50,39 @@ export default function AxesPage() {
       {/* Header */}
       <div className="brand-gradient-diagonal text-white py-20">
         <div className="max-w-[var(--content-max-width)] mx-auto px-6">
-          <div className="text-sm text-white/80 mb-3">{t('axes.breadcrumb')}</div>
-          <h1 className="text-5xl font-bold mb-4">{t('axes.title')}</h1>
-          <p className="text-xl text-white/90">{t('axes.discoverDomains')}</p>
+          <div className="text-sm text-white/80 mb-3">
+            {t('axes.breadcrumb')}
+          </div>
+          <h1 className="text-5xl font-bold mb-4">
+            {t('axes.title')}
+          </h1>
+          <p className="text-xl text-white/90">
+            {t('axes.discoverDomains')}
+          </p>
           <div className="flex gap-8 mt-8">
             <div className="text-center">
-              <div className="text-3xl font-bold">{axes.length}</div>
-              <div className="text-white/80">{t('axes.activeAxes')}</div>
+              <div className="text-3xl font-bold">
+                {axes.length}
+              </div>
+              <div className="text-white/80">
+                {t('axes.activeAxes')}
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">{totalMembers}</div>
-              <div className="text-white/80">{t('axes.researchers')}</div>
+              <div className="text-3xl font-bold">
+                {totalMembers}
+              </div>
+              <div className="text-white/80">
+                {t('axes.researchers')}
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold">{totalPublications}</div>
-              <div className="text-white/80">{t('pub.publications')}</div>
+              <div className="text-3xl font-bold">
+                {totalPublications}
+              </div>
+              <div className="text-white/80">
+                {t('pub.publications')}
+              </div>
             </div>
           </div>
         </div>
@@ -93,12 +111,20 @@ export default function AxesPage() {
                   </div>
                   <div className="text-right space-y-4 flex-shrink-0">
                     <div>
-                      <div className="text-3xl font-bold text-navy dark:text-white">{axe.members?.length || 0}</div>
-                      <div className="text-sm text-text-secondary">{t('axes.members').toLowerCase()}</div>
+                      <div className="text-3xl font-bold text-navy dark:text-white">
+                        {axe.members?.length || 0}
+                      </div>
+                      <div className="text-sm text-text-secondary">
+                        {t('axes.members').toLowerCase()}
+                      </div>
                     </div>
                     <div>
-                      <div className="text-2xl font-bold text-accent-blue">{axe.publicationsCount || 0}</div>
-                      <div className="text-sm text-text-secondary">{t('axes.publicationsCount')}</div>
+                      <div className="text-2xl font-bold text-accent-blue">
+                        {axe.publicationsCount || 0}
+                      </div>
+                      <div className="text-sm text-text-secondary">
+                        {t('axes.publicationsCount')}
+                      </div>
                     </div>
                   </div>
                 </div>

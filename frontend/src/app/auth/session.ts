@@ -121,7 +121,7 @@ export function normalizeRole(value: unknown, email?: string): UserRole {
   if (source.includes('masterien')) return 'MASTERIEN';
   if (source.includes('visitor')) return 'VISITOR';
 
-  return 'CHERCHEUR';
+  return 'VISITOR';
 }
 
 export function getDashboardPathForRole(role?: UserRole | string | null) {
@@ -131,7 +131,7 @@ export function getDashboardPathForRole(role?: UserRole | string | null) {
     return DASHBOARD_PATH_BY_ROLE[normalizedRole];
   }
 
-  return DASHBOARD_PATH_BY_ROLE.CHERCHEUR;
+  return DASHBOARD_PATH_BY_ROLE.VISITOR;
 }
 
 export function getDashboardSlugForRole(role?: unknown) {
