@@ -3,7 +3,7 @@
     public sealed class TechnicalReportDto
     {
         public long ReportNumber { get; set; }
-        public string Institution { get; set; };
+        public string Institution { get; set; }
     }
 
 }

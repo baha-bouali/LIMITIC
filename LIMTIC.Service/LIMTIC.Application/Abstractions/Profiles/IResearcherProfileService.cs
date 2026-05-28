@@ -8,7 +8,7 @@ namespace LIMTIC.Application.Abstractions.Profiles
     {
         Task<Result<List<ResearcherProfileDto>>> GetAllAsync();
         Task<Result<ResearcherProfileDto>> GetByUserIdAsync(Guid userId);
-        Task<Result<ResearcherProfileCommandResponse>> UpdateAsync(UpdateResearcherProfileCommand command);
+        Task<Result<ResearcherProfileDto>> UpdateAsync(UpdateResearcherProfileCommand command);
         Task<Result<bool>> DeleteAsync(Guid userId);
     }
 }

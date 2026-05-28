@@ -2,7 +2,6 @@ using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Publications;
 using LIMTIC.Application.Contracts.Commands.ResearchAxis;
 using LIMTIC.Application.DTOs.ResearchAxis;
-using LIMTIC.WebAPI.Models.ResearchAxis;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

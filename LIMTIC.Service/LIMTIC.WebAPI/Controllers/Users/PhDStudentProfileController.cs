@@ -1,7 +1,7 @@
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Contracts.Commands.Profiles;
-using LIMTIC.WebAPI.Models.Profiles;
+using LIMTIC.Application.DTOs.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,7 +27,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         public async Task<IActionResult> GetAllProfiles()
         {
             var result = await _phDStudentProfileService.GetAllAsync();
-            return Ok(new PhDStudentsListResponse { Success = true, Profiles = result.Data });
+            return Ok(new BaseResponse<List<PhDStudentProfileDto>> { Success = true, Data = result.Data });
         }
 
         [HttpGet("{userId:guid}")]
@@ -36,9 +36,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _phDStudentProfileService.GetByUserIdAsync(userId);
             if (result.Success)
-                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data });
+                return Ok(new BaseResponse<PhDStudentProfileDto> { Success = true, Data = result.Data });
 
-            return NotFound(new PhDStudentProfileResponse
+            return NotFound(new BaseResponse<PhDStudentProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -49,7 +49,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         [Authorize]
         public async Task<IActionResult> UpdateProfile(UpdatePhDStudentProfileCommand command)
         {
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
 
             if (!isAdmin && currentUserId != command.UserId)
@@ -57,17 +57,17 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
             var result = await _phDStudentProfileService.UpdateAsync(command);
             if (result.Success)
-                return Ok(new PhDStudentProfileResponse { Success = true, Profile = result.Data?.Profile });
+                return Ok(new BaseResponse<PhDStudentProfileDto> { Success = true, Data = result.Data });
 
             if (result.ValidationErrors != null)
-                return BadRequest(new PhDStudentProfileResponse
+                return BadRequest(new BaseResponse<PhDStudentProfileDto>
                 {
                     Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
 
-            return NotFound(new PhDStudentProfileResponse
+            return NotFound(new BaseResponse<PhDStudentProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -80,9 +80,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _phDStudentProfileService.DeleteAsync(userId);
             if (result.Success)
-                return Ok(new BaseResponse { Success = true });
+                return Ok(new BaseResponse<bool> { Success = true });
 
-            return NotFound(new BaseResponse
+            return NotFound(new BaseResponse<bool>
             {
                 Success = false,
                 Message = result.Message

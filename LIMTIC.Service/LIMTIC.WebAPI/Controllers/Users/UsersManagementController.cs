@@ -201,7 +201,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         [Authorize]
         public async Task<IActionResult> UploadAvatar(Guid userId, IFormFile avatar)
         {
-            if (_currentUserService.UserId != userId)
+            if (_currentUserService.UserId.Value != userId)
                 return Forbid();
 
             if (avatar == null || avatar.Length == 0)

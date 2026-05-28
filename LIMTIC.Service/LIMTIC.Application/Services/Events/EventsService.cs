@@ -123,7 +123,7 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<EventDto>.FailureResult("Failed to create event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<EventDto>.SuccessResult(MapEvent(eventEntity));
@@ -152,7 +152,7 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<EventDto>.FailureResult("Failed to update event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<EventDto>.SuccessResult(MapEvent(existingEvent));
@@ -168,7 +168,7 @@ namespace LIMTIC.Application.Services.Events
             if (!deleted)
                 return Result<bool>.FailureResult("Failed to delete event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<bool>.SuccessResult(true);
@@ -200,7 +200,7 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<SpeakerDto>.FailureResult("Failed to create speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(speaker));
@@ -227,7 +227,7 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<SpeakerDto>.FailureResult("Failed to update speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(existingSpeaker));
@@ -243,7 +243,7 @@ namespace LIMTIC.Application.Services.Events
             if (!deleted)
                 return Result<bool>.FailureResult("Failed to delete speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<bool>.SuccessResult(true);

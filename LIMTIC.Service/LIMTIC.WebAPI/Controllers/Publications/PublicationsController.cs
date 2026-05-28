@@ -2,9 +2,8 @@ using LIMTIC.Application.Abstractions.Publication;
 using LIMTIC.Application.Contracts.Commands.Publications;
 using LIMTIC.Application.Contracts.Queries.Publications;
 using LIMTIC.Application.DTOs.Publications;
+using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.WebAPI.Models;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Status;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -94,6 +93,17 @@ namespace LIMTIC.WebAPI.Controllers.Publications
             return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
         }
 
+        [HttpGet("{id:guid}/pdfs")]
+         public async Task<IActionResult> GetPublicationPdfs(Guid publicationId)
+        {
+            var result = await _publicationService.GetPublicationPdfs(publicationId);
+
+            if (result.Success)
+                return Ok(new BaseResponse<List<FileDownloadDto>> { Success = true, Data = result.Data });
+
+            return BadRequest(new BaseResponse<List<FileDownloadDto>> { Success = false, Message = result.Message });
+        }
+
         [HttpPost("{id:guid}/pdf")]
         public async Task<IActionResult> AddPublicationPdfs(AddPublicationPdfsCommand command)
         {
@@ -122,96 +132,42 @@ namespace LIMTIC.WebAPI.Controllers.Publications
             var result = await _publicationService.SubmitPublicationAsync(publicationId);
 
             if (result.Success)
-                return Ok(new PublicationStatusResponse
+                return Ok(new BaseResponse<bool>
                 {
-                    Message = result.Data!.Message,
-                    Id = result.Data.Id,
-                    Status = result.Data.Status
+                    Success = true
                 });
 
-            if (string.Equals(result.Message, "Publication not found.", StringComparison.OrdinalIgnoreCase))
-                return NotFound(new BaseResponse { Success = false, Message = result.Message ?? "Publication not found." });
-
-            return StatusCode(403, new BaseResponse { Success = false, Message = result.Message ?? "Access denied." });
+            return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
         }
 
         [HttpPost("{id:guid}/validate")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> ValidatePublication(Guid id, CancellationToken ct = default)
+        public async Task<IActionResult> ValidatePublication(Guid publicationId)
         {
-            var result = await _publicationService.ValidateDashboardPublicationAsync(
-                new ValidateDashboardPublicationCommand { Id = id }, ct);
+            var result = await _publicationService.ValidatePublicationAsync(publicationId);
 
             if (!result.Success)
-                return BadRequest(new BaseResponse { Success = false, Message = result.Message });
+                return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
 
-            return Ok(new PublicationValidatedResponse
+            return Ok(new BaseResponse<bool>
             {
-                Message = result.Data!.Message,
-                Id = result.Data.Id,
-                Status = result.Data.Status,
-                ValidatedBy = result.Data.Extra
+                Success = true
             });
         }
 
         [HttpPost("{id:guid}/reject")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> RejectPublication(
-            Guid id,
-            [FromBody] RejectPublicationRequest request,
-            CancellationToken ct = default)
+        public async Task<IActionResult> RejectPublication(Guid publicationId)
         {
-            var result = await _publicationService.RejectDashboardPublicationAsync(
-                new RejectDashboardPublicationCommand { Id = id, Reason = request.Reason }, ct);
+            var result = await _publicationService.RejectPublicationAsync(publicationId);
 
             if (!result.Success)
-                return BadRequest(new BaseResponse { Success = false, Message = result.Message });
+                return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
 
-            return Ok(new PublicationRejectedResponse
+            return Ok(new BaseResponse<bool>
             {
-                Message = result.Data!.Message,
-                Id = result.Data.Id,
-                Status = result.Data.Status,
-                RejectionReason = result.Data.Extra
+                Success = true
             });
-        }
-
-
-        [HttpPost("/api/publications/{id:guid}/attachments")]
-        [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> UploadPublicationAttachments(Guid id, List<IFormFile> files)
-        {
-            if (files == null || files.Count == 0)
-                return BadRequest(new BaseResponse { Success = false, Message = "No files provided" });
-
-            var filePayloads = new List<(Stream Stream, string FileName)>();
-            foreach (var file in files.Where(f => f != null && f.Length > 0))
-                filePayloads.Add((file.OpenReadStream(), file.FileName));
-
-            try
-            {
-                var result = await _publicationService.UploadAttachmentsAsync(id, filePayloads);
-                if (!result.Success)
-                    return BadRequest(new BaseResponse { Success = false, Message = result.Message });
-
-                return Ok(new BaseResponse { Success = true });
-            }
-            finally
-            {
-                foreach (var payload in filePayloads)
-                    payload.Stream.Dispose();
-            }
-        }
-
-        [HttpGet("/api/publications/{id:guid}/attachments/{index:int}")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetPublicationAttachment(Guid id, int index)
-        {
-            var result = await _publicationAttachmentsService.GetAttachmentAsync(id, index);
-            if (!result.Success || result.Data == null)
-                return NotFound(new BaseResponse { Success = false, Message = result.Message });
-
-            return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName);
         }
     }
 }

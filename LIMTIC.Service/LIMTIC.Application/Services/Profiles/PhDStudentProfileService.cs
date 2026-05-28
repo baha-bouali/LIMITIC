@@ -61,32 +61,32 @@ namespace LIMTIC.Application.Services.Profiles
             return Result<PhDStudentProfileDto>.SuccessResult(_profileMapper.MapToPhDStudentProfileDto(phDStudent));
         }
 
-        public async Task<Result<PhDStudentProfileCommandResponse>> UpdateAsync(UpdatePhDStudentProfileCommand command)
+        public async Task<Result<PhDStudentProfileDto>> UpdateAsync(UpdatePhDStudentProfileCommand command)
         {
             var validationResult = _updateValidator.Validate(command);
             if (!validationResult.IsValid)
-                return Result<PhDStudentProfileCommandResponse>.ValidationFailureResult(
+                return Result<PhDStudentProfileDto>.ValidationFailureResult(
                     ValidationHelper.ParseValidationErrors(validationResult));
 
             // Authorization: only admin or the PhD student themselves
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var currentRole = _currentUserService.Role;
             var isAdmin = Enum.TryParse<UserRole>(currentRole, out var role) &&
                 (role is UserRole.SuperAdmin or UserRole.Admin);
 
             if (!isAdmin && currentUserId != command.UserId)
-                return Result<PhDStudentProfileCommandResponse>.FailureResult("You are not authorized to update this profile");
+                return Result<PhDStudentProfileDto>.FailureResult("You are not authorized to update this profile");
 
             var phDStudent = await _phDStudentRepository.GetByUserIdAsync(command.UserId);
             if (phDStudent is null)
-                return Result<PhDStudentProfileCommandResponse>.FailureResult("PhD student profile not found");
+                return Result<PhDStudentProfileDto>.FailureResult("PhD student profile not found");
 
             // Validate supervisor if provided
             if (command.SupervisorId.HasValue)
             {
                 var supervisorExists = await _researcherRepository.ExistsAsync(command.SupervisorId.Value);
                 if (!supervisorExists)
-                    return Result<PhDStudentProfileCommandResponse>.FailureResult("Supervisor not found");
+                    return Result<PhDStudentProfileDto>.FailureResult("Supervisor not found");
             }
 
             // Update scalar fields
@@ -108,18 +108,15 @@ namespace LIMTIC.Application.Services.Profiles
 
             var saved = await _phDStudentRepository.UpdateAsync(phDStudent);
             if (!saved)
-                return Result<PhDStudentProfileCommandResponse>.FailureResult("Failed to update PhD student profile");
+                return Result<PhDStudentProfileDto>.FailureResult("Failed to update PhD student profile");
 
             // Reload to get updated supervisor navigation
             var updated = await _phDStudentRepository.GetByUserIdAsync(command.UserId);
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
-            return Result<PhDStudentProfileCommandResponse>.SuccessResult(new PhDStudentProfileCommandResponse
-            {
-                Profile = _profileMapper.MapToPhDStudentProfileDto(updated!)
-            });
+            return Result<PhDStudentProfileDto>.SuccessResult(_profileMapper.MapToPhDStudentProfileDto(updated!));
         }
 
         public async Task<Result<bool>> DeleteAsync(Guid userId)
@@ -142,7 +139,7 @@ namespace LIMTIC.Application.Services.Profiles
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);

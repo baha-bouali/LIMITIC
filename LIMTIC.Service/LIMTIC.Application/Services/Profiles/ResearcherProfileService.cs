@@ -97,25 +97,25 @@ namespace LIMTIC.Application.Services.Profiles
             return Result<ResearcherProfileDto>.SuccessResult(_profileMapper.MapToResearcherProfileDto(researcher));
         }
 
-        public async Task<Result<ResearcherProfileCommandResponse>> UpdateAsync(UpdateResearcherProfileCommand command)
+        public async Task<Result<ResearcherProfileDto>> UpdateAsync(UpdateResearcherProfileCommand command)
         {
             var validationResult = _updateValidator.Validate(command);
             if (!validationResult.IsValid)
-                return Result<ResearcherProfileCommandResponse>.ValidationFailureResult(
+                return Result<ResearcherProfileDto>.ValidationFailureResult(
                     ValidationHelper.ParseValidationErrors(validationResult));
 
             // Authorization: only admin or the researcher themselves
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var currentRole = _currentUserService.Role;
             var isAdmin = Enum.TryParse<UserRole>(currentRole, out var role) &&
                 (role is UserRole.SuperAdmin or UserRole.Admin);
 
             if (!isAdmin && currentUserId != command.UserId)
-                return Result<ResearcherProfileCommandResponse>.FailureResult("You are not authorized to update this profile");
+                return Result<ResearcherProfileDto>.FailureResult("You are not authorized to update this profile");
 
             var researcher = await _researcherRepository.GetByUserIdAsync(command.UserId);
             if (researcher is null)
-                return Result<ResearcherProfileCommandResponse>.FailureResult("Researcher profile not found");
+                return Result<ResearcherProfileDto>.FailureResult("Researcher profile not found");
 
             // Update scalar fields
             researcher.Rank = command.Rank.Trim();
@@ -142,15 +142,12 @@ namespace LIMTIC.Application.Services.Profiles
 
             var saved = await _researcherRepository.UpdateAsync(researcher);
             if (!saved)
-                return Result<ResearcherProfileCommandResponse>.FailureResult("Failed to update researcher profile");
+                return Result<ResearcherProfileDto>.FailureResult("Failed to update researcher profile");
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
-            return Result<ResearcherProfileCommandResponse>.SuccessResult(new ResearcherProfileCommandResponse
-            {
-                Profile = _profileMapper.MapToResearcherProfileDto(researcher)
-            });
+            return Result<ResearcherProfileDto>.SuccessResult(_profileMapper.MapToResearcherProfileDto(researcher));
         }
 
         public async Task<Result<bool>> DeleteAsync(Guid userId)
@@ -173,7 +170,7 @@ namespace LIMTIC.Application.Services.Profiles
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);

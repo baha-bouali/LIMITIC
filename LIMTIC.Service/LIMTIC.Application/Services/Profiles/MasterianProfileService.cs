@@ -64,7 +64,7 @@ namespace LIMTIC.Application.Services.Profiles
                     ValidationHelper.ParseValidationErrors(validationResult));
 
             // Authorization: only admin or the masterian themselves
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var currentRole = _currentUserService.Role;
             var isAdmin = Enum.TryParse<UserRole>(currentRole, out var role) &&
                 (role is UserRole.SuperAdmin or UserRole.Admin);
@@ -96,7 +96,7 @@ namespace LIMTIC.Application.Services.Profiles
             // Reload to get updated supervisor navigation
             var updated = await _masterianRepository.GetByUserIdAsync(command.UserId);
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
             return Result<MasterianProfileDto>.SuccessResult(_profileMapper.MapToMasterianProfileDto(updated!));
@@ -122,7 +122,7 @@ namespace LIMTIC.Application.Services.Profiles
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);

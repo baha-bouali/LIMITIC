@@ -1,10 +1,8 @@
 using LIMTIC.Application.Abstractions.Settings;
-using LIMTIC.Application.DTOs.Settings;
 using LIMTIC.WebAPI.Models.Settings.GetSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using static LIMTIC.Application.Contracts.Commands.Settings.SettingsCommand;
-using static LIMTIC.Application.Contracts.Commands.Settings.SettingsCommands;
+using LIMTIC.Application.Contracts.Commands.Settings;
 
 namespace LIMTIC.WebAPI.Controllers.Settings
 {

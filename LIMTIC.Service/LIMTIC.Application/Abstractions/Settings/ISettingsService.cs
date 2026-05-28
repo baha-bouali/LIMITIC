@@ -1,6 +1,6 @@
+using LIMTIC.Application.Contracts.Commands.Settings;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Settings;
-using static LIMTIC.Application.Contracts.Commands.Settings.SettingsCommands;
 
 namespace LIMTIC.Application.Abstractions.Settings
 {

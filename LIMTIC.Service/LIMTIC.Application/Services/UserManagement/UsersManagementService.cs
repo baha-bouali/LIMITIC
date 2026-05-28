@@ -83,7 +83,7 @@ namespace LIMTIC.Application.Services.UserManagement
             if (!result)
                 return Result<UserDto>.FailureResult("Failed to create user");
 
-            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.User);
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.User);
             await _auditLogsRepository.AddLog(log);
 
             return Result<UserDto>.SuccessResult(_userMapper.MapToUserDto(user));
@@ -111,7 +111,7 @@ namespace LIMTIC.Application.Services.UserManagement
             if (!result)
                 return Result<bool>.FailureResult("Failed to activate user");
 
-            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(log);
             return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to activate user");
         }
@@ -131,7 +131,7 @@ namespace LIMTIC.Application.Services.UserManagement
             if (!result)
                 return Result<bool>.FailureResult("Failed to activate user");
 
-            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(log);
             return result ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to deactivate user");
         }
@@ -151,7 +151,7 @@ namespace LIMTIC.Application.Services.UserManagement
 
             if (result)
             {
-                var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+                var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
                 await _auditLogsRepository.AddLog(log);
             }
 

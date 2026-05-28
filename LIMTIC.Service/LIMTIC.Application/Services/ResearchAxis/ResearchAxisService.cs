@@ -85,7 +85,7 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!added)
                 return Result<ResearchAxisDto>.FailureResult("Failed to create research axis");
 
-            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Axe);
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Axe);
             await _auditLogsRepository.AddLog(axisLog);
 
             var created = await _researchAxisRepository.GetByIdAsync(entity.Id);
@@ -123,7 +123,7 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!updated)
                 return Result<ResearchAxisDto>.FailureResult("Failed to update research axis");
 
-            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Axe);
             await _auditLogsRepository.AddLog(axisLog);
 
             return Result<ResearchAxisDto>.SuccessResult(MapToDto(entity));
@@ -142,7 +142,7 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!deleted)
                 return Result<bool>.FailureResult("Failed to delete research axis");
 
-            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Axe);
+            var axisLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.Axe);
             await _auditLogsRepository.AddLog(axisLog);
 
             return Result<bool>.SuccessResult(true);
@@ -160,7 +160,7 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!added)
                 return Result<bool>.FailureResult("Failed to add member");
 
-            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Axe);
             await _auditLogsRepository.AddLog(memberLog);
 
             return Result<bool>.SuccessResult(true);
@@ -175,7 +175,7 @@ namespace LIMTIC.Application.Services.ResearchAxis
             if (!removed)
                 return Result<bool>.FailureResult("Member not found in this axis");
 
-            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Axe);
+            var memberLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Axe);
             await _auditLogsRepository.AddLog(memberLog);
 
             return Result<bool>.SuccessResult(true);

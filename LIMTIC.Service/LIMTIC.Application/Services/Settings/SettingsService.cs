@@ -1,14 +1,13 @@
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Settings;
+using LIMTIC.Application.Contracts.Commands.Settings;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Settings;
-using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Domain.Enums;
-using LIMTIC.Application.Abstractions;
-using static LIMTIC.Application.Contracts.Commands.Settings.SettingsCommands;
 using LIMTIC.Domain.Abstractions.AuditLogs;
 using LIMTIC.Domain.Abstractions.Settings;
+using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Settings
 {
@@ -94,7 +93,7 @@ namespace LIMTIC.Application.Services.Settings
             if (!updated)
                 return Result<bool>.FailureResult("Failed to update settings");
 
-            var settingsLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Setting);
+            var settingsLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Setting);
             await _auditLogsRepository.AddLog(settingsLog);
 
             return Result<bool>.SuccessResult(true);

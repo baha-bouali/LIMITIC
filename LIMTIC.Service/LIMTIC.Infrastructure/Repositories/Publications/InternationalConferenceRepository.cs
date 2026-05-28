@@ -14,15 +14,15 @@ namespace LIMTIC.Infrastructure.Repositories.Publications
             _context = context;
         }
 
-        public async Task<InternationalConferenceEntity?> GetByPublicationIdAsync(Guid publicationId, CancellationToken ct = default)
+        public async Task<InternationalConferenceEntity?> GetByPublicationIdAsync(Guid publicationId)
         {
             return await _context.InternationalConferences
-                .FirstOrDefaultAsync(ic => ic.Id == publicationId, ct);
+                .FirstOrDefaultAsync(ic => ic.Id == publicationId);
         }
 
-        public async Task AddAsync(InternationalConferenceEntity entity, CancellationToken ct = default)
+        public async Task AddAsync(InternationalConferenceEntity entity)
         {
-            await _context.InternationalConferences.AddAsync(entity, ct);
+            await _context.InternationalConferences.AddAsync(entity);
         }
 
         public void Update(InternationalConferenceEntity entity)

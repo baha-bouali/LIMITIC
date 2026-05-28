@@ -17,6 +17,7 @@ namespace LIMTIC.Application.Abstractions.Publication
         Task<Result<bool>> SubmitPublicationAsync(Guid publicationId);
         Task<Result<bool>> ValidatePublicationAsync(Guid publicationId);
         Task<Result<bool>> RejectPublicationAsync(Guid publicationId);
+        Task<Result<List<FileDownloadDto>>> GetPublicationPdfs(Guid publicationId); 
         Task<Result<bool>> AddPublicationPdfsAsync(AddPublicationPdfsCommand command);
         Task<Result<bool>> RemovePublicationPdfAsync(RemovePublicationPdfCommand command);
     }

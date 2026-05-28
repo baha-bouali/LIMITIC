@@ -116,7 +116,7 @@ namespace LIMTIC.Application.Services.Auth
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
-            var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(validateLog);
 
             return Result<LoginDto>.SuccessResult(new LoginDto
@@ -132,7 +132,7 @@ namespace LIMTIC.Application.Services.Auth
         {
             int result = await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
             
-            var logoutLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGOUT, ResourceType.User);
+            var logoutLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.LOGOUT, ResourceType.User);
             await _auditLogsRepository.AddLog(logoutLog);
 
             return result > 0 ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to revoke refresh token");
@@ -182,7 +182,7 @@ namespace LIMTIC.Application.Services.Auth
 
             await _resetPasswordRepository.UpdateResetPasswordAsync(resetPasswordEntry);
 
-            var verifyResetLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
+            var verifyResetLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(verifyResetLog);
 
             return Result<string>.SuccessResult(resetToken);
@@ -212,7 +212,7 @@ namespace LIMTIC.Application.Services.Auth
             if (!updateResult)
                 return Result<bool>.FailureResult("Failed to reset password");
 
-            var resetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var resetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(resetPasswordLog);
 
             return Result<bool>.SuccessResult(true);

@@ -48,7 +48,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         [Authorize]
         public async Task<IActionResult> UpdateProfile(UpdateResearcherProfileCommand command)
         {
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
 
             if (!isAdmin && currentUserId != command.UserId)

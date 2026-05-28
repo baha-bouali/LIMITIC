@@ -62,7 +62,7 @@ namespace LIMTIC.Application.Services.Publications
 
                 PublicationType? parsedType = TryParseEnum<PublicationType>(getPublicationsQuery.Type);
                 PublicationStatus? status = TryParseEnum<PublicationStatus>(getPublicationsQuery.Status);
-                PublicationVisibility? visibility = _currentUserService.UserId != null ? null : PublicationVisibility.Public;
+                PublicationVisibility? visibility = _currentUserService.UserId.Value != null ? null : PublicationVisibility.Public;
 
                 var (items, total) = await _publicationRepository.GetFilteredAsync(
                     type: parsedType,
@@ -93,7 +93,7 @@ namespace LIMTIC.Application.Services.Publications
                 if (p is null || p.Status != PublicationStatus.Published)
                     return Result<PublicationDto>.FailureResult("Publication not found.");
 
-                bool canAccess = _currentUserService.UserId != null || p.Visibility == PublicationVisibility.Public;
+                bool canAccess = _currentUserService.UserId.Value != null || p.Visibility == PublicationVisibility.Public;
                 if (!canAccess)
                     return Result<PublicationDto>.FailureResult("User is not authorized to see this publication.");
 
@@ -139,7 +139,7 @@ namespace LIMTIC.Application.Services.Publications
 
             try
             {
-                if (_currentUserService.UserId == null)
+                if (_currentUserService.UserId.Value == null)
                     return Result<PublicationDto>.FailureResult("User not authenticated.");
 
                 var entity = command.Publication.ToEntity();
@@ -176,7 +176,7 @@ namespace LIMTIC.Application.Services.Publications
                     return Result<bool>.FailureResult("Publication not found.");
 
                 bool isAdmin = IsAdminRole(_currentUserService.Role);
-                bool isAuthor = _currentUserService.UserId != Guid.Empty && existing.UserId == _currentUserService.UserId;
+                bool isAuthor = _currentUserService.UserId.Value != Guid.Empty && existing.UserId == _currentUserService.UserId.Value;
 
                 if (!isAdmin && !isAuthor)
                     return Result<bool>.FailureResult("You are not the owner of this publication.");
@@ -205,7 +205,7 @@ namespace LIMTIC.Application.Services.Publications
                     return Result<bool>.FailureResult("Publication not found.");
 
                 bool isAdmin = IsAdminRole(_currentUserService.Role);
-                bool isAuthor = _currentUserService.UserId != null && existing.UserId == _currentUserService.UserId;
+                bool isAuthor = _currentUserService.UserId.Value != null && existing.UserId == _currentUserService.UserId.Value;
 
                 if (!isAdmin && !isAuthor)
                     return Result<bool>.FailureResult("User not authorized to delete publication.");
@@ -224,6 +224,37 @@ namespace LIMTIC.Application.Services.Publications
             catch (Exception ex)
             {
                 return Result<bool>.FailureResult($"Error deleting publication: {ex.Message}");
+            }
+        }
+
+        public async Task<Result<List<FileDownloadDto>>> GetPublicationPdfs(Guid publicationId)
+        {
+            try
+            {
+                var publicationFiles = await _publicationFilesRepository.GetByPublicationIdAsync(publicationId);
+                if (publicationFiles == null)
+                    return Result<List<FileDownloadDto>>.FailureResult("Attachments not found");
+                List<FileDownloadDto> attachments = new List<FileDownloadDto>();
+                foreach (var file in publicationFiles)
+                {
+                    var stream = await _blobStorageService.GetStreamAsync("media", file.BlobFileName);
+                    attachments.Add(new FileDownloadDto
+                    {
+                        FileId = file.Id,
+                        Stream = stream,
+                        FileName = file.OriginalFileName,
+                        ContentType = "application/pdf"
+                    });
+                }
+                return Result<List<FileDownloadDto>>.SuccessResult(data: attachments);
+            }
+            catch (FileNotFoundException)
+            {
+                return Result<List<FileDownloadDto>>.FailureResult("Failed to get publications pdfs from blob storage");
+            }
+            catch (Exception ex)
+            {
+                return Result<List<FileDownloadDto>>.FailureResult($"Error retrieving publication pdfs: {ex.Message}");
             }
         }
 
@@ -257,23 +288,21 @@ namespace LIMTIC.Application.Services.Publications
                     return Result<bool>.FailureResult("Publication not found.");
 
                 bool isAdmin = IsAdminRole(_currentUserService.Role);
-                bool isAuthor = _currentUserService.UserId != null &&
-                                 publication.UserId == _currentUserService.UserId;
+                bool isAuthor = _currentUserService.UserId.Value != null &&
+                                 publication.UserId == _currentUserService.UserId.Value;
 
                 if (!isAdmin && !isAuthor)
                     return Result<bool>.FailureResult("You are not the owner of this publication.");
 
-                var files = await _publicationFilesRepository.GetByPublicationIdAsync(command.PublicationId);
+                var file = await _publicationFilesRepository.GetByIdAsync(command.FileId);
 
-                var target = files.FirstOrDefault(f => f.OriginalFileName == command.PdfName);
-
-                if (target is null)
+                if (file is null)
                     return Result<bool>.FailureResult("Pdf not found in publication attachments.");
 
                 // 1. Delete from blob first
-                var deleted = await _blobStorageService.DeleteStreamAsync(
+                var deleted = await _blobStorageService.DeleteBlobAsync(
                     "media",
-                    target.BlobPath);
+                    file.BlobPath);
 
                 if (!deleted)
                     return Result<bool>.FailureResult("Failed to delete pdf from blob storage.");
@@ -283,7 +312,7 @@ namespace LIMTIC.Application.Services.Publications
                 try
                 {
                     // 2. Delete DB record
-                    await _publicationFilesRepository.DeleteAsync(target);
+                    await _publicationFilesRepository.DeleteAsync(file);
 
                     var saved = await _unitOfWork.SaveChangesAsync() > 0;
 
@@ -317,7 +346,7 @@ namespace LIMTIC.Application.Services.Publications
                 if (existing is null)
                     return Result<bool>.FailureResult("Publication not found.");
 
-                if (_currentUserService.UserId == null || existing.UserId != _currentUserService.UserId)
+                if (_currentUserService.UserId.Value == null || existing.UserId != _currentUserService.UserId.Value)
                     return Result<bool>.FailureResult("User not authorized to submit publication.");
 
                 if (existing.Status != PublicationStatus.Draft && existing.Status != PublicationStatus.Rejected)
@@ -451,8 +480,8 @@ namespace LIMTIC.Application.Services.Publications
                 throw new Exception("Publication not found.");
 
             bool isAdmin = IsAdminRole(_currentUserService.Role);
-            bool isAuthor = _currentUserService.UserId != null &&
-                            publication.UserId == _currentUserService.UserId;
+            bool isAuthor = _currentUserService.UserId.Value != null &&
+                            publication.UserId == _currentUserService.UserId.Value;
 
             if (!isAdmin && !isAuthor)
                 throw new Exception("You are not the owner of this publication.");
@@ -528,7 +557,7 @@ namespace LIMTIC.Application.Services.Publications
         {
             foreach (var file in files)
             {
-                await _blobStorageService.DeleteStreamAsync("media", file.BlobPath);
+                await _blobStorageService.DeleteBlobAsync("media", file.BlobPath);
             }
         }
     }
