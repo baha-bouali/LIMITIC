@@ -1,4 +1,4 @@
-using LIMTIC.Application.DTOs.Profiles;
+using LIMTIC.Application.DTOs.ResearchAxis;
 
 namespace LIMTIC.WebAPI.Models.ResearchAxis
 {

@@ -7,6 +7,7 @@ namespace LIMTIC.WebAPI.IOC
     {
         public static IServiceCollection AddWebApi(this IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
             services.AddScoped<ICurrentUserService, CurrentUserService>();
 
             return services;

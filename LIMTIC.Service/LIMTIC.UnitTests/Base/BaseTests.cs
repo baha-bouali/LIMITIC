@@ -5,7 +5,6 @@ using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.IOC;
-using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
 using LIMTIC.UnitTests.Helpers;
@@ -15,6 +14,9 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.IO;
+using LIMTIC.Domain.Abstractions.Events;
+using LIMTIC.Domain.Abstractions.Users;
+using LIMTIC.Domain.Abstractions.ResearchAxis;
 
 namespace LIMTIC.UnitTests.Base
 {

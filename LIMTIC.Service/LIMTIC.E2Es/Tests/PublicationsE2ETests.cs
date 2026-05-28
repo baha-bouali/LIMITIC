@@ -5,10 +5,10 @@ using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.CreatePublication;
+using LIMTIC.WebAPI.Models.Publications.CreatePublication;
 using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
 using LIMTIC.WebAPI.Models.Publications.Dashboard.Reject;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Status;
+using LIMTIC.WebAPI.Models.Publications.Status;
 using LIMTIC.WebAPI.Models.ResearchAxis;
 using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
@@ -68,9 +68,9 @@ namespace LIMTIC.E2Es.Tests
             return login!.AccessToken!;
         }
 
-        private static CreateDashboardPublicationRequest BuildJournalArticle(Guid axisId, string visibility)
+        private static CreatePublicationRequest BuildJournalArticle(Guid axisId, string visibility)
         {
-            return new CreateDashboardPublicationRequest
+            return new CreatePublicationRequest
             {
                 ResearchAxisId = axisId,
                 Title = "E2E Journal Article",
@@ -126,7 +126,7 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.Equal(HttpStatusCode.Created, createHttp.StatusCode);
 
-            var created = await createHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
             Assert.NotNull(created);
             Assert.Equal(nameof(PublicationStatus.Published), created!.Publication.Status);
 
@@ -157,7 +157,7 @@ namespace LIMTIC.E2Es.Tests
                 userToken);
 
             Assert.Equal(HttpStatusCode.Created, createHttp.StatusCode);
-            var created = await createHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
             Assert.NotNull(created);
             Assert.Equal(nameof(PublicationStatus.Submitted), created!.Publication.Status);
 
@@ -185,12 +185,12 @@ namespace LIMTIC.E2Es.Tests
             var createPublicHttp = await Client.CreateDashboardPublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 adminToken!);
-            var publicCreated = await createPublicHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var publicCreated = await createPublicHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
 
             var createPrivateHttp = await Client.CreateDashboardPublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Private)),
                 adminToken!);
-            var privateCreated = await createPrivateHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var privateCreated = await createPrivateHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
 
             Assert.NotNull(publicCreated);
             Assert.NotNull(privateCreated);
@@ -221,7 +221,7 @@ namespace LIMTIC.E2Es.Tests
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 userToken);
 
-            var created = await createHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
             Assert.NotNull(created);
 
             var rejectHttp = await Client.RejectDashboardPublication(created!.Publication.Id,
@@ -249,7 +249,7 @@ namespace LIMTIC.E2Es.Tests
             var createHttp = await Client.CreateDashboardPublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 userToken);
-            var created = await createHttp.Content.ReadFromJsonAsync<CreateDashboardPublicationResponse>();
+            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
             Assert.NotNull(created);
 
             var pdfUrl = "https://storage.example.com/e2e.pdf";

@@ -5,18 +5,19 @@ using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
 using LIMTIC.Application.Contracts.Commands.CreateUser;
-using LIMTIC.Application.Contracts.Commands.GetUser;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
+using LIMTIC.Application.Contracts.Queries.Users;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.UserMapper;
 using LIMTIC.Application.Validations;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.ResearchAxis;
+using LIMTIC.Domain.Abstractions.Users;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
-using System.IO;
 
 namespace LIMTIC.Application.Services.UserManagement
 {
@@ -60,15 +61,15 @@ namespace LIMTIC.Application.Services.UserManagement
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<Result<CreateUserCommandResponse>> CreateUserAsync(CreateUserCommand command)
+        public async Task<Result<UserDto>> CreateUserAsync(CreateUserCommand command)
         {
             var validationResult = _createUserCommandValidator.Validate(command);
             if (!validationResult.IsValid)
-                return Result<CreateUserCommandResponse>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
+                return Result<UserDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
 
             var existingUser = await _userRepository.GetUserByEmailAsync(command.Email);
             if (existingUser != null)
-                return Result<CreateUserCommandResponse>.FailureResult("Email already registered");
+                return Result<UserDto>.FailureResult("Email already registered");
 
             var user = UserEntity.Create(
                 email: command.Email,
@@ -80,24 +81,19 @@ namespace LIMTIC.Application.Services.UserManagement
 
             var result = await _userRepository.AddUserAsync(user);
             if (!result)
-                return Result<CreateUserCommandResponse>.FailureResult("Failed to create user");
+                return Result<UserDto>.FailureResult("Failed to create user");
 
             var log = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.User);
             await _auditLogsRepository.AddLog(log);
 
-            return Result<CreateUserCommandResponse>.SuccessResult(new CreateUserCommandResponse
-            {
-                User = _userMapper.MapToUserDto(user),
-            });
+            return Result<UserDto>.SuccessResult(_userMapper.MapToUserDto(user));
         }
 
-        public async Task<Result<GetUserCommandResponse>> GetUserByIdAsync(Guid userId)
+        public async Task<Result<UserDto>> GetUserByIdAsync(Guid userId)
         {
             var user = await _userRepository.GetUserByIdAsync(userId);
-            return user != null ? Result<GetUserCommandResponse>.SuccessResult(new GetUserCommandResponse
-            {
-                User = _userMapper.MapToUserDto(user)
-            }) : Result<GetUserCommandResponse>.FailureResult("User not found");
+            return user != null ? Result<UserDto>.SuccessResult(_userMapper.MapToUserDto(user)) 
+                : Result<UserDto>.FailureResult("User not found");
         }
 
         public async Task<Result<bool>> ActivateUserAsync(Guid userId)
@@ -256,17 +252,14 @@ namespace LIMTIC.Application.Services.UserManagement
             }
         }
 
-        public async Task<Result<GetUsersResult>> GetUsersAsync(UserRole? role, bool? isActive, string? search, int page, int limit)
+        public async Task<Result<GetUsersResult>> GetUsersAsync(GetUsersQuery getUsersQuery)
         {
-            var (items, total, counts) = await _userRepository.GetUsersAsync(role, isActive, search, page, limit);
+            var (items, total) = await _userRepository.GetUsersAsync(getUsersQuery.Role, getUsersQuery.IsActive, getUsersQuery.Q, getUsersQuery.Page, getUsersQuery.Limit);
 
             return Result<GetUsersResult>.SuccessResult(new GetUsersResult
             {
                 Items = items.Select(_userMapper.MapToUserDto).ToList(),
-                Total = total,
-                Counts = counts,
-                Page = page,
-                Limit = limit
+                Total = total
             });
         }
 

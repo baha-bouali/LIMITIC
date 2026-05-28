@@ -1,4 +1,5 @@
 using LIMTIC.Application.DTOs.Profiles;
+using LIMTIC.Application.DTOs.ResearchAxis;
 using LIMTIC.Domain.Entities.Users;
 
 namespace LIMTIC.Application.Mappers.ProfileMapper

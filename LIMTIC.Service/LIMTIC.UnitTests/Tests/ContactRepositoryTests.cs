@@ -1,3 +1,4 @@
+using LIMTIC.Domain.Abstractions.Contact;
 using LIMTIC.Domain.Entities.Contacts;
 using LIMTIC.UnitTests.Base;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,7 +10,7 @@ namespace LIMTIC.UnitTests.Tests
         [Fact]
         public async Task AddAsync_PersistsContact()
         {
-            var repo = ServiceProvider.GetRequiredService<LIMTIC.Domain.Abstractions.IContactRepository>();
+            var repo = ServiceProvider.GetRequiredService<IContactRepository>();
 
             var sentAt = DateTime.UtcNow;
             var contact = new ContactEntity

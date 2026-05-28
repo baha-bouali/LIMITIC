@@ -7,7 +7,9 @@ using LIMTIC.Application.DTOs.Profiles;
 using LIMTIC.Application.Helpers;
 
 using LIMTIC.Application.Mappers.ProfileMapper;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.ResearchAxis;
+using LIMTIC.Domain.Abstractions.Users;
 using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Profiles

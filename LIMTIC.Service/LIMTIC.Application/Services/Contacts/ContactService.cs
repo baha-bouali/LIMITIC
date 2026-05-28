@@ -6,11 +6,12 @@ using LIMTIC.Application.Contracts.Commands.Contacts;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Contacts;
 using Microsoft.Extensions.Options;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Enums;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Contact;
 
 namespace LIMTIC.Application.Services.Contacts
 {

@@ -46,6 +46,22 @@ namespace LIMTIC.Infrastructure.Services
             }
         }
 
+        public async Task<bool> DeleteBlobAsync(string containerName, string path)
+        {
+            var container = GetContainerClient(containerName);
+            var blobName = NormalizeBlobName(path);
+            var blob = container.GetBlobClient(blobName);
+            try
+            {
+                var response = await blob.DeleteIfExistsAsync();
+                return response.Value;
+            }
+            catch (RequestFailedException ex) when (ex.Status == 404)
+            {
+                return false;
+            }
+        }
+
         public async Task<Stream> GetStreamAsync(string containerName, string path)
         {
             var container = GetContainerClient(containerName);

@@ -1,16 +1,16 @@
-﻿using LIMTIC.Application.Abstractions;
-using LIMTIC.Domain.Entities.Contacts;
-
+﻿using LIMTIC.Domain.Entities.Contacts;
 using LIMTIC.Domain.Entities.Events;
+using LIMTIC.Domain.Entities.Files;
 using LIMTIC.Domain.Entities.Logs;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResearchAxis;
 using LIMTIC.Domain.Entities.ResetPassword;
+using LIMTIC.Domain.Entities.Settings;
 using LIMTIC.Domain.Entities.Users;
-using LIMTIC.Domain.Shared;
 using LIMTIC.Infrastructure.Data.Configurations.Contacts;
 using LIMTIC.Infrastructure.Data.Configurations.Events;
+using LIMTIC.Infrastructure.Data.Configurations.Files;
 using LIMTIC.Infrastructure.Data.Configurations.Logs;
 using LIMTIC.Infrastructure.Data.Configurations.Publications;
 using LIMTIC.Infrastructure.Data.Configurations.RefreshToken;
@@ -24,13 +24,9 @@ namespace LIMTIC.Infrastructure.Data
 {
     public class AppDbContext : DbContext
     {
-        private readonly ICurrentUserService _currentUserService;
-
         public AppDbContext(
-            DbContextOptions<AppDbContext> options,
-            ICurrentUserService currentUserService) : base(options)
+            DbContextOptions<AppDbContext> options) : base(options)
         {
-            _currentUserService = currentUserService;
         }
 
         public DbSet<ContactEntity> Contacts { get; set; }
@@ -53,27 +49,8 @@ namespace LIMTIC.Infrastructure.Data
         public DbSet<JournalArticleEntity> JournalArticles { get; set; }
         public DbSet<ResetPasswordEntity> ResetPasswords { get; set; }
         public DbSet<AuditLogsEntity> AuditLogs { get; set; }
-
-        public DbSet<LIMTIC.Domain.Entities.Settings.LabSettings> LabSettings { get; set; }
-
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            var currentUserId = _currentUserService.UserId;
-
-            var addedEntries = ChangeTracker.Entries<BaseEntity>()
-                .Where(e => e.State == EntityState.Added);
-
-            foreach (var entry in addedEntries)
-            {
-                if (entry.Entity.Id == Guid.Empty)
-                    entry.Entity.Id = Guid.NewGuid();
-
-                entry.Entity.CreatedBy = currentUserId;
-                entry.Entity.CreatedAtUtc = DateTime.UtcNow;
-            }
-
-            return await base.SaveChangesAsync(cancellationToken);
-        }
+        public DbSet<LabSettings> LabSettings { get; set; }
+        public DbSet<PublicationFileEntity> PublicationFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -103,6 +80,8 @@ namespace LIMTIC.Infrastructure.Data
             modelBuilder.ApplyConfiguration(new LabSettingsConfiguration());
 
             modelBuilder.ApplyConfiguration(new AuditLogsConfiguration());
+
+            modelBuilder.ApplyConfiguration(new PublicationFileConfiguration());
 
             base.OnModelCreating(modelBuilder);
         }

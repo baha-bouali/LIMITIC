@@ -13,11 +13,7 @@ using LIMTIC.WebAPI.Models.Events.UpdateEvent;
 using LIMTIC.WebAPI.Models.Events.AddSpeaker;
 using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using LIMTIC.WebAPI.Models.Profiles;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.CreatePublication;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublication;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublications;
 using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Reject;
 using LIMTIC.WebAPI.Models.Publications.Public.GetPublication;
 using LIMTIC.WebAPI.Models.Publications.Public.GetPublications;
 using LIMTIC.WebAPI.Models.Publications.Public.GetRecent;
@@ -28,6 +24,10 @@ using LIMTIC.WebAPI.Models.UserManagement.GetUsers;
 using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 using LIMTIC.WebAPI.Models.Contact;
 using LIMTIC.WebAPI.Models.AuditLogs.GetAuditLogs;
+using LIMTIC.WebAPI.Models.Publications.Reject;
+using LIMTIC.WebAPI.Models.Publications.CreatePublication;
+using LIMTIC.WebAPI.Models.Publications.GetPublications;
+using LIMTIC.WebAPI.Models.Publications.GetPublication;
 
 namespace LIMTIC.E2Es.Extensions
 {
@@ -537,31 +537,31 @@ namespace LIMTIC.E2Es.Extensions
 
         // ── Publications (Dashboard) ────────────────────────────────────────────
 
-        public static async Task<DashboardPublicationsListResponse?> GetDashboardPublications(
+        public static async Task<GetPublicationsListResponse?> GetDashboardPublications(
             this HttpClient client, string accessToken, string scope = "mine", int page = 1, int limit = 10)
         {
             var req = CreateRequest($"api/v1/publications?scope={Uri.EscapeDataString(scope)}&page={page}&limit={limit}", HttpMethod.Get, accessToken);
             var response = await client.SendAsync(req);
             return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<DashboardPublicationsListResponse>()
+                ? await response.Content.ReadFromJsonAsync<GetPublicationsListResponse>()
                 : null;
         }
 
         public static async Task<HttpResponseMessage> CreateDashboardPublication(
-            this HttpClient client, CreateDashboardPublicationRequest body, string accessToken)
+            this HttpClient client, CreatePublicationRequest body, string accessToken)
         {
             var req = CreateRequest("api/v1/publications", HttpMethod.Post, accessToken);
             req.Content = JsonContent.Create(body);
             return await client.SendAsync(req);
         }
 
-        public static async Task<DashboardPublicationDetailResponse?> GetDashboardPublicationById(
+        public static async Task<GetPublicationResponse?> GetDashboardPublicationById(
             this HttpClient client, Guid id, string accessToken)
         {
             var req = CreateRequest($"api/v1/publications/{id}", HttpMethod.Get, accessToken);
             var response = await client.SendAsync(req);
             return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<DashboardPublicationDetailResponse>()
+                ? await response.Content.ReadFromJsonAsync<GetPublicationResponse>()
                 : null;
         }
 

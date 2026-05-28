@@ -8,10 +8,12 @@ using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
 using LIMTIC.Application.DTOs;
+using LIMTIC.Application.DTOs.Auth;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Settings;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Users;
 using LIMTIC.Domain.Entities.RefreshToken;
 using LIMTIC.Domain.Entities.ResetPassword;
 using LIMTIC.Domain.Entities.Users;
@@ -63,18 +65,18 @@ namespace LIMTIC.Application.Services.Auth
             _loginCommandValidator = loginCommandValidator;
         }
 
-        public async Task<Result<LoginCommandResponse>> Login(LoginCommand command)
+        public async Task<Result<LoginDto>> Login(LoginCommand command)
         {
             var validationResult = _loginCommandValidator.Validate(command);
             if (!validationResult.IsValid)
-                return Result<LoginCommandResponse>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
+                return Result<LoginDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
 
             var user = await _userRepository.GetUserByEmailAsync(command.Username);
             if (user == null)
-                return Result<LoginCommandResponse>.FailureResult("Invalid username");
+                return Result<LoginDto>.FailureResult("Invalid username");
 
             if (!_passwordHasher.VerifyPassword(user.PasswordHash, command.Password))
-                return Result<LoginCommandResponse>.FailureResult("Invalid password");
+                return Result<LoginDto>.FailureResult("Invalid password");
 
             string accessToken = _tokenService.GenerateAccessToken(user);
             string refreshToken = _tokenService.GenerateToken();
@@ -91,39 +93,54 @@ namespace LIMTIC.Application.Services.Auth
             var loginLog = AuditLogHelper.CreateAuditLog(user.Id, ActionType.LOGIN, ResourceType.User);
             await _auditLogsRepository.AddLog(loginLog);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, user.Id, user.Email));
+            return Result<LoginDto>.SuccessResult(new LoginDto
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken, 
+                UserId = user.Id, 
+                Email = user.Email
+            });
         }
 
-        public async Task<Result<LoginCommandResponse>> ValidateRefreshToken(string? refreshToken)
+        public async Task<Result<LoginDto>> ValidateRefreshToken(string? refreshToken)
         {
             if (refreshToken == null)
-                return Result<LoginCommandResponse>.FailureResult("Refresh token not found in cookie");
+                return Result<LoginDto>.FailureResult("Refresh token not found in cookie");
 
             var token = await _refreshTokenRepository.GetRefreshTokenAsync(refreshToken);
             if (token == null)
-                return Result<LoginCommandResponse>.FailureResult("Refresh token not found");
+                return Result<LoginDto>.FailureResult("Refresh token not found");
 
             if (token.ExpiryDate < DateTime.UtcNow)
-                return Result<LoginCommandResponse>.FailureResult("Refresh token is expired");
+                return Result<LoginDto>.FailureResult("Refresh token is expired");
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
 
             var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(validateLog);
 
-            return Result<LoginCommandResponse>.SuccessResult(new LoginCommandResponse(accessToken, refreshToken, token.User!.Id, token.User!.Email));
+            return Result<LoginDto>.SuccessResult(new LoginDto
+            {
+                AccessToken = accessToken, 
+                RefreshToken = refreshToken, 
+                UserId = token.User!.Id, 
+                Email = token.User!.Email 
+            });
         }
 
-        public async Task Logout(string? refreshToken)
+        public async Task<Result<bool>> Logout(string? refreshToken)
         {
-            await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
+            int result = await _refreshTokenRepository.RevokeRefreshTokenAsync(refreshToken);
+            
             var logoutLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.LOGOUT, ResourceType.User);
             await _auditLogsRepository.AddLog(logoutLog);
+
+            return result > 0 ? Result<bool>.SuccessResult(true) : Result<bool>.FailureResult("Failed to revoke refresh token");
         }
 
         public async Task<Result<string>> ForgetPasswordAsync(ForgetPasswordCommand command)
         {
-            var user = await _userRepository.GetUserByEmailAsync(command.email);
+            var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
                 return Result<string>.FailureResult("User not found");
 
@@ -143,21 +160,21 @@ namespace LIMTIC.Application.Services.Auth
             return Result<string>.SuccessResult("OTP sent to email");
         }
 
-        public async Task<Result<VerifyResetCodeCommandResponse>> VerifyResetTokenAsync(VerifyResetCodeCommand command)
+        public async Task<Result<string>> VerifyResetTokenAsync(VerifyResetCodeCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
-                return Result<VerifyResetCodeCommandResponse>.FailureResult("User not found");
+                return Result<string>.FailureResult("User not found");
 
             var resetPasswordEntry = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
             if (resetPasswordEntry == null)
-                return Result<VerifyResetCodeCommandResponse>.FailureResult("No reset token found");
+                return Result<string>.FailureResult("No reset token found");
 
             if (!_passwordHasher.VerifyPassword(resetPasswordEntry.OTPTokenHash, command.OtpToken))
-                return Result<VerifyResetCodeCommandResponse>.FailureResult("Invalid OTP token");
+                return Result<string>.FailureResult("Invalid OTP token");
 
             if (resetPasswordEntry.OTPTokenExpiry < DateTime.UtcNow)
-                return Result<VerifyResetCodeCommandResponse>.FailureResult("OTP token is expired");
+                return Result<string>.FailureResult("OTP token is expired");
 
             var resetToken = _tokenService.GenerateToken();
             resetPasswordEntry.ResetPasswordTokenHash = _passwordHasher.HashPassword(resetToken);
@@ -168,40 +185,37 @@ namespace LIMTIC.Application.Services.Auth
             var verifyResetLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.VALIDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(verifyResetLog);
 
-            return Result<VerifyResetCodeCommandResponse>.SuccessResult(new VerifyResetCodeCommandResponse
-            {
-                ResetToken = resetToken
-            });
+            return Result<string>.SuccessResult(resetToken);
         }
 
-        public async Task<Result<string>> ResetPasswordAsync(ResetPasswordCommand command)
+        public async Task<Result<bool>> ResetPasswordAsync(ResetPasswordCommand command)
         {
             var user = await _userRepository.GetUserByEmailAsync(command.Email);
             if (user == null)
-                return Result<string>.FailureResult("User not found");
+                return Result<bool>.FailureResult("User not found");
 
             var resetPasswordEntry = await _resetPasswordRepository.GetResetPasswordAsync(user.Id);
             if (resetPasswordEntry == null)
-                return Result<string>.FailureResult("No reset token found");
+                return Result<bool>.FailureResult("No reset token found");
 
             if (resetPasswordEntry.ResetPasswordTokenHash == null || command.ResetToken == null)
-                return Result<string>.FailureResult("Invalid reset token");
+                return Result<bool>.FailureResult("Invalid reset token");
 
             if (!_passwordHasher.VerifyPassword(resetPasswordEntry.ResetPasswordTokenHash, command.ResetToken))
-                return Result<string>.FailureResult("Invalid reset token");
+                return Result<bool>.FailureResult("Invalid reset token");
 
             if (resetPasswordEntry.ResetPasswordTokenExpiry < DateTime.UtcNow)
-                return Result<string>.FailureResult("Reset token is expired");
+                return Result<bool>.FailureResult("Reset token is expired");
 
             user.PasswordHash = _passwordHasher.HashPassword(command.NewPassword);
             var updateResult = await _userRepository.UpdateUserAsync(user);
             if (!updateResult)
-                return Result<string>.FailureResult("Failed to reset password");
+                return Result<bool>.FailureResult("Failed to reset password");
 
             var resetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(resetPasswordLog);
 
-            return Result<string>.SuccessResult("Password reset successful");
+            return Result<bool>.SuccessResult(true);
         }
 
         private async Task upsertResetPassword(UserEntity user, string otp)

@@ -1,7 +1,6 @@
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Contracts.Commands.Profiles;
-using LIMTIC.WebAPI.Models.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -47,28 +46,13 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
         [HttpPut("{userId:guid}")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile(Guid userId, UpdateResearcherProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(UpdateResearcherProfileCommand command)
         {
             var currentUserId = _currentUserService.UserId;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
 
-            if (!isAdmin && currentUserId != userId)
+            if (!isAdmin && currentUserId != command.UserId)
                 return Forbid();
-
-            var command = new UpdateResearcherProfileCommand
-            {
-                UserId = userId,
-                Rank = request.Rank,
-                Specialty = request.Specialty,
-                Office = request.Office,
-                PhoneNumber = request.PhoneNumber,
-                Biography = request.Biography,
-                Orcid = request.Orcid,
-                GoogleScholar = request.GoogleScholar,
-                ResearchGate = request.ResearchGate,
-                LinkedIn = request.LinkedIn,
-                ResearchAxisIds = request.ResearchAxisIds
-            };
 
             var result = await _researcherProfileService.UpdateAsync(command);
             if (result.Success)

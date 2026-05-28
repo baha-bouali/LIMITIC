@@ -1,10 +1,10 @@
 ﻿using LIMTIC.Application.Abstractions.Publication;
 using LIMTIC.Application.Services.Publication;
 using LIMTIC.Application.Abstractions;
-using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
 using Moq;
+using LIMTIC.Domain.Abstractions.Publications;
 
 namespace LIMTIC.UnitTests.Tests
 {

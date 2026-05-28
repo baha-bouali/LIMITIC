@@ -1,6 +1,6 @@
 using LIMTIC.Application.Contracts.Commands.ResearchAxis;
 using LIMTIC.Application.DTOs;
-using LIMTIC.Application.DTOs.Profiles;
+using LIMTIC.Application.DTOs.ResearchAxis;
 
 namespace LIMTIC.Application.Abstractions
 {

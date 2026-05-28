@@ -3,11 +3,8 @@ using LIMTIC.Application.Contracts.Commands.ForgetPassword;
 using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Application.Contracts.Commands.ResetPassword;
 using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
+using LIMTIC.Application.DTOs.Auth;
 using LIMTIC.Application.Settings;
-using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Auth.ResetPassword;
-using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -29,13 +26,11 @@ namespace LIMTIC.WebAPI.Controllers.Auth
 
         [HttpPost("login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> Login([FromBody] LoginCommand loginCommand)
         {
-            var loginCommand = new LoginCommand(loginRequest.Username.ToLower(), loginRequest.Password);
-
             var result = await _authService.Login(loginCommand);
             if (result.IsFailure)
-                return BadRequest(new LoginResponse { Message = result.Message, ValidationErrors = result.ValidationErrors });
+                return BadRequest(new BaseResponse<LoginDto> { Message = result.Message, ValidationErrors = result.ValidationErrors });
 
             // SameSite=None is required when the frontend and API have different origins or
             // different schemes (http vs https) in development. Chrome 89+ treats http://localhost
@@ -52,7 +47,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                     .AddSeconds(_refreshTokenSettings.ExpireInSeconds)
             });
 
-            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken, UserId = result.Data!.UserId, Email = result.Data!.Email });
+            return Ok(new BaseResponse<LoginDto> { Data = result.Data, Success = true });
         }
 
         [HttpPost("refreshToken")]
@@ -63,9 +58,9 @@ namespace LIMTIC.WebAPI.Controllers.Auth
 
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
-                return Unauthorized(new LoginResponse { Message = result.Message });
+                return Unauthorized(new BaseResponse<LoginDto> { Message = result.Message });
 
-            return Ok(new LoginResponse { AccessToken = result.Data!.AccessToken, UserId = result.Data!.UserId, Email = result.Data!.Email });
+            return Ok(new BaseResponse<LoginDto> { Data = result.Data });
         }
 
         [HttpPost("logout")]
@@ -86,42 +81,33 @@ namespace LIMTIC.WebAPI.Controllers.Auth
                 SameSite = SameSiteMode.None
             });
 
-            return Ok(new BaseResponse { Success = true });
+            return Ok(new BaseResponse<bool> { Success = true });
         }
 
         [HttpPost("forgotPassword")]
-        public async Task<IActionResult> ForgotPassword(ForgetPasswordRequest request)
+        public async Task<IActionResult> ForgotPassword(ForgetPasswordCommand command)
         {
-            var command = new ForgetPasswordCommand
-            {
-                email = request.Email
-            };
             var result = await _authService.ForgetPasswordAsync(command);
             if (result.Success)
-                return Ok(new BaseResponse { Message = result.Data });
+                return Ok(new BaseResponse<bool> { Success = true, Message = result.Data });
             else
-                return BadRequest(new BaseResponse { Message = result.Message });
+                return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
         }
 
         [HttpPost("verifyOTP")]
-        public async Task<IActionResult> VerifyOTP(VerifyResetCodeRequest request)
+        public async Task<IActionResult> VerifyOTP(VerifyResetCodeCommand command)
         {
-            var command = new VerifyResetCodeCommand
-            {
-                Email = request.Email,
-                OtpToken = request.OtpToken
-            };
             var result = await _authService.VerifyResetTokenAsync(command);
             if (result.Success)
             {
-                return Ok(new VerifyResetCodeResponse
+                return Ok(new BaseResponse<string>
                 {
-                    ResetToken = result.Data.ResetToken,
+                    Data = result.Data,
                 });
             }
             else
             {
-                return BadRequest(new BaseResponse
+                return BadRequest(new BaseResponse<string>
                 {
                     Message = result.Message
                 });
@@ -129,25 +115,20 @@ namespace LIMTIC.WebAPI.Controllers.Auth
         }
 
         [HttpPost("resetPassword")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword(ResetPasswordCommand command)
         {
-            var command = new ResetPasswordCommand
-            {
-                Email = request.Email,
-                NewPassword = request.NewPassword,
-                ResetToken = request.ResetToken
-            };
             var result = await _authService.ResetPasswordAsync(command);
             if (result.Success)
             {
-                return Ok(new BaseResponse
+                return Ok(new BaseResponse<bool>
                 {
+                    Data = result.Data,
                     Message = "Password reset successful"
                 });
             }
             else
             {
-                return BadRequest(new BaseResponse
+                return BadRequest(new BaseResponse<bool>
                 {
                     Message = result.Message
                 });

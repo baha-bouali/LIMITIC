@@ -1,7 +1,7 @@
 ﻿using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Settings;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.Settings;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using System.Net;

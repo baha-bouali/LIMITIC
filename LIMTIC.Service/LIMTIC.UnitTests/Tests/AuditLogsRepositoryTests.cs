@@ -1,4 +1,4 @@
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
 using LIMTIC.Domain.Entities.Logs;
 using LIMTIC.Domain.Enums;
 using LIMTIC.UnitTests.Base;

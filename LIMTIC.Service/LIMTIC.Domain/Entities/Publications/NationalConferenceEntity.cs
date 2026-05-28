@@ -8,6 +8,7 @@ namespace LIMTIC.Domain.Entities.Publications
 
         public string ConferenceName { get; set; } 
         public string Location { get; set; }
-        public string? Pages { get; set; }
+        public int? Year { get; set; }
+
     }
 }

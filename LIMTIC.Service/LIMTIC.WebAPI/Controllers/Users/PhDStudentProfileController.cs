@@ -47,22 +47,13 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
         [HttpPut("{userId:guid}")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile(Guid userId, UpdatePhDStudentProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(UpdatePhDStudentProfileCommand command)
         {
             var currentUserId = _currentUserService.UserId;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
 
-            if (!isAdmin && currentUserId != userId)
+            if (!isAdmin && currentUserId != command.UserId)
                 return Forbid();
-
-            var command = new UpdatePhDStudentProfileCommand
-            {
-                UserId = userId,
-                ThesisSubject = request.ThesisSubject,
-                EnrollmentYear = request.EnrollmentYear,
-                SupervisorId = request.SupervisorId,
-                ResearchAxisIds = request.ResearchAxisIds
-            };
 
             var result = await _phDStudentProfileService.UpdateAsync(command);
             if (result.Success)
