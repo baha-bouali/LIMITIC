@@ -1,8 +1,8 @@
 using LIMTIC.Application.Abstractions.Settings;
-using LIMTIC.WebAPI.Models.Settings.GetSettings;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using LIMTIC.Application.Contracts.Commands.Settings;
+using LIMTIC.Application.DTOs.Settings;
 
 namespace LIMTIC.WebAPI.Controllers.Settings
 {
@@ -25,28 +25,11 @@ namespace LIMTIC.WebAPI.Controllers.Settings
             if (!result.Success || result.Data == null)
                 return BadRequest(new { Success = false, Message = result.Message });
 
-            var resp = new GetSettingsResponse
+            return Ok(new BaseResponse<SettingsResponseDto>
             {
                 Success = true,
-                Identity = new IdentityResponse
-                {
-                    LabName = result.Data.Identity.LabName,
-                    LabSlogan = result.Data.Identity.LabSlogan,
-                    ContactEmail = result.Data.Identity.ContactEmail,
-                    Address = result.Data.Identity.Address,
-                    Phone = result.Data.Identity.Phone,
-                    LogoUrl = result.Data.Identity.LogoUrl
-                },
-                Smtp = new SmtpResponse
-                {
-                    Host = result.Data.Smtp.Host,
-                    Port = result.Data.Smtp.Port,
-                    Username = result.Data.Smtp.Username,
-                    UseTls = result.Data.Smtp.UseTls
-                }
-            };
-
-            return Ok(resp);
+                Data = result.Data
+            });
         }
 
         [HttpPut]
