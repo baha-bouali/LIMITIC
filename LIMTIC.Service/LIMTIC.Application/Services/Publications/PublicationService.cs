@@ -188,6 +188,10 @@ namespace LIMTIC.Application.Services.Publications
                 var entity = command.Publication.ToEntity();
 
                 _publicationRepository.Update(entity);
+                bool updated = await _unitOfWork.SaveChangesAsync() > 0;
+                if (!updated)
+                    return Result<bool>.FailureResult("Failed to update publication.");
+
                 return Result<bool>.SuccessResult(true);
             }
             catch (Exception ex)
@@ -215,7 +219,7 @@ namespace LIMTIC.Application.Services.Publications
 
                 _publicationRepository.Remove(existing);
 
-                bool deleted = await _unitOfWork.SaveChangesAsync() == 1;
+                bool deleted = await _unitOfWork.SaveChangesAsync() > 0;
                 if (!deleted)
                     return Result<bool>.FailureResult("Failed to delete publication.");
 
@@ -429,7 +433,7 @@ namespace LIMTIC.Application.Services.Publications
         {
             switch (publication.Type)
             {
-                case PublicationType.Journal when publication.JournalArticle is not null:
+                case PublicationType.ArticleJournal when publication.JournalArticle is not null:
                     var journalEntity = publication.JournalArticle.ToEntity();
                     journalEntity.Id = publicationId;
                     await _journalArticleRepository.AddAsync(journalEntity);

@@ -23,7 +23,7 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<Guid> CreateResearcherAsync(string email, string token)
         {
-            var created = await Client.AddUser(new CreateUserRequest
+            var created = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Avatar",
                 LastName = "Researcher",
@@ -32,7 +32,7 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, token);
 
-            await Client.UpdateUserRole(created!.User.Id, new UpdateUserRoleRequest
+            await Client.UpdateUserRole(created!.User.Id, new UpdateUserRoleCommand
             {
                 Role = UserRole.Researcher,
                 Rank = "Dr",
@@ -60,8 +60,8 @@ namespace LIMTIC.E2Es.Tests
 
             // Verify the profile DTO now carries the updated AvatarBlobName
             var profile = await Client.GetResearcherProfile(userId, token);
-            Assert.NotNull(profile?.Profile?.AvatarBlobName);
-            Assert.Contains("photo.jpg", profile!.Profile!.AvatarBlobName);
+            Assert.NotNull(profile?.Data?.AvatarBlobName);
+            Assert.Contains("photo.jpg", profile!.Data!.AvatarBlobName);
         }
 
         [Fact]
@@ -82,7 +82,7 @@ namespace LIMTIC.E2Es.Tests
             var targetId = await CreateResearcherAsync("e2e.avatar.target@example.com", adminToken);
 
             // Create a visitor (the attacker)
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "V", LastName = "U",
                 Email = "e2e.avatar.visitor@example.com",
@@ -108,7 +108,7 @@ namespace LIMTIC.E2Es.Tests
             await Client.UploadAvatar(userId, FakeJpeg(), "second.jpg", token);
 
             var profile = await Client.GetResearcherProfile(userId, token);
-            Assert.Contains("second.jpg", profile?.Profile?.AvatarBlobName);
+            Assert.Contains("second.jpg", profile?.Data?.AvatarBlobName);
         }
 
         [Fact]
@@ -117,7 +117,7 @@ namespace LIMTIC.E2Es.Tests
             var adminToken = await LoginAsSuperAdmin();
 
             // Create a visitor and log in as that user
-            var created = await Client.AddUser(new CreateUserRequest
+            var created = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Self",
                 LastName = "Upload",

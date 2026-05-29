@@ -1,25 +1,29 @@
-﻿using LIMTIC.Application.Abstractions.Publication;
-using LIMTIC.Application.Services.Publication;
-using LIMTIC.Application.Abstractions;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Storage;
+using LIMTIC.Application.Contracts.Commands.Publications;
+using LIMTIC.Application.Contracts.Queries.Publications;
+using LIMTIC.Application.Mappings;
+using LIMTIC.Application.Services.Publications;
+using LIMTIC.Domain;
+using LIMTIC.Domain.Abstractions.Publications;
 using LIMTIC.Domain.Entities.Publications;
 using LIMTIC.Domain.Enums;
 using Moq;
-using LIMTIC.Domain.Abstractions.Publications;
 
 namespace LIMTIC.UnitTests.Tests
 {
-    #region Mocking Notes
-
     public class PublicationServiceTests
     {
         #region Mocks
 
+        private readonly Mock<IUnitOfWork> _unitOfWork = new();
         private readonly Mock<IPublicationRepository> _pubRepo = new();
         private readonly Mock<IJournalArticleRepository> _journalRepo = new();
         private readonly Mock<ITechnicalReportRepository> _reportRepo = new();
         private readonly Mock<IBookChapterRepository> _chapterRepo = new();
         private readonly Mock<INationalConferenceRepository> _nationalRepo = new();
         private readonly Mock<IInternationalConferenceRepository> _intlRepo = new();
+        private readonly Mock<IBlobStorageService> _blobStorage = new();
         private readonly Mock<ICurrentUserService> _currentUserService = new();
 
         #endregion
@@ -30,16 +34,19 @@ namespace LIMTIC.UnitTests.Tests
 
         public PublicationServiceTests()
         {
-            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.Empty);
+            // Default: authenticated user (non-null UserId) with no special role
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
             _currentUserService.SetupGet(x => x.Role).Returns((string?)null);
 
             _sut = new PublicationService(
+                _unitOfWork.Object,
                 _pubRepo.Object,
                 _journalRepo.Object,
                 _reportRepo.Object,
                 _chapterRepo.Object,
                 _nationalRepo.Object,
                 _intlRepo.Object,
+                _blobStorage.Object,
                 _currentUserService.Object);
         }
 
@@ -64,7 +71,6 @@ namespace LIMTIC.UnitTests.Tests
                 Abstract = "Test abstract.",
                 Keywords = ["AI", "ML"],
                 Authors = ["Author One", "Author Two"],
-                AttachedPdfs = [],
                 Type = type,
                 Status = status,
                 Visibility = visibility,
@@ -73,1106 +79,650 @@ namespace LIMTIC.UnitTests.Tests
                 CreatedAtUtc = createdAt ?? DateTime.UtcNow,
             };
 
-        private void SetupGetByIdWithDetails(PublicationEntity publication) =>
-            _pubRepo
-                .Setup(r => r.GetByIdWithDetailsAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-
         #endregion
 
-        #region Get By Id
+        #region GetPublicationByIdAsync
 
         [Fact]
-        public async Task GetByIdAsync_ExistingId_ReturnsPublication()
+        public async Task GetPublicationByIdAsync_PublishedPublicPublication_ReturnsPublication()
         {
-            var publication = BuildPublication(title: "My Publication");
+            // The service calls GetByIdWithDetailsAsync and only returns if status == Published
+            var publication = BuildPublication(
+                title: "My Publication",
+                status: PublicationStatus.Published,
+                visibility: PublicationVisibility.Public);
+
             _pubRepo
-                .Setup(r => r.GetByIdWithDetailsAsync(publication.Id, default))
+                .Setup(r => r.GetByIdWithDetailsAsync(publication.Id))
                 .ReturnsAsync(publication);
 
-            var result = await _sut.GetByIdAsync(publication.Id);
+            var result = await _sut.GetPublicationByIdAsync(publication.Id);
 
             Assert.NotNull(result);
-            Assert.Equal(publication.Id, result.Id);
-            Assert.Equal("My Publication", result.Title);
+            Assert.True(result.Success);
+            Assert.Equal(publication.Id, result.Data?.Id);
+            Assert.Equal("My Publication", result.Data?.Title);
         }
 
         [Fact]
-        public async Task GetByIdAsync_NonExistentId_ReturnsNull()
+        public async Task GetPublicationByIdAsync_NonExistentId_ReturnsFailure()
         {
             _pubRepo
-                .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<Guid>(), default))
+                .Setup(r => r.GetByIdWithDetailsAsync(It.IsAny<Guid>()))
                 .ReturnsAsync((PublicationEntity?)null);
 
-            var result = await _sut.GetByIdAsync(Guid.NewGuid());
+            var result = await _sut.GetPublicationByIdAsync(Guid.NewGuid());
 
-            Assert.Null(result);
+            Assert.NotNull(result);
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task GetPublicationByIdAsync_DraftPublication_ReturnsFailure()
+        {
+            // Service returns failure if status != Published
+            var publication = BuildPublication(status: PublicationStatus.Draft);
+            _pubRepo
+                .Setup(r => r.GetByIdWithDetailsAsync(publication.Id))
+                .ReturnsAsync(publication);
+
+            var result = await _sut.GetPublicationByIdAsync(publication.Id);
+
+            Assert.False(result.Success);
         }
 
         #endregion
 
-        #region Get By User Id
+        #region GetPublicationsAsync
 
         [Fact]
-        public async Task GetByUserIdAsync_ReturnsOnlyThatUsersPublications()
-        {
-            var userId = Guid.NewGuid();
-            var list = new List<PublicationEntity>
-            {
-                BuildPublication(userId: userId, title: "Pub 1"),
-                BuildPublication(userId: userId, title: "Pub 2"),
-            };
-            _pubRepo
-                .Setup(r => r.GetByUserIdAsync(userId, default))
-                .ReturnsAsync(list);
-
-            var result = await _sut.GetByUserIdAsync(userId);
-
-            Assert.Equal(2, result.Count());
-            Assert.All(result, p => Assert.Equal(userId, p.UserId));
-        }
-
-        [Fact]
-        public async Task GetByUserIdAsync_UserWithNoPublications_ReturnsEmpty()
-        {
-            _pubRepo
-                .Setup(r => r.GetByUserIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync(new List<PublicationEntity>());
-
-            var result = await _sut.GetByUserIdAsync(Guid.NewGuid());
-
-            Assert.Empty(result);
-        }
-
-        #endregion
-
-        #region Get By User Id And Status
-
-        [Fact]
-        public async Task GetByUserIdAndStatusAsync_ReturnsOnlyMatchingStatusPublications()
-        {
-            var userId = Guid.NewGuid();
-            var drafts = new List<PublicationEntity>
-            {
-                BuildPublication(userId: userId, status: PublicationStatus.Draft, title: "Draft Pub")
-            };
-            _pubRepo
-                .Setup(r => r.GetByUserIdAndStatusAsync(userId, PublicationStatus.Draft, default))
-                .ReturnsAsync(drafts);
-
-            var result = await _sut.GetByUserIdAndStatusAsync(userId, PublicationStatus.Draft);
-
-            Assert.Single(result);
-            Assert.Equal(PublicationStatus.Draft, result.First().Status);
-        }
-
-        #endregion
-
-        #region Get Public Publications
-
-        [Fact]
-        public async Task GetPublicPublicationsAsync_CallsRepoWithPublishedAndPublic()
-        {
-            var expected = new List<PublicationEntity>
-            {
-                BuildPublication(status: PublicationStatus.Published, visibility: PublicationVisibility.Public)
-            };
-            _pubRepo
-                .Setup(r => r.GetByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync(expected);
-
-            var result = await _sut.GetPublicPublicationsAsync();
-
-            Assert.Single(result);
-            _pubRepo.Verify(r => r.GetByStatusAndVisibilityAsync(
-                PublicationStatus.Published, PublicationVisibility.Public, default), Times.Once);
-        }
-
-        #endregion
-
-        #region Get Recent Public Publications
-
-        [Fact]
-        public async Task GetRecentPublicPublicationsAsync_RespectsLimit()
-        {
-            var allPublic = Enumerable.Range(0, 5)
-                .Select(i => BuildPublication(
-                    status: PublicationStatus.Published,
-                    visibility: PublicationVisibility.Public,
-                    year: 2020 + i,
-                    title: $"Pub {i}"))
-                .ToList();
-
-            _pubRepo
-                .Setup(r => r.GetByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync(allPublic);
-
-            var result = await _sut.GetRecentPublicPublicationsAsync(limit: 3);
-
-            Assert.Equal(3, result.Count());
-        }
-
-        [Fact]
-        public async Task GetRecentPublicPublicationsAsync_ReturnsMostRecentFirst()
-        {
-            var publications = new List<PublicationEntity>
-            {
-                BuildPublication(year: 2021, title: "Oldest", createdAt: new DateTime(2021, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
-                BuildPublication(year: 2023, title: "Newest", createdAt: new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
-                BuildPublication(year: 2022, title: "Middle", createdAt: new DateTime(2022, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
-            };
-
-            _pubRepo
-                .Setup(r => r.GetByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync(publications);
-
-            var result = (await _sut.GetRecentPublicPublicationsAsync(limit: 2)).ToList();
-
-            Assert.Equal(2023, result[0].Year);
-            Assert.Equal(2022, result[1].Year);
-        }
-
-        [Fact]
-        public async Task GetRecentPublicPublicationsAsync_SameYear_OrdersByCreatedAtDescending()
-        {
-            var earlier = BuildPublication(year: 2024, title: "Earlier",
-                createdAt: new DateTime(2024, 3, 1, 0, 0, 0, DateTimeKind.Utc));
-            var later = BuildPublication(year: 2024, title: "Later",
-                createdAt: new DateTime(2024, 9, 1, 0, 0, 0, DateTimeKind.Utc));
-
-            _pubRepo
-                .Setup(r => r.GetByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync([earlier, later]);
-
-            var result = (await _sut.GetRecentPublicPublicationsAsync(limit: 2)).ToList();
-
-            Assert.Equal("Later", result[0].Title);
-            Assert.Equal("Earlier", result[1].Title);
-        }
-
-        #endregion
-
-        #region Get By Research Axis Id
-
-        [Fact]
-        public async Task GetByResearchAxisIdAsync_ReturnsMockedList()
-        {
-            var axisId = Guid.NewGuid();
-            var list = new List<PublicationEntity>
-            {
-                BuildPublication(researchAxisId: axisId, title: "Axis Pub 1"),
-                BuildPublication(researchAxisId: axisId, title: "Axis Pub 2"),
-            };
-            _pubRepo
-                .Setup(r => r.GetByResearchAxisIdAsync(axisId, default))
-                .ReturnsAsync(list);
-
-            var result = await _sut.GetByResearchAxisIdAsync(axisId);
-
-            Assert.Equal(2, result.Count());
-            Assert.All(result, p => Assert.Equal(axisId, p.ResearchAxisId));
-        }
-
-        #endregion
-
-        #region Get By Type
-
-        [Fact]
-        public async Task GetByTypeAsync_ReturnsOnlyPublicationsOfThatType()
-        {
-            var list = new List<PublicationEntity>
-            {
-                BuildPublication(type: PublicationType.ArticleJournal, title: "Journal 1"),
-                BuildPublication(type: PublicationType.ArticleJournal, title: "Journal 2"),
-            };
-            _pubRepo
-                .Setup(r => r.GetByTypeAsync(PublicationType.ArticleJournal, default))
-                .ReturnsAsync(list);
-
-            var result = await _sut.GetByTypeAsync(PublicationType.ArticleJournal);
-
-            Assert.Equal(2, result.Count());
-            Assert.All(result, p => Assert.Equal(PublicationType.ArticleJournal, p.Type));
-        }
-
-        #endregion
-
-        #region GetFilteredAsync
-
-        [Fact]
-        public async Task GetFilteredAsync_ForwardsAllParametersToRepository()
+        public async Task GetPublicationsAsync_ForwardsTypeAndStatusToRepository()
         {
             var expected = (Items: (IEnumerable<PublicationEntity>)new List<PublicationEntity>(), TotalCount: 0);
+
+            var query = new GetPublicationsQuery
+            {
+                Type = PublicationType.ArticleJournal.ToString(),
+                Status = PublicationStatus.Published.ToString(),
+                Visibility = null,
+                UserId = null,
+                AxeId = null,
+                Year = null,
+                Search = null,
+                Page = 1,
+                Limit = 10
+            };
+
             _pubRepo
                 .Setup(r => r.GetFilteredAsync(
                     PublicationType.ArticleJournal,
                     PublicationStatus.Published,
-                    PublicationVisibility.Public,
-                    It.IsAny<Guid?>(),
-                    It.IsAny<Guid?>(),
-                    2023,
-                    "quantum",
-                    2,
-                    10,
-                    default))
+                    It.IsAny<PublicationVisibility?>(),
+                    null,
+                    null,
+                    null,
+                    null,
+                    1,
+                    10))
                 .ReturnsAsync(expected);
 
-            await _sut.GetFilteredAsync(
-                type: PublicationType.ArticleJournal,
-                status: PublicationStatus.Published,
-                visibility: PublicationVisibility.Public,
-                year: 2023,
-                search: "quantum",
-                page: 2,
-                pageSize: 10);
+            var result = await _sut.GetPublicationsAsync(query);
 
+            Assert.True(result.Success);
             _pubRepo.Verify(r => r.GetFilteredAsync(
                 PublicationType.ArticleJournal,
                 PublicationStatus.Published,
-                PublicationVisibility.Public,
-                It.IsAny<Guid?>(),
-                It.IsAny<Guid?>(),
-                2023,
-                "quantum",
-                2,
-                10,
-                default), Times.Once);
+                It.IsAny<PublicationVisibility?>(),
+                null,
+                null,
+                null,
+                null,
+                1,
+                10), Times.Once);
         }
 
         [Fact]
-        public async Task GetFilteredAsync_ReturnsTotalCountFromRepository()
+        public async Task GetPublicationsAsync_ReturnsTotalCountFromRepository()
         {
             var items = new List<PublicationEntity> { BuildPublication(), BuildPublication() };
             var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 42);
+
             _pubRepo
                 .Setup(r => r.GetFilteredAsync(
                     It.IsAny<PublicationType?>(), It.IsAny<PublicationStatus?>(),
                     It.IsAny<PublicationVisibility?>(), It.IsAny<Guid?>(),
                     It.IsAny<Guid?>(), It.IsAny<int?>(), It.IsAny<string?>(),
-                    It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(expected);
 
-            var (resultItems, totalCount) = await _sut.GetFilteredAsync();
+            var result = await _sut.GetPublicationsAsync(new GetPublicationsQuery { Page = 1, Limit = 10 });
 
-            Assert.Equal(42, totalCount);
-            Assert.Equal(2, resultItems.Count());
+            Assert.True(result.Success);
+            Assert.Equal(42, result.Data.Total);
+            Assert.Equal(2, result.Data.Publications.Count);
         }
 
         [Fact]
-        public async Task GetFilteredAsync_WithNullVisibility_ReturnsAllPublications()
+        public async Task GetPublicationsAsync_UnauthenticatedUser_ForcesPublicVisibility()
         {
-            // When visibility is null, it means show all publications (both public and private)
-            var items = new List<PublicationEntity>
-            {
-                BuildPublication(visibility: PublicationVisibility.Public),
-                BuildPublication(visibility: PublicationVisibility.Private)
-            };
-            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 2);
+            // When UserId is null/empty, the service forces visibility = Public
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.Empty);
+
+            var expected = (Items: (IEnumerable<PublicationEntity>)new List<PublicationEntity>(), TotalCount: 0);
             _pubRepo
                 .Setup(r => r.GetFilteredAsync(
-                    null, PublicationStatus.Published, null,
-                    null, null, null, null, 1, 10, default))
+                    It.IsAny<PublicationType?>(), It.IsAny<PublicationStatus?>(),
+                    PublicationVisibility.Public,
+                    It.IsAny<Guid?>(), It.IsAny<Guid?>(),
+                    It.IsAny<int?>(), It.IsAny<string?>(),
+                    It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(expected);
 
-            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
-                type: null,
-                status: PublicationStatus.Published,
-                visibility: null,
-                userId: null,
-                researchAxisId: null,
-                year: null,
-                search: null,
-                page: 1,
-                pageSize: 10);
+            await _sut.GetPublicationsAsync(new GetPublicationsQuery { Page = 1, Limit = 10 });
 
-            Assert.Equal(2, totalCount);
-            Assert.Equal(2, resultItems.Count());
             _pubRepo.Verify(r => r.GetFilteredAsync(
-                null, PublicationStatus.Published, null,
-                null, null, null, null, 1, 10, default), Times.Once);
+                It.IsAny<PublicationType?>(), It.IsAny<PublicationStatus?>(),
+                PublicationVisibility.Public,
+                It.IsAny<Guid?>(), It.IsAny<Guid?>(),
+                It.IsAny<int?>(), It.IsAny<string?>(),
+                It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
 
         [Fact]
-        public async Task GetFilteredAsync_WithPublicVisibilityOnly_ReturnsPublicPublicationsOnly()
+        public async Task GetPublicationsAsync_PageBelowOne_DefaultsToPageOne()
         {
-            // When visibility is explicitly set to Public, show only public publications
-            var items = new List<PublicationEntity>
-            {
-                BuildPublication(visibility: PublicationVisibility.Public),
-                BuildPublication(visibility: PublicationVisibility.Public)
-            };
-            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 2);
+            var expected = (Items: (IEnumerable<PublicationEntity>)new List<PublicationEntity>(), TotalCount: 0);
             _pubRepo
                 .Setup(r => r.GetFilteredAsync(
-                    null, PublicationStatus.Published, PublicationVisibility.Public,
-                    null, null, null, null, 1, 10, default))
+                    It.IsAny<PublicationType?>(), It.IsAny<PublicationStatus?>(),
+                    It.IsAny<PublicationVisibility?>(), It.IsAny<Guid?>(),
+                    It.IsAny<Guid?>(), It.IsAny<int?>(), It.IsAny<string?>(),
+                    1, It.IsAny<int>()))
                 .ReturnsAsync(expected);
 
-            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
-                type: null,
-                status: PublicationStatus.Published,
-                visibility: PublicationVisibility.Public,
-                userId: null,
-                researchAxisId: null,
-                year: null,
-                search: null,
-                page: 1,
-                pageSize: 10);
+            await _sut.GetPublicationsAsync(new GetPublicationsQuery { Page = 0, Limit = 10 });
 
-            Assert.Equal(2, totalCount);
-            Assert.Equal(2, resultItems.Count());
             _pubRepo.Verify(r => r.GetFilteredAsync(
-                null, PublicationStatus.Published, PublicationVisibility.Public,
-                null, null, null, null, 1, 10, default), Times.Once);
-        }
-
-        [Fact]
-        public async Task GetFilteredAsync_WithPrivateVisibility_ReturnsPrivatePublicationsOnly()
-        {
-            // When visibility is explicitly set to Private, show only private publications
-            var items = new List<PublicationEntity>
-            {
-                BuildPublication(visibility: PublicationVisibility.Private)
-            };
-            var expected = (Items: (IEnumerable<PublicationEntity>)items, TotalCount: 1);
-            _pubRepo
-                .Setup(r => r.GetFilteredAsync(
-                    null, PublicationStatus.Published, PublicationVisibility.Private,
-                    null, null, null, null, 1, 10, default))
-                .ReturnsAsync(expected);
-
-            var (resultItems, totalCount) = await _sut.GetFilteredAsync(
-                type: null,
-                status: PublicationStatus.Published,
-                visibility: PublicationVisibility.Private,
-                userId: null,
-                researchAxisId: null,
-                year: null,
-                search: null,
-                page: 1,
-                pageSize: 10);
-
-            Assert.Equal(1, totalCount);
-            Assert.Single(resultItems);
-            _pubRepo.Verify(r => r.GetFilteredAsync(
-                null, PublicationStatus.Published, PublicationVisibility.Private,
-                null, null, null, null, 1, 10, default), Times.Once);
+                It.IsAny<PublicationType?>(), It.IsAny<PublicationStatus?>(),
+                It.IsAny<PublicationVisibility?>(), It.IsAny<Guid?>(),
+                It.IsAny<Guid?>(), It.IsAny<int?>(), It.IsAny<string?>(),
+                1, It.IsAny<int>()), Times.Once);
         }
 
         #endregion
 
-        #region Type Specific
+        #region CreatePublicationAsync
 
         [Fact]
-        public async Task GetJournalArticleByPublicationIdAsync_ExistingId_ReturnsMappedDto()
+        public async Task CreatePublicationAsync_AuthenticatedUser_CallsAddAndCommits()
         {
-            var pubId = Guid.NewGuid();
-            var article = new JournalArticleEntity
+            var publication = BuildPublication(type: PublicationType.ArticleJournal, status: PublicationStatus.Draft);
+
+            _pubRepo.Setup(r => r.AddAsync(It.IsAny<PublicationEntity>())).Returns(Task.CompletedTask);
+            _journalRepo.Setup(r => r.AddAsync(It.IsAny<JournalArticleEntity>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(2);
+            _unitOfWork.Setup(u => u.CommitTransactionAsync()).Returns(Task.CompletedTask);
+
+            var command = new CreatePublicationCommand
             {
-                Id = Guid.NewGuid(),
-                JournalName = "Nature",
-                Volume = "12",
-                Number = "3",
-                Pages = "100-110",
-                Ranking = JournalRanking.Q1,
+                Publication = publication.ToDto()
             };
-            _journalRepo
-                .Setup(r => r.GetByPublicationIdAsync(pubId, default))
-                .ReturnsAsync(article);
+            var result = await _sut.CreatePublicationAsync(command);
 
-            var result = await _sut.GetJournalArticleByPublicationIdAsync(pubId);
-
-            Assert.NotNull(result);
-            Assert.Equal(article.Id, result.Id);
-            Assert.Equal("Nature", result.JournalName);
+            Assert.True(result.Success);
+            _pubRepo.Verify(r => r.AddAsync(It.IsAny<PublicationEntity>()), Times.Once);
+            _unitOfWork.Verify(u => u.CommitTransactionAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task GetJournalArticleByPublicationIdAsync_NonExistentId_ReturnsNull()
+        public async Task CreatePublicationAsync_UnauthenticatedUser_ReturnsFailure()
         {
-            _journalRepo
-                .Setup(r => r.GetByPublicationIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((JournalArticleEntity?)null);
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.Empty);
 
-            var result = await _sut.GetJournalArticleByPublicationIdAsync(Guid.NewGuid());
-
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetTechnicalReportByPublicationIdAsync_ExistingId_ReturnsMappedDto()
-        {
-            var pubId = Guid.NewGuid();
-            var report = new TechnicalReportEntity
-            {
-                Id = Guid.NewGuid(),
-                ReportNumber = 42,
-                Institution = "MIT",
-            };
-            _reportRepo
-                .Setup(r => r.GetByPublicationIdAsync(pubId, default))
-                .ReturnsAsync(report);
-
-            var result = await _sut.GetTechnicalReportByPublicationIdAsync(pubId);
-
-            Assert.NotNull(result);
-            Assert.Equal(42, result.ReportNumber);
-        }
-
-        [Fact]
-        public async Task GetTechnicalReportByPublicationIdAsync_NonExistentId_ReturnsNull()
-        {
-            _reportRepo
-                .Setup(r => r.GetByPublicationIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((TechnicalReportEntity?)null);
-
-            var result = await _sut.GetTechnicalReportByPublicationIdAsync(Guid.NewGuid());
-
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetBookChapterByPublicationIdAsync_ExistingId_ReturnsMappedDto()
-        {
-            var pubId = Guid.NewGuid();
-            var chapter = new BookChapterEntity
-            {
-                Id = Guid.NewGuid(),
-                BookTitle = "Deep Learning",
-                Publisher = "O'Reilly",
-                Isbn = "978-1-491-91490-2",
-                Pages = "100-130",
-            };
-            _chapterRepo
-                .Setup(r => r.GetByPublicationIdAsync(pubId, default))
-                .ReturnsAsync(chapter);
-
-            var result = await _sut.GetBookChapterByPublicationIdAsync(pubId);
-
-            Assert.NotNull(result);
-            Assert.Equal("Deep Learning", result.BookTitle);
-        }
-
-        [Fact]
-        public async Task GetBookChapterByPublicationIdAsync_NonExistentId_ReturnsNull()
-        {
-            _chapterRepo
-                .Setup(r => r.GetByPublicationIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((BookChapterEntity?)null);
-
-            var result = await _sut.GetBookChapterByPublicationIdAsync(Guid.NewGuid());
-
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetNationalConferenceByPublicationIdAsync_ExistingId_ReturnsMappedDto()
-        {
-            var pubId = Guid.NewGuid();
-            var conf = new NationalConferenceEntity
-            {
-                Id = Guid.NewGuid(),
-                ConferenceName = "TunisConf",
-                Location = "Tunis",
-                Pages = "5-15",
-            };
-            _nationalRepo
-                .Setup(r => r.GetByPublicationIdAsync(pubId, default))
-                .ReturnsAsync(conf);
-
-            var result = await _sut.GetNationalConferenceByPublicationIdAsync(pubId);
-
-            Assert.NotNull(result);
-            Assert.Equal("TunisConf", result.ConferenceName);
-        }
-
-        [Fact]
-        public async Task GetNationalConferenceByPublicationIdAsync_NonExistentId_ReturnsNull()
-        {
-            _nationalRepo
-                .Setup(r => r.GetByPublicationIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((NationalConferenceEntity?)null);
-
-            var result = await _sut.GetNationalConferenceByPublicationIdAsync(Guid.NewGuid());
-
-            Assert.Null(result);
-        }
-
-        [Fact]
-        public async Task GetInternationalConferenceByPublicationIdAsync_ExistingId_ReturnsMappedDto()
-        {
-            var pubId = Guid.NewGuid();
-            var conf = new InternationalConferenceEntity
-            {
-                Id = Guid.NewGuid(),
-                ConferenceName = "NeurIPS",
-                Location = "Vancouver",
-                Pages = "1-10",
-                Ranking = CoreRanking.A,
-            };
-            _intlRepo
-                .Setup(r => r.GetByPublicationIdAsync(pubId, default))
-                .ReturnsAsync(conf);
-
-            var result = await _sut.GetInternationalConferenceByPublicationIdAsync(pubId);
-
-            Assert.NotNull(result);
-            Assert.Equal("NeurIPS", result.ConferenceName);
-            Assert.Equal(CoreRanking.A, result.Ranking);
-        }
-
-        [Fact]
-        public async Task GetInternationalConferenceByPublicationIdAsync_NonExistentId_ReturnsNull()
-        {
-            _intlRepo
-                .Setup(r => r.GetByPublicationIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((InternationalConferenceEntity?)null);
-
-            var result = await _sut.GetInternationalConferenceByPublicationIdAsync(Guid.NewGuid());
-
-            Assert.Null(result);
-        }
-
-        #endregion
-
-        #region CreateAsync
-
-        [Fact]
-        public async Task CreateAsync_AlwaysSetsDraftStatus_RegardlessOfInput()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Published);
-            _pubRepo.Setup(r => r.AddAsync(It.IsAny<PublicationEntity>(), default)).Returns(Task.CompletedTask);
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            var result = await _sut.CreateAsync(publication);
-
-            Assert.Equal(PublicationStatus.Draft, result.Status);
-        }
-
-        [Fact]
-        public async Task CreateAsync_CallsAddAndSaveChanges()
-        {
             var publication = BuildPublication();
-            _pubRepo.Setup(r => r.AddAsync(publication, default)).Returns(Task.CompletedTask);
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
+            var command = new CreatePublicationCommand { Publication = publication.ToDto() };
 
-            await _sut.CreateAsync(publication);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.RollbackTransactionAsync()).Returns(Task.CompletedTask);
 
-            _pubRepo.Verify(r => r.AddAsync(publication, default), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
-        }
+            var result = await _sut.CreatePublicationAsync(command);
 
-        #endregion
-
-        #region UpdateAsync
-
-        [Fact]
-        public async Task UpdateAsync_DraftPublication_CallsUpdateAndSave()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Draft, title: "Original");
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(publication));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            publication.Title = "Updated";
-
-            var result = await _sut.UpdateAsync(publication);
-
-            Assert.Equal("Updated", result.Title);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.AddAsync(It.IsAny<PublicationEntity>()), Times.Never);
         }
 
         [Fact]
-        public async Task UpdateAsync_RejectedPublication_IsAllowedToBeEdited()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Rejected);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            await _sut.UpdateAsync(publication);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_SubmittedPublication_ThrowsInvalidOperationException()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Submitted);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.UpdateAsync(publication));
-
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_PublishedPublication_ThrowsInvalidOperationException()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Published);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.UpdateAsync(publication));
-
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
-        public async Task UpdateAsync_NonExistentPublication_ThrowsKeyNotFoundException()
-        {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
-
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.UpdateAsync(BuildPublication()));
-        }
-
-        #endregion
-
-        #region Delete
-
-        [Fact]
-        public async Task DeleteAsync_ExistingPublication_CallsRemoveAndSave()
+        public async Task CreatePublicationAsync_SaveChangesReturnsUnexpectedCount_RollsBackAndReturnsFailure()
         {
             var publication = BuildPublication(type: PublicationType.ArticleJournal);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+
+            _pubRepo.Setup(r => r.AddAsync(It.IsAny<PublicationEntity>())).Returns(Task.CompletedTask);
+            _journalRepo.Setup(r => r.AddAsync(It.IsAny<JournalArticleEntity>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync()).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(0); // unexpected
+            _unitOfWork.Setup(u => u.RollbackTransactionAsync()).Returns(Task.CompletedTask);
+
+            var result = await _sut.CreatePublicationAsync(new CreatePublicationCommand { Publication = publication.ToDto() });
+
+            Assert.False(result.Success);
+            _unitOfWork.Verify(u => u.RollbackTransactionAsync(), Times.Once);
+            _unitOfWork.Verify(u => u.CommitTransactionAsync(), Times.Never);
+        }
+
+        #endregion
+
+        #region UpdatePublicationAsync
+
+        [Fact]
+        public async Task UpdatePublicationAsync_DraftPublicationByOwner_CallsUpdateAndSave()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Draft, userId: ownerId, title: "Original");
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            publication.Title = "Updated";
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.True(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Once);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdatePublicationAsync_RejectedPublicationByOwner_IsAllowedToBeEdited()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Rejected, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.True(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdatePublicationAsync_SubmittedPublicationByNonAdmin_ReturnsFailure()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
+
+            var publication = BuildPublication(status: PublicationStatus.Submitted, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdatePublicationAsync_PublishedPublicationByNonAdmin_ReturnsFailure()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
+
+            var publication = BuildPublication(status: PublicationStatus.Published, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdatePublicationAsync_NonExistentPublication_ReturnsFailure()
+        {
+            _pubRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((PublicationEntity?)null);
+
+            var publication = BuildPublication();
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task UpdatePublicationAsync_NonOwnerNonAdmin_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.NewGuid()); // different from publication's owner
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
+
+            var publication = BuildPublication(status: PublicationStatus.Draft, userId: Guid.NewGuid());
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var command = new UpdatePublicationCommand { Publication = publication.ToDto() };
+            var result = await _sut.UpdatePublicationAsync(command);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        #endregion
+
+        #region DeletePublicationAsync
+
+        [Fact]
+        public async Task DeletePublicationAsync_DraftByOwner_CallsRemoveAndSave()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Draft, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
             _pubRepo.Setup(r => r.Remove(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            await _sut.DeleteAsync(publication.Id);
+            var result = await _sut.DeletePublicationAsync(publication.Id);
 
-            _pubRepo.Verify(r => r.Remove(publication), Times.Once());
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once());
+            Assert.True(result.Success);
+            _pubRepo.Verify(r => r.Remove(publication), Times.Once);
+            _unitOfWork.Verify(u => u.SaveChangesAsync(), Times.Once);
         }
 
         [Fact]
-        public async Task DeleteAsync_NonExistentId_ThrowsKeyNotFoundException()
+        public async Task DeletePublicationAsync_NonExistentId_ReturnsFailure()
         {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
+            _pubRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((PublicationEntity?)null);
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.DeleteAsync(Guid.NewGuid()));
+            var result = await _sut.DeletePublicationAsync(Guid.NewGuid());
 
-            _pubRepo.Verify(r => r.Remove(It.IsAny<PublicationEntity>()), Times.Never());
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never());
-        }
-
-        #endregion
-
-        #region UpdateVisibilityAsync
-
-        [Fact]
-        public async Task UpdateVisibilityAsync_ExistingPublication_ChangesVisibilityAndSaves()
-        {
-            var publication = BuildPublication(visibility: PublicationVisibility.Public);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            var result = await _sut.UpdateVisibilityAsync(publication.Id, PublicationVisibility.Private);
-
-            Assert.Equal(PublicationVisibility.Private, result.Visibility);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Remove(It.IsAny<PublicationEntity>()), Times.Never);
         }
 
         [Fact]
-        public async Task UpdateVisibilityAsync_NonExistentPublication_ThrowsKeyNotFoundException()
+        public async Task DeletePublicationAsync_NonDraftByNonAdmin_ReturnsFailure()
         {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.UpdateVisibilityAsync(Guid.NewGuid(), PublicationVisibility.Private));
+            var publication = BuildPublication(status: PublicationStatus.Published, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
 
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
+            var result = await _sut.DeletePublicationAsync(publication.Id);
 
-        #endregion
-
-        #region SubmitAsync
-
-        [Fact]
-        public async Task SubmitAsync_DraftPublication_TransitionsToSubmitted()
-        {
-            var publication = BuildPublication(status: PublicationStatus.Draft);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            var result = await _sut.SubmitAsync(publication.Id);
-
-            Assert.Equal(PublicationStatus.Submitted, result.Status);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Remove(It.IsAny<PublicationEntity>()), Times.Never);
         }
 
         [Fact]
-        public async Task SubmitAsync_NonDraftPublication_ThrowsInvalidOperationException()
+        public async Task DeletePublicationAsync_AdminCanDeletePublishedPublication()
         {
-            var publication = BuildPublication(status: PublicationStatus.Submitted);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.SubmitAsync(publication.Id));
-
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
-        public async Task SubmitAsync_PublishedPublication_ThrowsInvalidOperationException()
-        {
             var publication = BuildPublication(status: PublicationStatus.Published);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.Remove(It.IsAny<PublicationEntity>()));
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.SubmitAsync(publication.Id));
+            var result = await _sut.DeletePublicationAsync(publication.Id);
 
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
-        public async Task SubmitAsync_NonExistentPublication_ThrowsKeyNotFoundException()
-        {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
-
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.SubmitAsync(Guid.NewGuid()));
+            Assert.True(result.Success);
+            _pubRepo.Verify(r => r.Remove(publication), Times.Once);
         }
 
         #endregion
 
-        #region ApproveAsync
+        #region SubmitPublicationAsync
 
         [Fact]
-        public async Task ApproveAsync_SubmittedPublication_TransitionsToPublished()
+        public async Task SubmitPublicationAsync_DraftByOwner_TransitionsToSubmitted()
         {
-            var publication = BuildPublication(status: PublicationStatus.Submitted);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Draft, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
             _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            var result = await _sut.ApproveAsync(publication.Id);
+            var result = await _sut.SubmitPublicationAsync(publication.Id);
 
-            Assert.Equal(PublicationStatus.Published, result.Status);
+            Assert.True(result.Success);
+            Assert.Equal(PublicationStatus.Submitted, publication.Status);
             _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
         }
 
         [Fact]
-        public async Task ApproveAsync_DraftPublication_ThrowsInvalidOperationException()
+        public async Task SubmitPublicationAsync_RejectedByOwner_TransitionsToSubmitted()
         {
-            var publication = BuildPublication(status: PublicationStatus.Draft);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.ApproveAsync(publication.Id));
+            var publication = BuildPublication(status: PublicationStatus.Rejected, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
+            var result = await _sut.SubmitPublicationAsync(publication.Id);
+
+            Assert.True(result.Success);
+            Assert.Equal(PublicationStatus.Submitted, publication.Status);
+        }
+
+        [Fact]
+        public async Task SubmitPublicationAsync_AlreadySubmittedPublication_ReturnsFailure()
+        {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Submitted, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var result = await _sut.SubmitPublicationAsync(publication.Id);
+
+            Assert.False(result.Success);
             _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task ApproveAsync_AlreadyPublishedPublication_ThrowsInvalidOperationException()
+        public async Task SubmitPublicationAsync_PublishedPublication_ReturnsFailure()
         {
+            var ownerId = Guid.NewGuid();
+            _currentUserService.SetupGet(x => x.UserId).Returns(ownerId);
+
+            var publication = BuildPublication(status: PublicationStatus.Published, userId: ownerId);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var result = await _sut.SubmitPublicationAsync(publication.Id);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SubmitPublicationAsync_NonExistentPublication_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.NewGuid());
+            _pubRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((PublicationEntity?)null);
+
+            var result = await _sut.SubmitPublicationAsync(Guid.NewGuid());
+
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task SubmitPublicationAsync_NonOwner_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.UserId).Returns(Guid.NewGuid()); // not the owner
+
+            var publication = BuildPublication(status: PublicationStatus.Draft, userId: Guid.NewGuid());
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var result = await _sut.SubmitPublicationAsync(publication.Id);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        #endregion
+
+        #region ValidatePublicationAsync (Approve)
+
+        [Fact]
+        public async Task ValidatePublicationAsync_SubmittedByAdmin_TransitionsToPublished()
+        {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
+            var publication = BuildPublication(status: PublicationStatus.Submitted);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
+
+            var result = await _sut.ValidatePublicationAsync(publication.Id);
+
+            Assert.True(result.Success);
+            Assert.Equal(PublicationStatus.Published, publication.Status);
+            _pubRepo.Verify(r => r.Update(publication), Times.Once);
+        }
+
+        [Fact]
+        public async Task ValidatePublicationAsync_DraftPublication_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
+            var publication = BuildPublication(status: PublicationStatus.Draft);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var result = await _sut.ValidatePublicationAsync(publication.Id);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidatePublicationAsync_AlreadyPublished_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
             var publication = BuildPublication(status: PublicationStatus.Published);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.ApproveAsync(publication.Id));
+            var result = await _sut.ValidatePublicationAsync(publication.Id);
 
+            Assert.False(result.Success);
             _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task ApproveAsync_NonExistentPublication_ThrowsKeyNotFoundException()
+        public async Task ValidatePublicationAsync_NonAdminUser_ReturnsFailure()
         {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.ApproveAsync(Guid.NewGuid()));
+            var publication = BuildPublication(status: PublicationStatus.Submitted);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
+
+            var result = await _sut.ValidatePublicationAsync(publication.Id);
+
+            Assert.False(result.Success);
+            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ValidatePublicationAsync_NonExistentPublication_ReturnsFailure()
+        {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+            _pubRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((PublicationEntity?)null);
+
+            var result = await _sut.ValidatePublicationAsync(Guid.NewGuid());
+
+            Assert.False(result.Success);
         }
 
         #endregion
 
-        #region RejectAsync
+        #region RejectPublicationAsync
 
         [Fact]
-        public async Task RejectAsync_SubmittedPublication_TransitionsToRejected()
+        public async Task RejectPublicationAsync_SubmittedByAdmin_TransitionsToRejected()
         {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
             var publication = BuildPublication(status: PublicationStatus.Submitted);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
             _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
+            _unitOfWork.Setup(u => u.SaveChangesAsync()).ReturnsAsync(1);
 
-            var result = await _sut.RejectAsync(publication.Id, reason: "Insufficient references.");
+            var result = await _sut.RejectPublicationAsync(publication.Id);
 
-            Assert.Equal(PublicationStatus.Rejected, result.Status);
+            Assert.True(result.Success);
+            Assert.Equal(PublicationStatus.Rejected, publication.Status);
             _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
         }
 
         [Fact]
-        public async Task RejectAsync_DraftPublication_ThrowsInvalidOperationException()
+        public async Task RejectPublicationAsync_DraftPublication_ReturnsFailure()
         {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
             var publication = BuildPublication(status: PublicationStatus.Draft);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.RejectAsync(publication.Id));
+            var result = await _sut.RejectPublicationAsync(publication.Id);
 
+            Assert.False(result.Success);
             _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task RejectAsync_AlreadyRejectedPublication_ThrowsInvalidOperationException()
+        public async Task RejectPublicationAsync_AlreadyRejected_ReturnsFailure()
         {
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+
             var publication = BuildPublication(status: PublicationStatus.Rejected);
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                _sut.RejectAsync(publication.Id));
+            var result = await _sut.RejectPublicationAsync(publication.Id);
 
+            Assert.False(result.Success);
             _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task RejectAsync_NonExistentPublication_ThrowsKeyNotFoundException()
+        public async Task RejectPublicationAsync_NonAdminUser_ReturnsFailure()
         {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
+            _currentUserService.SetupGet(x => x.Role).Returns("User");
 
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.RejectAsync(Guid.NewGuid()));
-        }
+            var publication = BuildPublication(status: PublicationStatus.Submitted);
+            _pubRepo.Setup(r => r.GetByIdAsync(publication.Id)).ReturnsAsync(publication);
 
-        #endregion
+            var result = await _sut.RejectPublicationAsync(publication.Id);
 
-        #region PDF Management
-
-        [Fact]
-        public async Task AddPdfAsync_ExistingPublication_AppendsPdfUrlAndSaves()
-        {
-            const string newPdf = "https://storage/paper.pdf";
-            var publication = BuildPublication();
-            publication.AttachedPdfs = ["https://storage/existing.pdf"];
-
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            var result = await _sut.AddPdfAsync(publication.Id, newPdf);
-
-            Assert.Contains(newPdf, result.AttachedPdfs);
-            Assert.Contains("https://storage/existing.pdf", result.AttachedPdfs);
-            Assert.Equal(2, result.AttachedPdfs.Length);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
-        }
-
-        [Fact]
-        public async Task AddPdfAsync_NonExistentPublication_ThrowsKeyNotFoundException()
-        {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
-
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.AddPdfAsync(Guid.NewGuid(), "https://storage/paper.pdf"));
-
+            Assert.False(result.Success);
             _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
         }
 
         [Fact]
-        public async Task RemovePdfAsync_ExistingPublication_RemovesMatchingUrlAndSaves()
+        public async Task RejectPublicationAsync_NonExistentPublication_ReturnsFailure()
         {
-            const string target = "https://storage/remove-me.pdf";
-            const string keep = "https://storage/keep-me.pdf";
-            var publication = BuildPublication();
-            publication.AttachedPdfs = [target, keep];
+            _currentUserService.SetupGet(x => x.Role).Returns("Admin");
+            _pubRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>())).ReturnsAsync((PublicationEntity?)null);
 
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
+            var result = await _sut.RejectPublicationAsync(Guid.NewGuid());
 
-            var result = await _sut.RemovePdfAsync(publication.Id, target);
-
-            Assert.DoesNotContain(target, result.AttachedPdfs);
-            Assert.Contains(keep, result.AttachedPdfs);
-            Assert.Single(result.AttachedPdfs);
-            _pubRepo.Verify(r => r.Update(publication), Times.Once);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Once);
-        }
-
-        [Fact]
-        public async Task RemovePdfAsync_NonExistentPublication_ThrowsKeyNotFoundException()
-        {
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), default))
-                .ReturnsAsync((PublicationEntity?)null);
-
-            await Assert.ThrowsAsync<KeyNotFoundException>(() =>
-                _sut.RemovePdfAsync(Guid.NewGuid(), "https://storage/paper.pdf"));
-
-            _pubRepo.Verify(r => r.Update(It.IsAny<PublicationEntity>()), Times.Never);
-            _pubRepo.Verify(r => r.SaveChangesAsync(default), Times.Never);
-        }
-
-        [Fact]
-        public async Task RemovePdfAsync_UrlNotInList_LeavesArrayUnchangedAndStillSaves()
-        {
-            const string keep = "https://storage/keep-me.pdf";
-            var publication = BuildPublication();
-            publication.AttachedPdfs = [keep];
-
-            _pubRepo
-                .Setup(r => r.GetByIdAsync(publication.Id, default))
-                .ReturnsAsync(publication);
-            _pubRepo.Setup(r => r.Update(It.IsAny<PublicationEntity>()));
-            _pubRepo.Setup(r => r.SaveChangesAsync(default)).Returns(Task.CompletedTask);
-            SetupGetByIdWithDetails(publication);
-
-            var result = await _sut.RemovePdfAsync(publication.Id, "https://storage/ghost.pdf");
-
-            Assert.Single(result.AttachedPdfs);
-            Assert.Contains(keep, result.AttachedPdfs);
-        }
-
-        #endregion
-
-        #region Statistics
-
-        [Fact]
-        public async Task CountPublicPublicationsAsync_DelegatesToRepoWithCorrectArguments()
-        {
-            _pubRepo
-                .Setup(r => r.CountByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync(17);
-
-            var count = await _sut.CountPublicPublicationsAsync();
-
-            Assert.Equal(17, count);
-            _pubRepo.Verify(r => r.CountByStatusAndVisibilityAsync(
-                PublicationStatus.Published, PublicationVisibility.Public, default), Times.Once);
-        }
-
-        [Fact]
-        public async Task CountPublicPublicationsAsync_WhenNoneExist_ReturnsZero()
-        {
-            _pubRepo
-                .Setup(r => r.CountByStatusAndVisibilityAsync(
-                    PublicationStatus.Published, PublicationVisibility.Public, default))
-                .ReturnsAsync(0);
-
-            var count = await _sut.CountPublicPublicationsAsync();
-
-            Assert.Equal(0, count);
+            Assert.False(result.Success);
         }
 
         #endregion
     }
-
-    #endregion
-
-    #region PublicationEntityExtensions
-
-    file static class PublicationEntityExtensions
-    {
-        public static PublicationEntity BuildPublication(
-            PublicationType type = PublicationType.ArticleJournal,
-            PublicationStatus status = PublicationStatus.Draft,
-            PublicationVisibility visibility = PublicationVisibility.Public,
-            int year = 2024,
-            Guid? userId = null,
-            Guid? researchAxisId = null,
-            string title = "Test Publication",
-            DateTime? createdAt = null) => new()
-            {
-                Id = Guid.NewGuid(),
-                UserId = userId ?? Guid.NewGuid(),
-                ResearchAxisId = researchAxisId ?? Guid.NewGuid(),
-                Title = title,
-                Abstract = "Test abstract.",
-                Keywords = ["AI", "ML"],
-                Authors = ["Author One", "Author Two"],
-                AttachedPdfs = [],
-                Type = type,
-                Status = status,
-                Visibility = visibility,
-                Year = year,
-                CreatedBy = Guid.NewGuid(),
-                CreatedAtUtc = createdAt ?? DateTime.UtcNow,
-            };
-    }
-
-    #endregion
 }

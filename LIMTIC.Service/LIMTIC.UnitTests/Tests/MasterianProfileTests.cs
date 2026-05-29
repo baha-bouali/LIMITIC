@@ -85,8 +85,8 @@ namespace LIMTIC.UnitTests.Tests
             var result = await MasterianProfileService.UpdateAsync(command);
 
             Assert.True(result.Success);
-            Assert.Equal("2025", result.Data!.Profile.Cohort);
-            Assert.Equal("Edge Computing Security", result.Data.Profile.DissertationSubject);
+            Assert.Equal("2025", result.Data!.Cohort);
+            Assert.Equal("Edge Computing Security", result.Data.DissertationSubject);
 
             var persisted = await MasterianRepository.GetByUserIdAsync(user.Id);
             Assert.Equal("2025", persisted!.Cohort);

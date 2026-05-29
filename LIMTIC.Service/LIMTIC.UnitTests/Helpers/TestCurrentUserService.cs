@@ -10,7 +10,7 @@ namespace LIMTIC.UnitTests.Helpers
     /// </summary>
     public class TestCurrentUserService : ICurrentUserService
     {
-        public Guid UserId => Guid.Empty;
+        public Guid? UserId => Guid.Empty;
         public string? Role => UserRole.SuperAdmin.ToString();
     }
 }

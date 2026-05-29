@@ -1,9 +1,8 @@
 ﻿using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -27,7 +26,7 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            var createUserRequest = new CreateUserRequest
+            var createUserCommand = new CreateUserCommand
             {
                 FirstName = "John",
                 LastName = "Doe",
@@ -36,7 +35,7 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             };
 
-            var addResponse = await Client.AddUser(createUserRequest, superAdminAccessToken);
+            var addResponse = await Client.AddUser(createUserCommand, superAdminAccessToken);
             Assert.NotNull(addResponse);
 
             var loginRequest = new LoginRequest(createUserRequest.Email, createUserRequest.Password);

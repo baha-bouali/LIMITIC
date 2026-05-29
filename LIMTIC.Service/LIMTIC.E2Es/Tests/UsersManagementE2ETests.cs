@@ -25,7 +25,7 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            var createUserRequest = new CreateUserRequest
+            var createUserRequest = new CreateUserCommand
             {
                 FirstName = "John",
                 LastName = "Doe",
@@ -64,7 +64,7 @@ namespace LIMTIC.E2Es.Tests
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
             // 2. Create a new user
-            var createUserRequest = new CreateUserRequest
+            var createUserRequest = new CreateUserCommand
             {
                 FirstName = "John",
                 LastName = "Doe",
@@ -108,7 +108,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "List", LastName = "UserA",
                 Email = "e2e.list.a@example.com",
@@ -141,7 +141,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Active", LastName = "StatusTest",
                 Email = "e2e.status.active@example.com",
@@ -160,7 +160,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Inactive", LastName = "StatusTest",
                 Email = "e2e.status.inactive@example.com",
@@ -180,7 +180,7 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var unique = "Zxuniqqe2e";
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = unique, LastName = "SearchTest",
                 Email = "e2e.search.name@example.com",

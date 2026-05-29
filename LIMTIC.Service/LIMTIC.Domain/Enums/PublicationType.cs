@@ -2,7 +2,7 @@ namespace LIMTIC.Domain.Enums
 {
     public enum PublicationType
     {
-        Journal = 1,
+        ArticleJournal = 1,
         InternationalConference = 2,
         NationalConference = 3,
         BookChapter = 4,

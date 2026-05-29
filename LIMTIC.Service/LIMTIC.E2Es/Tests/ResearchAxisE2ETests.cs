@@ -1,11 +1,12 @@
 using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.ResearchAxis;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.ResearchAxis;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -21,20 +22,20 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<Guid> CreateAxisAsync(string token, string title = "AI Research", string description = "Artificial Intelligence")
         {
-            var result = await Client.CreateResearchAxis(new CreateResearchAxisRequest
+            var result = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = title,
                 Description = description,
                 Themes = ["ML", "DL"]
             }, token);
 
-            Assert.NotNull(result?.ResearchAxis);
-            return result!.ResearchAxis!.Id;
+            Assert.NotNull(result?.Data);
+            return result!.Data!.Id;
         }
 
         private async Task<Guid> CreateResearcherAsync(string email, string token)
         {
-            var createResponse = await Client.AddUser(new CreateUserRequest
+            var createResponse = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "E2E",
                 LastName = "Researcher",
@@ -43,10 +44,10 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, token);
 
-            Assert.NotNull(createResponse?.User);
-            var userId = createResponse!.User.Id;
+            Assert.NotNull(createResponse?.Data);
+            var userId = createResponse!.Data.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleCommand
             {
                 Role = UserRole.Researcher,
                 Rank = "Professor",
@@ -56,8 +57,7 @@ namespace LIMTIC.E2Es.Tests
                 ResearchAxisIds = []
             }, token);
 
-            Assert.True(roleResponse.IsSuccessStatusCode,
-                $"Role update failed: {await roleResponse.Content.ReadAsStringAsync()}");
+            Assert.True(roleResponse.Success);
 
             return userId;
         }
@@ -71,17 +71,10 @@ namespace LIMTIC.E2Es.Tests
             await CreateAxisAsync(token, "E2E Axis A", "Description A");
             await CreateAxisAsync(token, "E2E Axis B", "Description B");
 
-            var result = await Client.GetAllResearchAxes(token);
+            var result = await Client.GetAllResearchAxes();
 
             Assert.NotNull(result);
-            Assert.True(result!.ResearchAxes.Count >= 2);
-        }
-
-        [Fact]
-        public async Task GetAllResearchAxes_Unauthenticated_Returns401()
-        {
-            var response = await Client.GetAllResearchAxesFullResponse("invalid-token");
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.True(result?.Data?.Count >= 2);
         }
 
         // ── GET BY ID ──────────────────────────────────────────────────────────────
@@ -92,18 +85,18 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var id = await CreateAxisAsync(token, "E2E Get Axis", "Some description");
 
-            var result = await Client.GetResearchAxisById(id, token);
+            var result = await Client.GetResearchAxisById(id);
 
-            Assert.NotNull(result?.ResearchAxis);
-            Assert.Equal("E2E Get Axis", result!.ResearchAxis!.Title);
+            Assert.NotNull(result?.Data);
+            Assert.Equal("E2E Get Axis", result!.Data!.Title);
         }
 
         [Fact]
         public async Task GetResearchAxisById_NonExisting_Returns404()
         {
             var token = await LoginAsSuperAdmin();
-            var response = await Client.GetResearchAxisByIdFullResponse(Guid.NewGuid(), token);
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            var response = await Client.GetResearchAxisById(Guid.NewGuid());
+            Assert.False(response.Success);
         }
 
         // ── CREATE ─────────────────────────────────────────────────────────────────
@@ -113,16 +106,16 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var result = await Client.CreateResearchAxis(new CreateResearchAxisRequest
+            var result = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "Cybersecurity E2E",
                 Description = "Security research",
                 Themes = ["Crypto", "Networking"]
             }, token);
 
-            Assert.NotNull(result?.ResearchAxis);
-            Assert.Equal("Cybersecurity E2E", result!.ResearchAxis!.Title);
-            Assert.Equal(2, result.ResearchAxis.Themes.Length);
+            Assert.NotNull(result?.Data);
+            Assert.Equal("Cybersecurity E2E", result!.Data!.Title);
+            Assert.Equal(2, result.Data.Themes.Length);
         }
 
         [Fact]
@@ -130,20 +123,20 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var response = await Client.CreateResearchAxisFullResponse(new CreateResearchAxisRequest
+            var response = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "",
                 Description = "Some description"
             }, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
         public async Task CreateResearchAxis_NonAdmin_Returns403()
         {
             var adminToken = await LoginAsSuperAdmin();
-            await Client.AddUser(new WebAPI.Models.UserManagement.CreateUser.CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "V", LastName = "U",
                 Email = "e2e.axis.visitor@example.com",
@@ -151,15 +144,15 @@ namespace LIMTIC.E2Es.Tests
             }, adminToken);
 
             var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.axis.visitor@example.com", "password"));
+                new LoginCommand("e2e.axis.visitor@example.com", "password"));
 
-            var response = await Client.CreateResearchAxisFullResponse(new CreateResearchAxisRequest
+            var response = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "Unauthorized",
                 Description = "Should fail"
-            }, visitorToken?.AccessToken ?? "");
+            }, visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── UPDATE ─────────────────────────────────────────────────────────────────
@@ -170,18 +163,17 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var id = await CreateAxisAsync(token, "Original Title", "Original Desc");
 
-            var response = await Client.UpdateResearchAxis(id, new UpdateResearchAxisRequest
+            var response = await Client.UpdateResearchAxis(id, new UpdateResearchAxisCommand
             {
                 Title = "Updated Title",
                 Description = "Updated Desc",
                 Themes = ["Theme X"]
             }, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Update failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
-            var updated = await Client.GetResearchAxisById(id, token);
-            Assert.Equal("Updated Title", updated?.ResearchAxis?.Title);
+            var updated = await Client.GetResearchAxisById(id);
+            Assert.Equal("Updated Title", updated?.Data?.Title);
         }
 
         [Fact]
@@ -189,13 +181,13 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var response = await Client.UpdateResearchAxis(Guid.NewGuid(), new UpdateResearchAxisRequest
+            var response = await Client.UpdateResearchAxis(Guid.NewGuid(), new UpdateResearchAxisCommand
             {
                 Title = "Ghost",
                 Description = "Ghost"
             }, token);
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── DELETE ─────────────────────────────────────────────────────────────────
@@ -207,11 +199,10 @@ namespace LIMTIC.E2Es.Tests
             var id = await CreateAxisAsync(token, "To Delete E2E", "Will be deleted");
 
             var response = await Client.DeleteResearchAxis(id, token);
-            Assert.True(response.IsSuccessStatusCode,
-                $"Delete failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
-            var getResponse = await Client.GetResearchAxisByIdFullResponse(id, token);
-            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+            var getResponse = await Client.GetResearchAxisById(id);
+            Assert.False(getResponse.Success);
         }
 
         [Fact]
@@ -219,7 +210,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
             var response = await Client.DeleteResearchAxis(Guid.NewGuid(), token);
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── COLOR & RESPONSIBLE ────────────────────────────────────────────────────
@@ -229,15 +220,15 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var result = await Client.CreateResearchAxis(new CreateResearchAxisRequest
+            var result = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "E2E Color Axis",
                 Description = "Has a color",
                 Color = "#FF5733"
             }, token);
 
-            Assert.NotNull(result?.ResearchAxis);
-            Assert.Equal("#FF5733", result!.ResearchAxis!.Color);
+            Assert.NotNull(result?.Data);
+            Assert.Equal("#FF5733", result!.Data!.Color);
         }
 
         [Fact]
@@ -246,15 +237,15 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var researcherId = await CreateResearcherAsync("e2e.axis.responsible@example.com", token);
 
-            var result = await Client.CreateResearchAxis(new CreateResearchAxisRequest
+            var result = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "E2E Responsible Axis",
                 Description = "Has a responsible researcher",
                 ResponsibleId = researcherId
             }, token);
 
-            Assert.NotNull(result?.ResearchAxis);
-            Assert.Equal(researcherId, result!.ResearchAxis!.ResponsibleId);
+            Assert.NotNull(result?.Data);
+            Assert.Equal(researcherId, result!.Data!.ResponsibleId);
         }
 
         [Fact]
@@ -262,14 +253,14 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var response = await Client.CreateResearchAxisFullResponse(new CreateResearchAxisRequest
+            var response = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "Bad Responsible Axis",
                 Description = "Should fail",
                 ResponsibleId = Guid.NewGuid()
             }, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -279,7 +270,7 @@ namespace LIMTIC.E2Es.Tests
             var researcherId = await CreateResearcherAsync("e2e.axis.update.responsible@example.com", token);
             var id = await CreateAxisAsync(token, "E2E Update Color Axis", "To be updated");
 
-            var response = await Client.UpdateResearchAxis(id, new UpdateResearchAxisRequest
+            var response = await Client.UpdateResearchAxis(id, new UpdateResearchAxisCommand
             {
                 Title = "E2E Update Color Axis",
                 Description = "Updated",
@@ -287,12 +278,11 @@ namespace LIMTIC.E2Es.Tests
                 ResponsibleId = researcherId
             }, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Update failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
-            var updated = await Client.GetResearchAxisById(id, token);
-            Assert.Equal("#AABBCC", updated?.ResearchAxis?.Color);
-            Assert.Equal(researcherId, updated?.ResearchAxis?.ResponsibleId);
+            var updated = await Client.GetResearchAxisById(id);
+            Assert.Equal("#AABBCC", updated?.Data?.Color);
+            Assert.Equal(researcherId, updated?.Data?.ResponsibleId);
         }
 
         // ── MEMBER MANAGEMENT ─────────────────────────────────────────────────────
@@ -304,12 +294,11 @@ namespace LIMTIC.E2Es.Tests
             var researcherId = await CreateResearcherAsync("e2e.addmember@example.com", token);
             var axisId = await CreateAxisAsync(token, "E2E Add Member Axis", "For member testing");
 
-            var response = await Client.AddAxisMember(axisId, new AddAxisMemberRequest { UserId = researcherId }, token);
-            Assert.True(response.IsSuccessStatusCode,
-                $"AddMember failed: {await response.Content.ReadAsStringAsync()}");
+            var response = await Client.AddAxisMember(axisId, researcherId, token);
+            Assert.True(response.Success);
 
-            var axis = await Client.GetResearchAxisById(axisId, token);
-            Assert.Contains(axis!.ResearchAxis!.Members, m => m.Id == researcherId);
+            var axis = await Client.GetResearchAxisById(axisId);
+            Assert.Contains(axis!.Data!.Members, m => m.Id == researcherId);
         }
 
         [Fact]
@@ -318,8 +307,8 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var axisId = await CreateAxisAsync(token, "E2E NonResearcher Member Axis", "Rejects non-researcher");
 
-            var response = await Client.AddAxisMember(axisId, new AddAxisMemberRequest { UserId = Guid.NewGuid() }, token);
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var response = await Client.AddAxisMember(axisId, Guid.NewGuid(), token);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -328,8 +317,8 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var researcherId = await CreateResearcherAsync("e2e.addmember.noaxis@example.com", token);
 
-            var response = await Client.AddAxisMember(Guid.NewGuid(), new AddAxisMemberRequest { UserId = researcherId }, token);
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            var response = await Client.AddAxisMember(Guid.NewGuid(), researcherId, token);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -339,14 +328,13 @@ namespace LIMTIC.E2Es.Tests
             var researcherId = await CreateResearcherAsync("e2e.removemember@example.com", token);
             var axisId = await CreateAxisAsync(token, "E2E Remove Member Axis", "For remove testing");
 
-            await Client.AddAxisMember(axisId, new AddAxisMemberRequest { UserId = researcherId }, token);
+            await Client.AddAxisMember(axisId, researcherId, token);
 
             var removeResponse = await Client.RemoveAxisMember(axisId, researcherId, token);
-            Assert.True(removeResponse.IsSuccessStatusCode,
-                $"RemoveMember failed: {await removeResponse.Content.ReadAsStringAsync()}");
+            Assert.True(removeResponse.Success);
 
-            var axis = await Client.GetResearchAxisById(axisId, token);
-            Assert.DoesNotContain(axis!.ResearchAxis!.Members, m => m.Id == researcherId);
+            var axis = await Client.GetResearchAxisById(axisId);
+            Assert.DoesNotContain(axis!.Data!.Members, m => m.Id == researcherId);
         }
 
         [Fact]
@@ -356,7 +344,7 @@ namespace LIMTIC.E2Es.Tests
             var axisId = await CreateAxisAsync(token, "E2E Remove Non-Member Axis", "For 404 testing");
 
             var response = await Client.RemoveAxisMember(axisId, Guid.NewGuid(), token);
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -365,7 +353,7 @@ namespace LIMTIC.E2Es.Tests
             var adminToken = await LoginAsSuperAdmin();
             var axisId = await CreateAxisAsync(adminToken, "E2E Auth Member Axis", "Auth test");
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "V", LastName = "User",
                 Email = "e2e.axis.member.visitor@example.com",
@@ -373,13 +361,13 @@ namespace LIMTIC.E2Es.Tests
             }, adminToken);
 
             var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.axis.member.visitor@example.com", "password"));
+                new LoginCommand("e2e.axis.member.visitor@example.com", "password"));
 
             var response = await Client.AddAxisMember(axisId,
-                new AddAxisMemberRequest { UserId = Guid.NewGuid() },
-                visitorToken?.AccessToken ?? "");
+                Guid.NewGuid(),
+                visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
     }
 }

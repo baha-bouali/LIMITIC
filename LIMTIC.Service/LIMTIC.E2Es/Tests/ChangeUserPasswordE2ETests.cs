@@ -1,9 +1,8 @@
-﻿using LIMTIC.E2Es.Base;
+﻿using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -25,7 +24,7 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            var createUserRequest = new CreateUserRequest
+            var createUserRequest = new CreateUserCommand
             {
                 FirstName = "Alice",
                 LastName = "Smith",
@@ -35,10 +34,10 @@ namespace LIMTIC.E2Es.Tests
             };
 
             var createResponse = await Client.AddUser(createUserRequest, superAdminAccessToken);
-            Assert.NotNull(createResponse.User);
+            Assert.NotNull(createResponse.Data);
             Assert.Null(createResponse.Message);
 
-            var changePasswordRequest = new ChangeUserPasswordRequest
+            var changePasswordRequest = new ChangeUserPasswordCommand
             {
                 Email = createUserRequest.Email,
                 OldPassword = "OldPassword1!",
@@ -47,14 +46,14 @@ namespace LIMTIC.E2Es.Tests
 
             var changePasswordResponse = await Client.ChangePassword(changePasswordRequest, superAdminAccessToken);
 
-            Assert.True(changePasswordResponse.IsSuccessStatusCode);
+            Assert.True(changePasswordResponse.Success);
 
-            var retrievedUser = await Client.GetUserById(createResponse.User.Id, superAdminAccessToken);
+            var retrievedUser = await Client.GetUserById(createResponse.Data.Id, superAdminAccessToken);
             Assert.NotNull(retrievedUser);
-            Assert.Equal(createResponse.User.Id, retrievedUser.User.Id);
-            Assert.Equal(createResponse.User.FirstName, retrievedUser.User.FirstName);
-            Assert.Equal(createResponse.User.LastName, retrievedUser.User.LastName);
-            Assert.Equal(createResponse.User.Email, retrievedUser.User.Email);
+            Assert.Equal(createResponse.Data?.Id, retrievedUser.Data?.Id);
+            Assert.Equal(createResponse.Data?.FirstName, retrievedUser.Data?.FirstName);
+            Assert.Equal(createResponse.Data?.LastName, retrievedUser.Data?.LastName);
+            Assert.Equal(createResponse.Data?.Email, retrievedUser.Data?.Email);
         }
     }
 }

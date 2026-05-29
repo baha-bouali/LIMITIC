@@ -83,8 +83,8 @@ namespace LIMTIC.UnitTests.Tests
             var result = await PhDStudentProfileService.UpdateAsync(command);
 
             Assert.True(result.Success);
-            Assert.Equal(2023, result.Data!.Profile.EnrollmentYear);
-            Assert.Equal("Federated Learning", result.Data.Profile.ThesisSubject);
+            Assert.Equal(2023, result.Data!.EnrollmentYear);
+            Assert.Equal("Federated Learning", result.Data.ThesisSubject);
 
             var persisted = await PhDStudentRepository.GetByUserIdAsync(user.Id);
             Assert.Equal(2023, persisted!.EnrollmentYear);

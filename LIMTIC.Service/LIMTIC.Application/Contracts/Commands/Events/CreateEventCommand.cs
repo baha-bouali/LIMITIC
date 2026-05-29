@@ -4,7 +4,7 @@ namespace LIMTIC.Application.Contracts.Commands.Events
 {
     public class CreateEventCommand
     {
-        public EventType Type { get; set; }
+        public string Type { get; set; }
         public string Title { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

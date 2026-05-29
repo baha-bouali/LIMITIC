@@ -1,6 +1,7 @@
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Contracts.Commands.Profiles;
+using LIMTIC.Application.DTOs.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +27,15 @@ namespace LIMTIC.WebAPI.Controllers.Users
         public async Task<IActionResult> GetAllProfiles()
         {
             var result = await _researcherProfileService.GetAllAsync();
-            return Ok(new ResearchersListResponse { Success = true, Profiles = result.Data });
+
+            if (!result.Success)
+                return NotFound(new BaseResponse<List<ResearcherProfileDto>>
+                {
+                    Success = false,
+                    Message = result.Message
+                });
+
+            return Ok(new BaseResponse<List<ResearcherProfileDto>> { Success = true, Data = result.Data });
         }
 
         [HttpGet("{userId:guid}")]
@@ -35,9 +44,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _researcherProfileService.GetByUserIdAsync(userId);
             if (result.Success)
-                return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data });
+                return Ok(new BaseResponse<ResearcherProfileDto> { Success = true, Data = result.Data });
 
-            return NotFound(new ResearcherProfileResponse
+            return NotFound(new BaseResponse<ResearcherProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -56,17 +65,17 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
             var result = await _researcherProfileService.UpdateAsync(command);
             if (result.Success)
-                return Ok(new ResearcherProfileResponse { Success = true, Profile = result.Data?.Profile });
+                return Ok(new BaseResponse<ResearcherProfileDto> { Success = true, Data = result.Data });
 
             if (result.ValidationErrors != null)
-                return BadRequest(new ResearcherProfileResponse
+                return BadRequest(new BaseResponse<ResearcherProfileDto>
                 {
                     Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
 
-            return NotFound(new ResearcherProfileResponse
+            return NotFound(new BaseResponse<ResearcherProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -79,9 +88,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _researcherProfileService.DeleteAsync(userId);
             if (result.Success)
-                return Ok(new BaseResponse { Success = true });
+                return Ok(new BaseResponse<bool> { Success = true });
 
-            return NotFound(new BaseResponse
+            return NotFound(new BaseResponse<bool>
             {
                 Success = false,
                 Message = result.Message

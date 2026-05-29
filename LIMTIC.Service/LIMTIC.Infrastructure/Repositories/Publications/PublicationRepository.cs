@@ -56,7 +56,7 @@ namespace LIMTIC.Infrastructure.Repositories.Publications
 
                 switch (type.Value)
                 {
-                    case PublicationType.Journal:
+                    case PublicationType.ArticleJournal:
                         query = query.Include(p => p.JournalArticle);
                         break;
                     case PublicationType.InternationalConference:

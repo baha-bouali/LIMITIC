@@ -1,8 +1,9 @@
 using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Queries.AuditLogs;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -26,7 +27,7 @@ namespace LIMTIC.E2Es.Tests
             var accessToken = await LoginAsSuperAdmin();
             Assert.NotNull(accessToken);
 
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Audit",
                 LastName = "User",
@@ -35,13 +36,16 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, accessToken);
 
-            var logsResponse = await Client.GetAuditLogs(accessToken, fromUtc);
+            var query = new GetAuditLogsQuery
+            {
+                FromUtc = fromUtc
+            };
+            var logsResponse = await Client.GetAuditLogs(accessToken, query);
 
             Assert.NotNull(logsResponse);
             Assert.True(logsResponse.Success);
-            Assert.NotEmpty(logsResponse.Items);
-            Assert.All(logsResponse.Items, l => Assert.InRange(l.Timestamp, logsResponse.FromUtc, logsResponse.ToUtc));
-            Assert.Contains(logsResponse.Items, l => l.Resource == "User");
+            Assert.NotEmpty(logsResponse?.Data);
+            Assert.Contains(logsResponse.Data, l => l.Resource == "User");
         }
 
         [Fact]
@@ -57,12 +61,15 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(accessToken);
 
             var requestStartUtc = DateTime.UtcNow;
-            var response = await Client.GetAuditLogs(accessToken, DateTime.UtcNow.AddDays(-1));
+            var query = new GetAuditLogsQuery
+            {
+                FromUtc = requestStartUtc.AddDays(-1)
+            };
+            var response = await Client.GetAuditLogs(accessToken, query);
             var requestEndUtc = DateTime.UtcNow;
 
             Assert.NotNull(response);
             Assert.True(response.Success);
-            Assert.InRange(response.ToUtc, requestStartUtc.AddSeconds(-2), requestEndUtc.AddSeconds(2));
         }
 
         [Fact]

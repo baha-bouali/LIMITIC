@@ -91,10 +91,10 @@ namespace LIMTIC.UnitTests.Tests
             var result = await ResearcherProfileService.UpdateAsync(command);
 
             Assert.True(result.Success);
-            Assert.Equal("Full Professor", result.Data!.Profile.Rank);
-            Assert.Equal("Deep Learning", result.Data.Profile.Specialty);
-            Assert.Equal("Expert in DL", result.Data.Profile.Biography);
-            Assert.Equal("https://linkedin.com/test", result.Data.Profile.LinkedIn);
+            Assert.Equal("Full Professor", result.Data!.Rank);
+            Assert.Equal("Deep Learning", result.Data.Specialty);
+            Assert.Equal("Expert in DL", result.Data.Biography);
+            Assert.Equal("https://linkedin.com/test", result.Data.LinkedIn);
 
             // Verify persistence
             var persisted = await ResearcherRepository.GetByUserIdAsync(user.Id);

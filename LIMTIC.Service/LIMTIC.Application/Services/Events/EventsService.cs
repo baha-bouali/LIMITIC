@@ -96,11 +96,13 @@ namespace LIMTIC.Application.Services.Events
             if (!validationResult.IsValid)
                 return Result<EventDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
 
+            Enum.TryParse<EventType>(command.Type, out var type);
+
             var eventEntity = new EventEntity
             {
                 Id = Guid.NewGuid(),
                 Title = command.Title,
-                Type = command.Type,
+                Type = type,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
                 Location = command.Location,
@@ -139,8 +141,9 @@ namespace LIMTIC.Application.Services.Events
             if (existingEvent == null)
                 return Result<EventDto>.FailureResult("Event not found");
 
+            Enum.TryParse<EventType>(command.Type, out var type);
             existingEvent.Title = command.Title;
-            existingEvent.Type = command.Type;
+            existingEvent.Type = type;
             existingEvent.StartDate = command.StartDate;
             existingEvent.EndDate = command.EndDate;
             existingEvent.Location = command.Location;

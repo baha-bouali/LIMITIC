@@ -1,22 +1,22 @@
-﻿using LIMTIC.Application.Abstractions.Email;
-using LIMTIC.Application.Abstractions;
+﻿using LIMTIC.Application.Abstractions;
+using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Profiles;
-using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Abstractions.Storage;
+using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.IOC;
+using LIMTIC.Domain.Abstractions.Events;
+using LIMTIC.Domain.Abstractions.ResearchAxis;
+using LIMTIC.Domain.Abstractions.Users;
 using LIMTIC.Infrastructure.Data;
 using LIMTIC.Infrastructure.IOC;
 using LIMTIC.UnitTests.Helpers;
+using LIMTIC.UnitTests.Mocks;
 using LIMTIC.WebAPI.IOC;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO;
-using LIMTIC.Domain.Abstractions.Events;
-using LIMTIC.Domain.Abstractions.Users;
-using LIMTIC.Domain.Abstractions.ResearchAxis;
 
 namespace LIMTIC.UnitTests.Base
 {
@@ -114,38 +114,6 @@ namespace LIMTIC.UnitTests.Base
             public Task SendOTPEmailAsync(OTPEmailModel model) => Task.CompletedTask;
             public Task SendContactEmailAsync(ContactEmailModel model) => Task.CompletedTask;
             public Task<bool> TestSmtpAsync(string testEmail) => Task.FromResult(true);
-        }
-
-        private sealed class MockBlobStorageService : IBlobStorageService
-        {
-            private readonly Dictionary<string, byte[]> _storage = new();
-
-            public Task<bool> UploadStreamAsync(Stream stream, string containerName, string destinationPath, bool overwrite)
-            {
-                var key = $"{containerName}/{destinationPath}";
-
-                if (_storage.ContainsKey(key) && !overwrite)
-                    return Task.FromResult(false);
-
-                using (var memoryStream = new MemoryStream())
-                {
-                    stream.CopyTo(memoryStream);
-                    _storage[key] = memoryStream.ToArray();
-                }
-
-                return Task.FromResult(true);
-            }
-
-            public Task<Stream> GetStreamAsync(string containerName, string path)
-            {
-                var key = $"{containerName}/{path}";
-
-                if (!_storage.ContainsKey(key))
-                    throw new FileNotFoundException($"Blob '{key}' not found.");
-
-                var stream = new MemoryStream(_storage[key]);
-                return Task.FromResult<Stream>(stream);
-            }
         }
 
         public void Dispose()

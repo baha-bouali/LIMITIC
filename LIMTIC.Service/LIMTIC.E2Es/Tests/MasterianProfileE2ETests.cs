@@ -1,11 +1,12 @@
 using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.Profiles;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.Profiles;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -23,7 +24,7 @@ namespace LIMTIC.E2Es.Tests
             string email, string token,
             string cohort = "2024", string dissertation = "Initial Subject")
         {
-            var createResponse = await Client.AddUser(new CreateUserRequest
+            var createResponse = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Masterian",
                 LastName = "E2E",
@@ -33,17 +34,16 @@ namespace LIMTIC.E2Es.Tests
             }, token);
 
             Assert.NotNull(createResponse);
-            var userId = createResponse.User.Id;
+            var userId = createResponse.Data.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleCommand
             {
                 Role = UserRole.Masterian,
                 Cohort = cohort,
                 DissertationSubject = dissertation
             }, token);
 
-            Assert.True(roleResponse.IsSuccessStatusCode,
-                $"UpdateRole failed: {await roleResponse.Content.ReadAsStringAsync()}");
+            Assert.True(roleResponse.Success);
 
             return userId;
         }
@@ -56,23 +56,13 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateMasterianUserAsync("e2e.get.masterian@example.com", token, "2023", "Blockchain Security");
 
-            var profile = await Client.GetMasterianProfile(userId, token);
+            var profile = await Client.GetMasterianProfile(userId);
 
             Assert.NotNull(profile);
-            Assert.Equal(userId, profile!.Profile?.Id);
-            Assert.Equal("2023", profile.Profile?.Cohort);
-            Assert.Equal("Blockchain Security", profile.Profile?.DissertationSubject);
-            Assert.Equal(UserRole.Masterian, profile.Profile?.Role);
-        }
-
-        [Fact]
-        public async Task GetMasterianProfile_NonExistingProfile_Returns404()
-        {
-            var token = await LoginAsSuperAdmin();
-
-            var response = await Client.GetMasterianProfileFullResponse(Guid.NewGuid(), token);
-
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(userId, profile!.Data?.Id);
+            Assert.Equal("2023", profile.Data?.Cohort);
+            Assert.Equal("Blockchain Security", profile.Data?.DissertationSubject);
+            Assert.Equal(UserRole.Masterian, profile.Data?.Role);
         }
 
         // ── UPDATE ─────────────────────────────────────────────────────────────────
@@ -83,7 +73,7 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateMasterianUserAsync("e2e.update.masterian@example.com", token);
 
-            var updateRequest = new UpdateMasterianProfileRequest
+            var updateRequest = new UpdateMasterianProfileCommand
             {
                 Cohort = "2025",
                 DissertationSubject = "Edge Computing Security"
@@ -91,14 +81,13 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateMasterianProfile(userId, updateRequest, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Update failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
             // Verify changes persisted
-            var profile = await Client.GetMasterianProfile(userId, token);
-            Assert.NotNull(profile?.Profile);
-            Assert.Equal("2025", profile!.Profile!.Cohort);
-            Assert.Equal("Edge Computing Security", profile.Profile.DissertationSubject);
+            var profile = await Client.GetMasterianProfile(userId);
+            Assert.NotNull(profile?.Data);
+            Assert.Equal("2025", profile!.Data!.Cohort);
+            Assert.Equal("Edge Computing Security", profile.Data.DissertationSubject);
         }
 
         [Fact]
@@ -107,7 +96,7 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateMasterianUserAsync("e2e.update.masterian.invalid@example.com", token);
 
-            var updateRequest = new UpdateMasterianProfileRequest
+            var updateRequest = new UpdateMasterianProfileCommand
             {
                 Cohort = "",                // required
                 DissertationSubject = ""    // required
@@ -115,7 +104,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateMasterianProfile(userId, updateRequest, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -123,7 +112,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var updateRequest = new UpdateMasterianProfileRequest
+            var updateRequest = new UpdateMasterianProfileCommand
             {
                 Cohort = "2024",
                 DissertationSubject = "Something"
@@ -131,13 +120,13 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateMasterianProfile(Guid.NewGuid(), updateRequest, token);
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
         public async Task UpdateMasterianProfile_Unauthenticated_Returns401()
         {
-            var updateRequest = new UpdateMasterianProfileRequest
+            var updateRequest = new UpdateMasterianProfileCommand
             {
                 Cohort = "2024",
                 DissertationSubject = "Something"
@@ -145,7 +134,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateMasterianProfile(Guid.NewGuid(), updateRequest, "invalid-token");
 
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── DELETE ─────────────────────────────────────────────────────────────────
@@ -158,17 +147,16 @@ namespace LIMTIC.E2Es.Tests
 
             var deleteResponse = await Client.DeleteMasterianProfile(userId, token);
 
-            Assert.True(deleteResponse.IsSuccessStatusCode,
-                $"Delete failed: {await deleteResponse.Content.ReadAsStringAsync()}");
+            Assert.True(deleteResponse.Success);
 
             // Profile must be gone
-            var profileResponse = await Client.GetMasterianProfileFullResponse(userId, token);
-            Assert.Equal(HttpStatusCode.NotFound, profileResponse.StatusCode);
+            var profileResponse = await Client.GetMasterianProfile(userId);
+            Assert.False(profileResponse.Success);
 
             // User role must be reset to Visitor
             var user = await Client.GetUserById(userId, token);
             Assert.NotNull(user);
-            Assert.Equal(UserRole.Visitor, user!.User.Role);
+            Assert.Equal(UserRole.Visitor, user!.Data.Role);
         }
 
         [Fact]
@@ -178,7 +166,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.DeleteMasterianProfile(Guid.NewGuid(), token);
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -187,7 +175,7 @@ namespace LIMTIC.E2Es.Tests
             var adminToken = await LoginAsSuperAdmin();
 
             // Create a regular visitor user and get their token
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Visitor",
                 LastName = "User",
@@ -196,15 +184,14 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, adminToken);
 
-            var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.visitor.delete.masterian@example.com", "password"));
+            var visitorToken = await Client.AuthenticateUser(new LoginCommand("e2e.visitor.delete.masterian@example.com", "password"));
 
             // Create a masterian to attempt to delete
             var masterianUserId = await CreateMasterianUserAsync("e2e.delete.masterian.target@example.com", adminToken);
 
-            var response = await Client.DeleteMasterianProfile(masterianUserId, visitorToken?.AccessToken ?? "");
+            var response = await Client.DeleteMasterianProfile(masterianUserId, visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
     }
 }

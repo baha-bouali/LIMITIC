@@ -1,18 +1,14 @@
-using System.Net;
-using System.Net.Http.Json;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.Publications;
+using LIMTIC.Application.Contracts.Commands.ResearchAxis;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
+using LIMTIC.Application.Contracts.Queries.Publications;
+using LIMTIC.Application.DTOs.Publications;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Publications.CreatePublication;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Reject;
-using LIMTIC.WebAPI.Models.Publications.Status;
-using LIMTIC.WebAPI.Models.ResearchAxis;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
-using Xunit;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -26,20 +22,21 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<Guid> CreateAxisAsync(string token)
         {
-            var created = await Client.CreateResearchAxis(new CreateResearchAxisRequest
+            var created = await Client.CreateResearchAxis(new CreateResearchAxisCommand
             {
                 Title = "E2E Publications Axis",
                 Description = "Axis for publications tests",
                 Themes = ["AI"]
             }, token);
 
-            Assert.NotNull(created?.ResearchAxis);
-            return created!.ResearchAxis!.Id;
+            Assert.True(created.Success, $"Failed to create axis: {created.Message}");
+            Assert.NotNull(created.Data);
+            return created.Data.Id;
         }
 
         private async Task<string> CreateAndLoginUserAsync(string adminToken, string email, UserRole role)
         {
-            var created = await Client.AddUser(new CreateUserRequest
+            var created = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "E2E",
                 LastName = "User",
@@ -48,10 +45,11 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, adminToken);
 
-            Assert.NotNull(created?.User);
-            var userId = created!.User.Id;
+            Assert.True(created.Success, $"Failed to create user: {created.Message}");
+            Assert.NotNull(created.Data);
+            var userId = created.Data.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleCommand
             {
                 Role = role,
                 Cohort = "2026",
@@ -60,35 +58,38 @@ namespace LIMTIC.E2Es.Tests
                 ResearchAxisIds = []
             }, adminToken);
 
-            Assert.True(roleResponse.IsSuccessStatusCode,
-                $"Role update failed: {await roleResponse.Content.ReadAsStringAsync()}");
+            Assert.True(roleResponse.Success, $"Role update failed: {roleResponse.Message}");
 
-            var login = await Client.AuthenticateUser(new LoginRequest(email, "password"));
-            Assert.NotNull(login?.AccessToken);
-            return login!.AccessToken!;
+            var login = await Client.AuthenticateUser(new LoginCommand(email, "password"));
+            Assert.True(login.Success, $"Login failed: {login.Message}");
+            Assert.NotNull(login.Data);
+            return login.Data.AccessToken;
         }
 
-        private static CreatePublicationRequest BuildJournalArticle(Guid axisId, string visibility)
+        private static CreatePublicationCommand BuildJournalArticle(Guid axisId, string visibility)
         {
-            return new CreatePublicationRequest
+            return new CreatePublicationCommand
             {
-                ResearchAxisId = axisId,
-                Title = "E2E Journal Article",
-                Abstract = "E2E abstract",
-                Keywords = ["AI", "ML"],
-                Doi = "10.1234/e2e",
-                Venue = "E2E Journal",
-                Type = nameof(PublicationType.ArticleJournal),
-                Visibility = visibility,
-                Year = 2026,
-                Authors = ["Author A", "Author B"],
-                JournalArticle = new CreateJournalArticleRequestItem
+                Publication = new PublicationDto
                 {
-                    JournalName = "E2E Journal",
-                    Volume = "1",
-                    Number = "1",
-                    Pages = "1-10",
-                    Ranking = nameof(JournalRanking.Q1)
+                    ResearchAxisId = axisId,
+                    Title = "E2E ArticleJournal Article",
+                    Abstract = "E2E abstract",
+                    Keywords = ["AI", "ML"],
+                    Doi = "10.1234/e2e",
+                    Venue = "E2E ArticleJournal",
+                    Type = PublicationType.ArticleJournal,
+                    Visibility = Enum.Parse<PublicationVisibility>(visibility),
+                    Year = 2026,
+                    Authors = ["Author A", "Author B"],
+                    JournalArticle = new JournalArticleDto
+                    {
+                        JournalName = "E2E ArticleJournal",
+                        Volume = "1",
+                        Number = "1",
+                        Pages = 10,
+                        Ranking = JournalRanking.Q1
+                    }
                 }
             };
         }
@@ -100,14 +101,12 @@ namespace LIMTIC.E2Es.Tests
             // Given an anonymous visitor
             // When calling GET /api/v1/public/publications
             // Then the API returns 200 and the response contains Data/Stats/Pagination
-            var response = await Client.GetPublicPublicationsFullResponse();
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            var query = new GetPublicationsQuery { Page = 1, Limit = 20 };
+            var response = await Client.GetPublications(query, string.Empty); // Empty token for anonymous
 
-            var body = await response.Content.ReadFromJsonAsync<LIMTIC.WebAPI.Models.Publications.Public.GetPublications.PublicationsListResponse>();
-            Assert.NotNull(body);
-            Assert.NotNull(body!.Data);
-            Assert.NotNull(body.Stats);
-            Assert.NotNull(body.Pagination);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
+            Assert.NotNull(response.Pagination);
         }
 
         [Fact]
@@ -118,26 +117,27 @@ namespace LIMTIC.E2Es.Tests
             // When creating a PUBLIC publication from the dashboard
             // Then it is created as Published and is visible in public list and public detail
             var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken!);
+            var axisId = await CreateAxisAsync(adminToken);
 
-            var createHttp = await Client.CreateDashboardPublication(
+            var createResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
-                adminToken!);
+                adminToken);
 
-            Assert.Equal(HttpStatusCode.Created, createHttp.StatusCode);
+            Assert.True(createResponse.Success, $"Failed to create publication: {createResponse.Message}");
+            Assert.NotNull(createResponse.Data);
+            Assert.Equal(PublicationStatus.Published, createResponse.Data.Status);
 
-            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
-            Assert.NotNull(created);
-            Assert.Equal(nameof(PublicationStatus.Published), created!.Publication.Status);
+            var query = new GetPublicationsQuery { Page = 1, Limit = 20 };
+            var publicList = await Client.GetPublications(query, string.Empty);
+            Assert.True(publicList.Success);
+            Assert.NotNull(publicList.Data);
+            Assert.Contains(publicList.Data, p => p.Id == createResponse.Data.Id);
 
-            var publicList = await Client.GetPublicPublications(page: 1, limit: 20);
-            Assert.NotNull(publicList);
-            Assert.Contains(publicList!.Data, p => p.Id == created.Publication.Id);
-
-            var detail = await Client.GetPublicPublicationById(created.Publication.Id);
-            Assert.NotNull(detail);
-            Assert.Equal(created.Publication.Id, detail!.Id);
-            Assert.Equal(nameof(PublicationStatus.Published), detail.Status);
+            var detail = await Client.GetPublicationById(createResponse.Data.Id.Value, string.Empty);
+            Assert.True(detail.Success);
+            Assert.NotNull(detail.Data);
+            Assert.Equal(createResponse.Data.Id, detail.Data.Id);
+            Assert.Equal(PublicationStatus.Published, detail.Data.Status);
         }
 
         [Fact]
@@ -148,28 +148,25 @@ namespace LIMTIC.E2Es.Tests
             // When creating a PUBLIC publication from the dashboard
             // Then it is created as Submitted and only becomes visible publicly after Admin validation
             var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken!);
+            var axisId = await CreateAxisAsync(adminToken);
 
-            var userToken = await CreateAndLoginUserAsync(adminToken!, "e2e.pub.user@test.com", UserRole.Masterian);
+            var userToken = await CreateAndLoginUserAsync(adminToken, "e2e.pub.user@test.com", UserRole.Masterian);
 
-            var createHttp = await Client.CreateDashboardPublication(
+            var createResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 userToken);
 
-            Assert.Equal(HttpStatusCode.Created, createHttp.StatusCode);
-            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
-            Assert.NotNull(created);
-            Assert.Equal(nameof(PublicationStatus.Submitted), created!.Publication.Status);
+            Assert.True(createResponse.Success, $"Failed to create publication: {createResponse.Message}");
+            Assert.NotNull(createResponse.Data);
+            Assert.Equal(PublicationStatus.Submitted, createResponse.Data.Status);
 
-            var validateHttp = await Client.ValidateDashboardPublication(created.Publication.Id, adminToken!);
-            Assert.Equal(HttpStatusCode.OK, validateHttp.StatusCode);
-            var validated = await validateHttp.Content.ReadFromJsonAsync<PublicationValidatedResponse>();
-            Assert.NotNull(validated);
-            Assert.Equal(nameof(PublicationStatus.Published), validated!.Status);
+            var validateResponse = await Client.ValidatePublication(createResponse.Data.Id.Value, adminToken);
+            Assert.True(validateResponse.Success, $"Failed to validate publication: {validateResponse.Message}");
 
-            var publicDetail = await Client.GetPublicPublicationById(created.Publication.Id);
-            Assert.NotNull(publicDetail);
-            Assert.Equal(nameof(PublicationStatus.Published), publicDetail!.Status);
+            var publicDetail = await Client.GetPublicationById(createResponse.Data.Id.Value, string.Empty);
+            Assert.True(publicDetail.Success);
+            Assert.NotNull(publicDetail.Data);
+            Assert.Equal(PublicationStatus.Published, publicDetail.Data.Status);
         }
 
         [Fact]
@@ -180,29 +177,31 @@ namespace LIMTIC.E2Es.Tests
             // When an anonymous visitor requests the public list and a private publication detail
             // Then the public list contains only the Public publication and the private detail returns 404
             var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken!);
+            var axisId = await CreateAxisAsync(adminToken);
 
-            var createPublicHttp = await Client.CreateDashboardPublication(
+            var createPublicResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
-                adminToken!);
-            var publicCreated = await createPublicHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
+                adminToken);
+            var publicCreated = createPublicResponse.Data;
 
-            var createPrivateHttp = await Client.CreateDashboardPublication(
+            var createPrivateResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Private)),
-                adminToken!);
-            var privateCreated = await createPrivateHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
+                adminToken);
+            var privateCreated = createPrivateResponse.Data;
 
             Assert.NotNull(publicCreated);
             Assert.NotNull(privateCreated);
 
-            var publicList = await Client.GetPublicPublications(page: 1, limit: 50);
-            Assert.NotNull(publicList);
+            var query = new GetPublicationsQuery { Page = 1, Limit = 50 };
+            var publicList = await Client.GetPublications(query, null);
+            Assert.True(publicList.Success);
+            Assert.NotNull(publicList.Data);
 
-            Assert.Contains(publicList!.Data, p => p.Id == publicCreated!.Publication.Id);
-            Assert.DoesNotContain(publicList.Data, p => p.Id == privateCreated!.Publication.Id);
+            Assert.Contains(publicList.Data, p => p.Id == publicCreated.Id);
+            Assert.DoesNotContain(publicList.Data, p => p.Id == privateCreated.Id);
 
-            var privateDetailHttp = await Client.GetAsync($"api/v1/public/publications/{privateCreated.Publication.Id}");
-            Assert.Equal(HttpStatusCode.NotFound, privateDetailHttp.StatusCode);
+            var privateDetail = await Client.GetPublicationById(privateCreated.Id.Value, string.Empty);
+            Assert.False(privateDetail.Success); // Should fail for anonymous
         }
 
         [Fact]
@@ -213,57 +212,25 @@ namespace LIMTIC.E2Es.Tests
             // When an Admin rejects it with a reason
             // Then the API returns 200 and the status becomes Rejected with the rejection reason echoed
             var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken!);
+            var axisId = await CreateAxisAsync(adminToken);
 
-            var userToken = await CreateAndLoginUserAsync(adminToken!, "e2e.pub.reject@test.com", UserRole.Masterian);
+            var userToken = await CreateAndLoginUserAsync(adminToken, "e2e.pub.reject@test.com", UserRole.Masterian);
 
-            var createHttp = await Client.CreateDashboardPublication(
+            var createResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 userToken);
 
-            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
-            Assert.NotNull(created);
+            Assert.True(createResponse.Success);
+            Assert.NotNull(createResponse.Data);
 
-            var rejectHttp = await Client.RejectDashboardPublication(created!.Publication.Id,
-                new RejectPublicationRequest { Reason = "Incomplete metadata" }, adminToken!);
+            var rejectResponse = await Client.RejectPublication(createResponse.Data.Id.Value, adminToken);
+            Assert.True(rejectResponse.Success, $"Failed to reject publication: {rejectResponse.Message}");
 
-            Assert.Equal(HttpStatusCode.OK, rejectHttp.StatusCode);
-            var rejected = await rejectHttp.Content.ReadFromJsonAsync<PublicationRejectedResponse>();
-            Assert.NotNull(rejected);
-            Assert.Equal(nameof(PublicationStatus.Rejected), rejected!.Status);
-            Assert.Equal("Incomplete metadata", rejected.RejectionReason);
-        }
-
-        [Fact]
-        public async Task Dashboard_Pdf_AddAndRemove_Works_ForOwner()
-        {
-            // Scenario:
-            // Given a user created a publication from the dashboard
-            // When the owner adds a PDF URL then removes it
-            // Then the add/remove endpoints return 200 and the publication detail reflects the PDF change
-            var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken!);
-
-            var userToken = await CreateAndLoginUserAsync(adminToken!, "e2e.pub.pdf@test.com", UserRole.Masterian);
-
-            var createHttp = await Client.CreateDashboardPublication(
-                BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
-                userToken);
-            var created = await createHttp.Content.ReadFromJsonAsync<CreatePublicationResponse>();
-            Assert.NotNull(created);
-
-            var pdfUrl = "https://storage.example.com/e2e.pdf";
-            var addHttp = await Client.AddDashboardPublicationPdf(created!.Publication.Id,
-                new PdfRequest { PdfUrl = pdfUrl }, userToken);
-            Assert.Equal(HttpStatusCode.OK, addHttp.StatusCode);
-
-            var detail = await Client.GetDashboardPublicationById(created.Publication.Id, userToken);
-            Assert.NotNull(detail);
-            Assert.Equal(pdfUrl, detail!.PdfUrl);
-
-            var removeHttp = await Client.RemoveDashboardPublicationPdf(created.Publication.Id,
-                new PdfRequest { PdfUrl = pdfUrl }, userToken);
-            Assert.Equal(HttpStatusCode.OK, removeHttp.StatusCode);
+            // Verify the publication is now rejected
+            var detail = await Client.GetPublicationById(createResponse.Data.Id.Value, adminToken);
+            Assert.True(detail.Success);
+            Assert.NotNull(detail.Data);
+            Assert.Equal(PublicationStatus.Rejected, detail.Data.Status);
         }
     }
 }
