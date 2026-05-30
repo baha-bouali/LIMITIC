@@ -198,9 +198,9 @@ namespace LIMTIC.E2Es.Extensions
         }
 
         public static async Task<BaseResponse<bool>> UpdateUserRole(
-            this HttpClient client, Guid userId, UpdateUserRoleCommand command, string accessToken)
+            this HttpClient client, UpdateUserRoleCommand command, string accessToken)
         {
-            return await client.PutAndDeserializeAsync<bool>($"api/users/updateRole/{userId}", command, accessToken);
+            return await client.PutAndDeserializeAsync<bool>($"api/users/updateRole", command, accessToken);
         }
 
         public static async Task<BaseResponse<bool>> ActivateUser(
@@ -373,6 +373,9 @@ namespace LIMTIC.E2Es.Extensions
             this HttpClient client, GetEventsQuery query)
         {
             var queryParams = new List<string>();
+            if (query.Q != null) queryParams.Add($"q={Uri.EscapeDataString(query.Q)}");
+            if (query.Status != null) queryParams.Add($"status={Uri.EscapeDataString(query.Status)}");
+            if (query.Type != null) queryParams.Add($"type={Uri.EscapeDataString(query.Type)}");
             if (query.Page > 0) queryParams.Add($"page={query.Page}");
             if (query.Limit > 0) queryParams.Add($"limit={query.Limit}");
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";

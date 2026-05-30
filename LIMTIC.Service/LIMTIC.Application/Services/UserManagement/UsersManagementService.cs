@@ -216,7 +216,7 @@ namespace LIMTIC.Application.Services.UserManagement
                 return Result<string>.FailureResult("User not found");
 
             var sanitizedFileName = Path.GetFileName(fileName);
-            var blobName = $"users/{userId}/avatar/{Guid.NewGuid()}_{sanitizedFileName}";
+            var blobName = $"users/avatar/{userId}/{Guid.NewGuid()}_{sanitizedFileName}";
             var uploaded = await _blobStorageService.UploadStreamAsync(fileStream, "media", blobName, overwrite: true);
             if (!uploaded)
                 return Result<string>.FailureResult("Failed to upload avatar");

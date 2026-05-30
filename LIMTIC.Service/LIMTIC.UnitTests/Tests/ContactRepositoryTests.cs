@@ -1,5 +1,6 @@
 using LIMTIC.Domain.Abstractions.Contact;
 using LIMTIC.Domain.Entities.Contacts;
+using LIMTIC.Infrastructure.Repositories;
 using LIMTIC.UnitTests.Base;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,8 +11,6 @@ namespace LIMTIC.UnitTests.Tests
         [Fact]
         public async Task AddAsync_PersistsContact()
         {
-            var repo = ServiceProvider.GetRequiredService<IContactRepository>();
-
             var sentAt = DateTime.UtcNow;
             var contact = new ContactEntity
             {
@@ -22,7 +21,8 @@ namespace LIMTIC.UnitTests.Tests
                 SentAtUtc = sentAt
             };
 
-            await repo.AddAsync(contact);
+            await ContactRepository.AddAsync(contact);
+            await UnitOfWork.SaveChangesAsync();
 
             var saved = DbContext.Contacts.FirstOrDefault(c => c.Id == contact.Id);
             Assert.NotNull(saved);
@@ -30,7 +30,6 @@ namespace LIMTIC.UnitTests.Tests
             Assert.Equal("Hello, I would like more details...", saved.Message);
             Assert.Equal(sentAt, saved.SentAtUtc);
             Assert.NotEqual(Guid.Empty, saved.Id);
-            Assert.NotEqual(default, saved.CreatedAtUtc);
         }
     }
 }

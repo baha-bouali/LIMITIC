@@ -433,6 +433,7 @@ namespace LIMTIC.E2Es.Tests
 
             var updateRequest = new UpdateEventCommand
             {
+                Id = eventId,
                 Type = "Seminar",
                 Title = "AI and Health - Updated",
                 StartDate = DateTime.UtcNow.AddDays(10),
@@ -491,13 +492,14 @@ namespace LIMTIC.E2Es.Tests
             }, accessToken);
 
             Assert.NotNull(createEventResponse);
-            Assert.True(createEventResponse.Success);
+            Assert.True(createEventResponse.Success, createEventResponse.Message);
             Assert.NotNull(createEventResponse.Data);
 
             var eventId = Guid.Parse(createEventResponse.Data.Id);
 
             var addSpeakerResponse = await Client.AddSpeaker(eventId, new CreateSpeakerCommand
             {
+                EventId = eventId,
                 FirstName = "Amine",
                 LastName = "Ben Ali",
                 Email = "amine.benali@test.com",
@@ -507,7 +509,7 @@ namespace LIMTIC.E2Es.Tests
             }, accessToken);
 
             Assert.NotNull(addSpeakerResponse);
-            Assert.True(addSpeakerResponse.Success);
+            Assert.True(addSpeakerResponse.Success, addSpeakerResponse.Message);
             Assert.NotNull(addSpeakerResponse.Data);
             Assert.Equal("Amine", addSpeakerResponse.Data.FirstName);
 
@@ -515,6 +517,8 @@ namespace LIMTIC.E2Es.Tests
 
             var updateSpeakerResponse = await Client.UpdateSpeaker(eventId, speakerId, new UpdateSpeakerCommand
             {
+                EventId = eventId,
+                SpeakerId = speakerId,
                 FirstName = "Amine",
                 LastName = "Ben Ali",
                 Email = "amine.benali@test.com",
@@ -524,13 +528,13 @@ namespace LIMTIC.E2Es.Tests
             }, accessToken);
 
             Assert.NotNull(updateSpeakerResponse);
-            Assert.True(updateSpeakerResponse.Success);
+            Assert.True(updateSpeakerResponse.Success, updateSpeakerResponse.Message);
             Assert.NotNull(updateSpeakerResponse.Data);
             Assert.Equal("Keynote", updateSpeakerResponse.Data.Role);
 
             var deleteSpeakerResponse = await Client.DeleteSpeaker(eventId, speakerId, accessToken);
             Assert.NotNull(deleteSpeakerResponse);
-            Assert.True(deleteSpeakerResponse.Success);
+            Assert.True(deleteSpeakerResponse.Success, deleteSpeakerResponse.Message); 
 
             var query = new GetEventsQuery
             {
@@ -538,7 +542,7 @@ namespace LIMTIC.E2Es.Tests
             };
             var eventsResponse = await Client.GetEvents(query);
             Assert.NotNull(eventsResponse);
-            Assert.True(eventsResponse.Success);
+            Assert.True(eventsResponse.Success, eventsResponse.Message);
             var targetEvent = eventsResponse.Data?.Single(e => e.Id == eventId.ToString());
             Assert.DoesNotContain(targetEvent.Speakers, s => s.Id == speakerId.ToString());
         }

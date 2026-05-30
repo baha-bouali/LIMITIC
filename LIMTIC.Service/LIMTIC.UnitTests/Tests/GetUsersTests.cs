@@ -70,7 +70,7 @@ namespace LIMTIC.UnitTests.Tests
             await SeedUserAsync("getstatus.active@test.com", "Status", "Active", isActive: true);
             await SeedUserAsync("getstatus.inactive@test.com", "Status", "Inactive", isActive: false);
 
-            var result = await UsersManagementService.GetUsersAsync(new GetUsersQuery());
+            var result = await UsersManagementService.GetUsersAsync(new GetUsersQuery { IsActive = true });
 
             Assert.True(result.Success);
             Assert.All(result.Data!.Items, u => Assert.True(u.IsActive));
@@ -81,7 +81,7 @@ namespace LIMTIC.UnitTests.Tests
         {
             await SeedUserAsync("getstatus.inactive2@test.com", "Status", "Inactive2", isActive: false);
 
-            var result = await UsersManagementService.GetUsersAsync(new GetUsersQuery());
+            var result = await UsersManagementService.GetUsersAsync(new GetUsersQuery { IsActive = false });
 
             Assert.True(result.Success);
             Assert.True(result.Data!.Items.Count >= 1);

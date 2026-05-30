@@ -226,7 +226,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var auth = await Client.AuthenticateUser(new LoginCommand("admin@test.com", "AdminPassword"));
             Assert.True(auth.Success, "Failed to login as SuperAdmin");
-            return auth.Data!.AccessToken;
+            return auth?.Data?.AccessToken;
         }
 
         private void SeedAdminUser(AppDbContext db, IPasswordHasher passwordHasher)

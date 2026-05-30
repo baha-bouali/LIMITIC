@@ -1,7 +1,5 @@
-using LIMTIC.Domain.Enums;
 
-namespace LIMTIC.Application.Contracts.Commands.Events
-{
+namespace LIMTIC.Application.Contracts.Commands.Events{
     public class UpdateEventCommand
     {
         public Guid Id { get; set; }

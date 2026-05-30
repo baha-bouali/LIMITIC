@@ -17,4 +17,8 @@
     <ProjectReference Include="..\LIMTIC.Domain\LIMTIC.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Abstractions\Publications\" />
+  </ItemGroup>
+
 </Project>

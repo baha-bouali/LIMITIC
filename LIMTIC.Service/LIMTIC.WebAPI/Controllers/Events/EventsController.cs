@@ -22,7 +22,7 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetEvents(GetEventsQuery getEventsQuery)
+        public async Task<IActionResult> GetEvents([FromQuery] GetEventsQuery getEventsQuery)
         {
             if (getEventsQuery.Page < 1)
                 getEventsQuery.Page = 1;

@@ -30,6 +30,6 @@ namespace LIMTIC.Domain.Entities.Publications
         public BookChapterEntity? BookChapter { get; set; }
         public NationalConferenceEntity? NationalConference { get; set; }
         public InternationalConferenceEntity? InternationalConference { get; set; }
-        public ICollection<PublicationFileEntity> Files { get; set; } = new List<PublicationFileEntity>();
+        public ICollection<PublicationFileEntity>? Files { get; set; }
     }
 }

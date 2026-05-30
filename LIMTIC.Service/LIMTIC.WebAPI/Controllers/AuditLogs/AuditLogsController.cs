@@ -8,7 +8,7 @@ namespace LIMTIC.WebAPI.Controllers.AuditLogs
 {
     [ApiController]
     [Route("api/auditLogs/")]
-    [Authorize(Roles = "SuperAdmin")]
+    [Authorize(Roles = "SuperAdmin,Admin")]
     public class AuditLogsController : ControllerBase
     {
         private readonly IAuditLogsService _auditLogsService;
@@ -19,8 +19,7 @@ namespace LIMTIC.WebAPI.Controllers.AuditLogs
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> GetAuditLogs(GetAuditLogsQuery getAuditLogsQuery)
+        public async Task<IActionResult> GetAuditLogs([FromQuery] GetAuditLogsQuery getAuditLogsQuery)
         {
             var result = await _auditLogsService.GetAuditLogsByPeriodAsync(getAuditLogsQuery);
             var rightBound = getAuditLogsQuery.ToUtc ?? DateTime.UtcNow;

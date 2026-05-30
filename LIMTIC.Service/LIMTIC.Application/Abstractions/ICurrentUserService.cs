@@ -1,6 +1,4 @@
-﻿using LIMTIC.Domain.Enums;
-
-namespace LIMTIC.Application.Abstractions
+﻿namespace LIMTIC.Application.Abstractions
 {
     /// <summary>
     /// Abstracts the identity of the authenticated user making the current request.

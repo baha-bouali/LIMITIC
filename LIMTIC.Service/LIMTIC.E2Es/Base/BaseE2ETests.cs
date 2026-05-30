@@ -19,8 +19,6 @@ namespace LIMTIC.E2Es.Base
         protected readonly CustomWebApplicationFactory Factory;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
-        protected IBlobStorageService BlobStorageService => Factory.Services
-           .GetRequiredService<IBlobStorageService>();
 
         public BaseE2ETests(PostgresFixture dbfixture, MailHogFixture mailHogFixture, bool useShortTokenExpiry = false)
         {
@@ -30,7 +28,7 @@ namespace LIMTIC.E2Es.Base
                 ["Jwt:ExpireInMinutes"] = "0",
                 ["Jwt:ExpireInSeconds"] = "3",
                 ["RefreshToken:ExpireInDays"] = "0",
-                ["RefreshToken:ExpireInSeconds"] = "10"
+                ["RefreshToken:ExpireInSeconds"] = "120"
             }
             : new Dictionary<string, string?>();
 

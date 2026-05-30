@@ -53,7 +53,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         }
 
         [HttpPost("addUser/")]
-        [AllowAnonymous]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> AddUser(CreateUserCommand command)
         {
             var result = await _usersManagementService.CreateUserAsync(command);
@@ -76,7 +76,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
             }
         }
 
-        [HttpPut("updateRole/{userId}")]
+        [HttpPut("updateRole/")]
         [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> UpdateUserRole(UpdateUserRoleCommand command)
         {
@@ -138,7 +138,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         }
 
         [HttpGet("getUser")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> GetUser(Guid id)
         {
             var result = await _usersManagementService.GetUserByIdAsync(id);

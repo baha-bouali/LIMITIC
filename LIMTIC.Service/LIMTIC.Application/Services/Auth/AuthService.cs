@@ -71,7 +71,7 @@ namespace LIMTIC.Application.Services.Auth
             if (!validationResult.IsValid)
                 return Result<LoginDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
 
-            var user = await _userRepository.GetUserByEmailAsync(command.Username);
+            var user = await _userRepository.GetUserByEmailAsync(command.Username.ToLowerInvariant());
             if (user == null)
                 return Result<LoginDto>.FailureResult("Invalid username");
 
@@ -115,9 +115,6 @@ namespace LIMTIC.Application.Services.Auth
                 return Result<LoginDto>.FailureResult("Refresh token is expired");
 
             string accessToken = _tokenService.GenerateAccessToken(token.User!);
-
-            var validateLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.VALIDATE, ResourceType.User);
-            await _auditLogsRepository.AddLog(validateLog);
 
             return Result<LoginDto>.SuccessResult(new LoginDto
             {
@@ -182,9 +179,6 @@ namespace LIMTIC.Application.Services.Auth
 
             await _resetPasswordRepository.UpdateResetPasswordAsync(resetPasswordEntry);
 
-            var verifyResetLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.VALIDATE, ResourceType.User);
-            await _auditLogsRepository.AddLog(verifyResetLog);
-
             return Result<string>.SuccessResult(resetToken);
         }
 
@@ -211,9 +205,6 @@ namespace LIMTIC.Application.Services.Auth
             var updateResult = await _userRepository.UpdateUserAsync(user);
             if (!updateResult)
                 return Result<bool>.FailureResult("Failed to reset password");
-
-            var resetPasswordLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
-            await _auditLogsRepository.AddLog(resetPasswordLog);
 
             return Result<bool>.SuccessResult(true);
         }

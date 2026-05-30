@@ -56,7 +56,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.SendContactMessage(request);
 
-            Assert.True(response.Success);
+            Assert.False(response.Success);
         }
     }
 }

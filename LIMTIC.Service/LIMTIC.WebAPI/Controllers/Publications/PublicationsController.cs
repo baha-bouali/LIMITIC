@@ -22,7 +22,7 @@ namespace LIMTIC.WebAPI.Controllers.Publications
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPublications(GetPublicationsQuery query)
+        public async Task<IActionResult> GetPublications([FromQuery] GetPublicationsQuery query)
         {
             var result = await _publicationService.GetPublicationsAsync(query);
             if (!result.Success)

@@ -33,8 +33,9 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(createResponse);
             var userId = createResponse.Data?.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId.Value, new UpdateUserRoleCommand
+            var roleResponse = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId.Value,
                 Role = UserRole.Researcher,
                 Rank = "Professor",
                 Specialty = "AI",

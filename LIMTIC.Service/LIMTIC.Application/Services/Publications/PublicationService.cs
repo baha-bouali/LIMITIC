@@ -62,7 +62,7 @@ namespace LIMTIC.Application.Services.Publications
 
                 PublicationType? parsedType = TryParseEnum<PublicationType>(getPublicationsQuery.Type);
                 PublicationStatus? status = TryParseEnum<PublicationStatus>(getPublicationsQuery.Status);
-                PublicationVisibility? visibility = _currentUserService.UserId.Value != null ? null : PublicationVisibility.Public;
+                PublicationVisibility? visibility = _currentUserService.UserId != null ? null : PublicationVisibility.Public;
 
                 var (items, total) = await _publicationRepository.GetFilteredAsync(
                     type: parsedType,
@@ -88,12 +88,12 @@ namespace LIMTIC.Application.Services.Publications
         {
             try
             {
-                var p = await _publicationRepository.GetByIdWithDetailsAsync(publicationId);
+                var p = await _publicationRepository.GetByIdAsync(publicationId);
 
                 if (p is null || p.Status != PublicationStatus.Published)
                     return Result<PublicationDto>.FailureResult("Publication not found.");
 
-                bool canAccess = _currentUserService.UserId.Value != null || p.Visibility == PublicationVisibility.Public;
+                bool canAccess = _currentUserService?.UserId.Value != null || p.Visibility == PublicationVisibility.Public;
                 if (!canAccess)
                     return Result<PublicationDto>.FailureResult("User is not authorized to see this publication.");
 
@@ -139,17 +139,18 @@ namespace LIMTIC.Application.Services.Publications
 
             try
             {
-                if (_currentUserService.UserId.Value == null)
+                if (_currentUserService.UserId == null)
                     return Result<PublicationDto>.FailureResult("User not authenticated.");
 
                 var entity = command.Publication.ToEntity();
                 entity.Id = Guid.NewGuid();
+                entity.Status = PublicationStatus.Draft;
 
                 await _publicationRepository.AddAsync(entity);
 
                 await CreateSpecificPublicationDetails(command.Publication, entity.Id);
 
-                bool added = await _unitOfWork.SaveChangesAsync() == 2;
+                bool added = await _unitOfWork.SaveChangesAsync() > 0;
                 
                 if (!added)
                 {

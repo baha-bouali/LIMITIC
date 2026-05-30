@@ -1,9 +1,8 @@
-﻿using System.Net;
+﻿using LIMTIC.Application.Contracts.Commands.CreateUser;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -35,18 +34,18 @@ namespace LIMTIC.E2Es.Tests
             };
 
             var response = await Client.AddUser(createUserRequest, superAdminAccessToken);
-            var createdUser = response.User;
+            var createdUser = response.Data;
             Assert.NotNull(createdUser);
             Assert.Null(response.Message);
 
             // 4. Send a GET request to the API endpoint to retrieve the user by ID
-            var retrievedUser = await Client.GetUserById(response.User.Id, superAdminAccessToken);
+            var retrievedUser = await Client.GetUserById(response.Data.Id, superAdminAccessToken);
 
             Assert.NotNull(retrievedUser);
-            Assert.Equal(createdUser.Id, retrievedUser.User.Id);
-            Assert.Equal(createdUser.FirstName, retrievedUser.User.FirstName);
-            Assert.Equal(createdUser.LastName, retrievedUser.User.LastName);
-            Assert.Equal(createdUser.Email, retrievedUser.User.Email);
+            Assert.Equal(createdUser.Id, retrievedUser.Data.Id);
+            Assert.Equal(createdUser.FirstName, retrievedUser.Data.FirstName);
+            Assert.Equal(createdUser.LastName, retrievedUser.Data.LastName);
+            Assert.Equal(createdUser.Email, retrievedUser.Data.Email);
         }
 
         [Fact]
@@ -74,7 +73,7 @@ namespace LIMTIC.E2Es.Tests
             };
 
             var createResponse = await Client.AddUser(createUserRequest, superAdminAccessToken);
-            var createdUser = createResponse.User;
+            var createdUser = createResponse.Data;
             Assert.NotNull(createdUser);
             Assert.Null(createResponse.Message);
 
@@ -87,7 +86,7 @@ namespace LIMTIC.E2Es.Tests
             // 4. Assert the user is active
             var activeUser = await Client.GetUserById(createdUser.Id, superAdminAccessToken);
             Assert.NotNull(activeUser);
-            Assert.True(activeUser.User.IsActive);
+            Assert.True(activeUser.Data.IsActive);
 
             // 5. Deactivate the user
             var deactivateResponse = await Client.DeactivateUser(createdUser.Id, superAdminAccessToken);
@@ -98,7 +97,7 @@ namespace LIMTIC.E2Es.Tests
             // 6. Assert the user is inactive
             var inactiveUser = await Client.GetUserById(createdUser.Id, superAdminAccessToken);
             Assert.NotNull(inactiveUser);
-            Assert.False(inactiveUser.User.IsActive);
+            Assert.False(inactiveUser.Data.IsActive);
         }
 
         // ── GET USERS LIST ────────────────────────────────────────────────────────
@@ -119,9 +118,8 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.True(result.Total >= 1);
-            Assert.True(result.Items.Count >= 1);
-            Assert.NotEmpty(result.Counts);
+            Assert.True(result.Pagination.Total >= 1);
+            Assert.True(result.Data.Items.Count >= 1);
         }
 
         [Fact]
@@ -133,7 +131,7 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.All(result.Items, u => Assert.Equal(UserRole.SuperAdmin, u.Role));
+            Assert.All(result.Data.Items, u => Assert.Equal(UserRole.SuperAdmin, u.Role));
         }
 
         [Fact]
@@ -152,7 +150,7 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.All(result.Items, u => Assert.True(u.IsActive));
+            Assert.All(result.Data.Items, u => Assert.True(u.IsActive));
         }
 
         [Fact]
@@ -171,7 +169,7 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.All(result.Items, u => Assert.False(u.IsActive));
+            Assert.All(result.Data.Items, u => Assert.False(u.IsActive));
         }
 
         [Fact]
@@ -191,8 +189,8 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.True(result.Items.Count >= 1);
-            Assert.All(result.Items, u =>
+            Assert.True(result.Data.Items.Count >= 1);
+            Assert.All(result.Data.Items, u =>
                 Assert.True(
                     u.FirstName.Contains(unique, StringComparison.OrdinalIgnoreCase) ||
                     u.LastName.Contains(unique, StringComparison.OrdinalIgnoreCase) ||
@@ -208,9 +206,9 @@ namespace LIMTIC.E2Es.Tests
 
             Assert.NotNull(result);
             Assert.True(result!.Success);
-            Assert.True(result.Items.Count <= 2);
-            Assert.Equal(1, result.Page);
-            Assert.Equal(2, result.Limit);
+            Assert.True(result.Data.Items.Count <= 2);
+            Assert.Equal(1, result.Pagination.Page);
+            Assert.Equal(2, result.Pagination.Limit);
         }
     }
 }

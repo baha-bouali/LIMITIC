@@ -1,11 +1,11 @@
-using System.Net;
-using System.Text;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
+using System.Text;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -32,8 +32,9 @@ namespace LIMTIC.E2Es.Tests
                 IsActive = true
             }, token);
 
-            await Client.UpdateUserRole(created!.User.Id, new UpdateUserRoleCommand
+            await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = created.Data.Id,
                 Role = UserRole.Researcher,
                 Rank = "Dr",
                 Specialty = "AI",
@@ -42,7 +43,7 @@ namespace LIMTIC.E2Es.Tests
                 ResearchAxisIds = []
             }, token);
 
-            return created.User.Id;
+            return created.Data.Id;
         }
 
         // ── Upload ─────────────────────────────────────────────────────────────────
@@ -55,11 +56,10 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UploadAvatar(userId, FakeJpeg(), "photo.jpg", token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Upload failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
             // Verify the profile DTO now carries the updated AvatarBlobName
-            var profile = await Client.GetResearcherProfile(userId, token);
+            var profile = await Client.GetResearcherProfile(userId);
             Assert.NotNull(profile?.Data?.AvatarBlobName);
             Assert.Contains("photo.jpg", profile!.Data!.AvatarBlobName);
         }
@@ -70,7 +70,7 @@ namespace LIMTIC.E2Es.Tests
             var response = await Client.UploadAvatar(
                 Guid.NewGuid(), FakeJpeg(), "photo.jpg", "invalid-token");
 
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -90,12 +90,12 @@ namespace LIMTIC.E2Es.Tests
             }, adminToken);
 
             var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.avatar.visitor@example.com", "password"));
+                new LoginCommand("e2e.avatar.visitor@example.com", "password"));
 
             var response = await Client.UploadAvatar(
-                targetId, FakeJpeg(), "evil.jpg", visitorToken?.AccessToken ?? "");
+                targetId, FakeJpeg(), "evil.jpg", visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -107,7 +107,7 @@ namespace LIMTIC.E2Es.Tests
             await Client.UploadAvatar(userId, FakeJpeg(), "first.jpg", token);
             await Client.UploadAvatar(userId, FakeJpeg(), "second.jpg", token);
 
-            var profile = await Client.GetResearcherProfile(userId, token);
+            var profile = await Client.GetResearcherProfile(userId);
             Assert.Contains("second.jpg", profile?.Data?.AvatarBlobName);
         }
 
@@ -127,14 +127,13 @@ namespace LIMTIC.E2Es.Tests
             }, adminToken);
 
             var userToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.avatar.self@example.com", "password"));
+                new LoginCommand("e2e.avatar.self@example.com", "password"));
 
             // User uploads their own avatar — should succeed
             var response = await Client.UploadAvatar(
-                created!.User.Id, FakeJpeg(), "self.jpg", userToken?.AccessToken ?? "");
+                created!.Data.Id, FakeJpeg(), "self.jpg", userToken?.Data.AccessToken ?? "");
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Self-upload failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
         }
     }
 }

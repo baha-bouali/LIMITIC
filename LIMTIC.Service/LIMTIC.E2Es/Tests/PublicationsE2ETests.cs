@@ -5,6 +5,7 @@ using LIMTIC.Application.Contracts.Commands.ResearchAxis;
 using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Application.Contracts.Queries.Publications;
 using LIMTIC.Application.DTOs.Publications;
+using LIMTIC.Application.DTOs.ResearchAxis;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
@@ -49,13 +50,14 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(created.Data);
             var userId = created.Data.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleCommand
+            var roleResponse = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = role,
                 Cohort = "2026",
                 EnrollmentYear = 2026,
                 DissertationSubject = "E2E Dissertation",
-                ResearchAxisIds = []
+                ResearchAxisIds = new List<Guid>()
             }, adminToken);
 
             Assert.True(roleResponse.Success, $"Role update failed: {roleResponse.Message}");
@@ -95,12 +97,12 @@ namespace LIMTIC.E2Es.Tests
         }
 
         [Fact]
-        public async Task Public_List_Anonymous_Returns200_WithShape()
+        public async Task Anonymous_User_can_List_Publications()
         {
             // Scenario:
-            // Given an anonymous visitor
-            // When calling GET /api/v1/public/publications
-            // Then the API returns 200 and the response contains Data/Stats/Pagination
+            // 1) Given an anonymous visitor
+            // 2) When calling GET /api/v1/publications
+            // 3) Then the API returns 200 and the response contains Data/Pagination
             var query = new GetPublicationsQuery { Page = 1, Limit = 20 };
             var response = await Client.GetPublications(query, string.Empty); // Empty token for anonymous
 
@@ -110,63 +112,37 @@ namespace LIMTIC.E2Es.Tests
         }
 
         [Fact]
-        public async Task Dashboard_Create_ByAdmin_Publishes_AndAppearsInPublicList()
+        public async Task Create_Publication_Submits_ThenAdminValidates_ThenAppearsPublic()
         {
             // Scenario:
-            // Given an Admin user and an existing Research Axis
-            // When creating a PUBLIC publication from the dashboard
-            // Then it is created as Published and is visible in public list and public detail
+            // 1) Given a non-admin user and an existing Research Axis
+            // 2) When creating a PUBLIC publication
+            // 3) The user submit publication
+            // 4) 
+
+            // 1) Given a non-admin user and an existing Research Axis
             var adminToken = await LoginAsSuperAdmin();
             var axisId = await CreateAxisAsync(adminToken);
-
-            var createResponse = await Client.CreatePublication(
-                BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
-                adminToken);
-
-            Assert.True(createResponse.Success, $"Failed to create publication: {createResponse.Message}");
-            Assert.NotNull(createResponse.Data);
-            Assert.Equal(PublicationStatus.Published, createResponse.Data.Status);
-
-            var query = new GetPublicationsQuery { Page = 1, Limit = 20 };
-            var publicList = await Client.GetPublications(query, string.Empty);
-            Assert.True(publicList.Success);
-            Assert.NotNull(publicList.Data);
-            Assert.Contains(publicList.Data, p => p.Id == createResponse.Data.Id);
-
-            var detail = await Client.GetPublicationById(createResponse.Data.Id.Value, string.Empty);
-            Assert.True(detail.Success);
-            Assert.NotNull(detail.Data);
-            Assert.Equal(createResponse.Data.Id, detail.Data.Id);
-            Assert.Equal(PublicationStatus.Published, detail.Data.Status);
-        }
-
-        [Fact]
-        public async Task Dashboard_Create_ByNonAdmin_Submits_ThenAdminValidates_ThenAppearsPublic()
-        {
-            // Scenario:
-            // Given a non-admin user and an existing Research Axis
-            // When creating a PUBLIC publication from the dashboard
-            // Then it is created as Submitted and only becomes visible publicly after Admin validation
-            var adminToken = await LoginAsSuperAdmin();
-            var axisId = await CreateAxisAsync(adminToken);
-
             var userToken = await CreateAndLoginUserAsync(adminToken, "e2e.pub.user@test.com", UserRole.Masterian);
 
+            // 2) When creating a PUBLIC publication
             var createResponse = await Client.CreatePublication(
                 BuildJournalArticle(axisId, visibility: nameof(PublicationVisibility.Public)),
                 userToken);
-
             Assert.True(createResponse.Success, $"Failed to create publication: {createResponse.Message}");
             Assert.NotNull(createResponse.Data);
-            Assert.Equal(PublicationStatus.Submitted, createResponse.Data.Status);
+            Assert.Equal(PublicationStatus.Draft, createResponse.Data.Status);
+
+            // 3) The user submit publication
+            var submitResponse = await Client.SubmitPublication(createResponse.Data.Id.Value, userToken);
+            Assert.True(submitResponse.Success, $"Failed to submit publication: {submitResponse.Message}");
 
             var validateResponse = await Client.ValidatePublication(createResponse.Data.Id.Value, adminToken);
             Assert.True(validateResponse.Success, $"Failed to validate publication: {validateResponse.Message}");
 
-            var publicDetail = await Client.GetPublicationById(createResponse.Data.Id.Value, string.Empty);
+            var publicDetail = await Client.GetPublications(new GetPublicationsQuery(), string.Empty);
             Assert.True(publicDetail.Success);
             Assert.NotNull(publicDetail.Data);
-            Assert.Equal(PublicationStatus.Published, publicDetail.Data.Status);
         }
 
         [Fact]

@@ -1,5 +1,4 @@
 using LIMTIC.Application.Abstractions;
-using LIMTIC.Application.Abstractions.Publications;
 using LIMTIC.Application.Contracts.Commands.ResearchAxis;
 using LIMTIC.Application.DTOs.ResearchAxis;
 using Microsoft.AspNetCore.Authorization;
@@ -12,14 +11,11 @@ namespace LIMTIC.WebAPI.Controllers.ResearchAxis
     public class ResearchAxisController : ControllerBase
     {
         private readonly IResearchAxisService _researchAxisService;
-        private readonly IPublicationAttachmentsService _publicationAttachmentsService;
 
         public ResearchAxisController(
-            IResearchAxisService researchAxisService,
-            IPublicationAttachmentsService publicationAttachmentsService)
+            IResearchAxisService researchAxisService)
         {
             _researchAxisService = researchAxisService;
-            _publicationAttachmentsService = publicationAttachmentsService;
         }
 
         [HttpGet]

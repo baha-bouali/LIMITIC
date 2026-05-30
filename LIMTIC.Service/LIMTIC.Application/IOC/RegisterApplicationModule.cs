@@ -7,7 +7,6 @@ using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Abstractions.Contacts;
 using LIMTIC.Application.Abstractions.Settings;
 using LIMTIC.Application.Abstractions.Profiles;
-using LIMTIC.Application.Abstractions.Publications;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Services.AuditLogs;
 using LIMTIC.Application.Services.Auth;

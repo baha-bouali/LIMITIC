@@ -69,9 +69,6 @@ namespace LIMTIC.Application.Services.Contacts
                 SentAt = sentAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
             });
 
-            var contactLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Contact);
-            await _auditLogsRepository.AddLog(contactLog);
-
             return Result<string>.SuccessResult("Contact message sent successfully.");
         }
     }

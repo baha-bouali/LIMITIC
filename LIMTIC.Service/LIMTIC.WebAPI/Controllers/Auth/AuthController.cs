@@ -58,9 +58,9 @@ namespace LIMTIC.WebAPI.Controllers.Auth
 
             var result = await _authService.ValidateRefreshToken(refreshToken);
             if (result.IsFailure)
-                return Unauthorized(new BaseResponse<LoginDto> { Message = result.Message });
+                return Unauthorized(new BaseResponse<LoginDto> { Success = false, Message = result.Message });
 
-            return Ok(new BaseResponse<LoginDto> { Data = result.Data });
+            return Ok(new BaseResponse<LoginDto> { Success = true, Data = result.Data });
         }
 
         [HttpPost("logout")]
@@ -102,6 +102,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             {
                 return Ok(new BaseResponse<string>
                 {
+                    Success = true,
                     Data = result.Data,
                 });
             }
@@ -109,6 +110,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             {
                 return BadRequest(new BaseResponse<string>
                 {
+                    Success = false,
                     Message = result.Message
                 });
             }
@@ -122,6 +124,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             {
                 return Ok(new BaseResponse<bool>
                 {
+                    Success = true,
                     Data = result.Data,
                     Message = "Password reset successful"
                 });
@@ -130,6 +133,7 @@ namespace LIMTIC.WebAPI.Controllers.Auth
             {
                 return BadRequest(new BaseResponse<bool>
                 {
+                    Success = false,
                     Message = result.Message
                 });
             }

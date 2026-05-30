@@ -36,8 +36,9 @@ namespace LIMTIC.E2Es.Tests
             Assert.NotNull(createResponse);
             var userId = createResponse.Data.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleCommand
+            var roleResponse = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Masterian,
                 Cohort = cohort,
                 DissertationSubject = dissertation
@@ -146,7 +147,6 @@ namespace LIMTIC.E2Es.Tests
             var userId = await CreateMasterianUserAsync("e2e.delete.masterian@example.com", token);
 
             var deleteResponse = await Client.DeleteMasterianProfile(userId, token);
-
             Assert.True(deleteResponse.Success);
 
             // Profile must be gone

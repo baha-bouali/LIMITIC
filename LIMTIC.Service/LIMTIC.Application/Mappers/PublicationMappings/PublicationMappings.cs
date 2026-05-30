@@ -75,7 +75,6 @@ namespace LIMTIC.Application.Mappings
         public static PublicationEntity ToEntity(this PublicationDto d) =>
             new PublicationEntity
             {
-                Id = d.Id.Value,
                 UserId = d.UserId,
                 ResearchAxisId = d.ResearchAxisId,
                 Title = d.Title,
