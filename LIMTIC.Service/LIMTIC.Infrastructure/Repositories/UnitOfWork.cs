@@ -1,4 +1,4 @@
-﻿using LIMTIC.Domain;
+﻿using LIMTIC.Domain.Abstractions;
 using LIMTIC.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore.Storage;
 

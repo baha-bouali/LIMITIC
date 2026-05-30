@@ -1,4 +1,4 @@
-﻿namespace LIMTIC.Domain
+﻿namespace LIMTIC.Domain.Abstractions
 {
     public interface IUnitOfWork
     {

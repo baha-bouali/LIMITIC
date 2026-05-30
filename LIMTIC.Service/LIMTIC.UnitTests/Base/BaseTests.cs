@@ -6,7 +6,7 @@ using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Abstractions.UserManagement;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.IOC;
-using LIMTIC.Domain;
+using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Abstractions.Contact;
 using LIMTIC.Domain.Abstractions.Events;
 using LIMTIC.Domain.Abstractions.Publications;

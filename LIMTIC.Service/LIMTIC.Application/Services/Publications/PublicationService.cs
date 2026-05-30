@@ -7,7 +7,7 @@ using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Publications;
 using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.Mappings;
-using LIMTIC.Domain;
+using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Abstractions.Files;
 using LIMTIC.Domain.Abstractions.Publications;
 using LIMTIC.Domain.Entities.Files;

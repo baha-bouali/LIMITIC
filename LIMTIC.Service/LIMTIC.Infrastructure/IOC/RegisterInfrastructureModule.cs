@@ -29,10 +29,10 @@ using LIMTIC.Infrastructure.Repositories.Users;
 using LIMTIC.Infrastructure.Repositories.Events;
 using LIMTIC.Infrastructure.Repositories.ResearchAxis;
 using LIMTIC.Infrastructure.Repositories.Settings;
-using LIMTIC.Domain;
 using LIMTIC.Infrastructure.Repositories;
 using LIMTIC.Domain.Abstractions.Files;
 using LIMTIC.Infrastructure.Repositories.Files;
+using LIMTIC.Domain.Abstractions;
 
 namespace LIMTIC.Infrastructure.IOC
 {
