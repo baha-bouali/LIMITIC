@@ -18,9 +18,6 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
                    .IsRequired()
                    .HasMaxLength(300);
 
-            builder.Property(c => c.Pages)
-                   .HasMaxLength(50);
-
             builder.HasOne(c => c.Publication)
                    .WithOne(p => p.NationalConference)
                    .HasForeignKey<NationalConferenceEntity>(c => c.Id)

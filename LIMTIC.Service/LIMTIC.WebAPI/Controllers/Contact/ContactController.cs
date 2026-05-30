@@ -1,6 +1,5 @@
 using LIMTIC.Application.Abstractions.Contacts;
 using LIMTIC.Application.Contracts.Commands.Contacts;
-using LIMTIC.WebAPI.Models.Contact;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LIMTIC.WebAPI.Controllers.Contact
@@ -17,27 +16,19 @@ namespace LIMTIC.WebAPI.Controllers.Contact
         }
 
         [HttpPost("send")]
-        public async Task<IActionResult> Send([FromBody] SendContactMessageRequest request)
+        public async Task<IActionResult> Send([FromBody] SendContactMessageCommand command)
         {
-            var command = new SendContactMessageCommand
-            {
-                FullName = request.FullName,
-                Email = request.Email,
-                Subject = request.Subject,
-                Message = request.Message
-            };
-
             var result = await _contactService.SendContactMessageAsync(command);
             if (result.Success)
             {
-                return Ok(new BaseResponse
+                return Ok(new BaseResponse<string>
                 {
                     Success = true,
-                    Message = result.Data
+                    Data = result.Data
                 });
             }
 
-            return BadRequest(new BaseResponse
+            return BadRequest(new BaseResponse<string>
             {
                 Success = false,
                 Message = result.Message,

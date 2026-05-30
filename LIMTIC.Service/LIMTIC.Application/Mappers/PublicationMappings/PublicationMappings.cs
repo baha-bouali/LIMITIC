@@ -1,190 +1,133 @@
 ﻿using LIMTIC.Application.DTOs.Publications;
 using LIMTIC.Domain.Entities.Publications;
-using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Mappings
 {
     public static class PublicationMappings
     {
-        // ─── Entity → type-specific detail DTOs ───────────────────────────────
-
-        public static JournalArticleDto ToDto(this JournalArticleEntity e) =>
-            new(e.Id, e.JournalName, e.Volume, e.Number, e.Pages,
-                e.Ranking, e.GetRankingLabel());
-
-        public static TechnicalReportDto ToDto(this TechnicalReportEntity e) =>
-            new(e.Id, e.ReportNumber, e.Institution);
-
-        public static BookChapterDto ToDto(this BookChapterEntity e) =>
-            new(e.Id, e.BookTitle, e.Publisher, e.Isbn, e.Pages);
-
-        public static NationalConferenceDto ToDto(this NationalConferenceEntity e) =>
-            new(e.Id, e.ConferenceName, e.Location, e.Pages);
-
-        public static InternationalConferenceDto ToDto(this InternationalConferenceEntity e) =>
-            new(e.Id, e.ConferenceName, e.Location, e.Pages,
-                e.Ranking, e.GetRankingLabel());
-
-        // ─── Entity → full DTO ─────────────────────────────────────────────────
-
         public static PublicationDto ToDto(this PublicationEntity e) =>
-            new(e.Id,
-                e.UserId,
-                e.User is not null ? $"{e.User.FirstName} {e.User.LastName}".Trim() : string.Empty,
-                e.ResearchAxisId,
-                e.ResearchAxis?.Title ?? string.Empty,
-                e.Title,
-                e.Abstract,
-                e.Keywords,
-                e.AttachedPdfs ?? [],
-                e.Doi,
-                e.Venue,
-                e.Type,
-                e.Status,
-                e.Visibility,
-                e.Year,
-                e.Authors,
-                e.CreatedAtUtc,
-                e.JournalArticle?.ToDto(),
-                e.TechnicalReport?.ToDto(),
-                e.BookChapter?.ToDto(),
-                e.NationalConference?.ToDto(),
-                e.InternationalConference?.ToDto());
-
-        // ─── Entity → summary DTO ──────────────────────────────────────────────
-
-        public static PublicationSummaryDto ToSummaryDto(this PublicationEntity e) =>
-            new(e.Id,
-                e.Title,
-                e.Abstract,
-                e.Doi,
-                e.Venue,
-                e.Authors,
-                e.AttachedPdfs ?? [],
-                e.Type,
-                e.Status,
-                e.Visibility,
-                e.Year,
-                e.UserId,
-                e.User is not null ? $"{e.User.FirstName} {e.User.LastName}".Trim() : string.Empty,
-                e.ResearchAxisId,
-                e.ResearchAxis?.Title ?? string.Empty,
-                // Expose ranking only for the matching type; null otherwise
-                e.JournalArticle?.Ranking,
-                e.InternationalConference?.Ranking);
-
-        // ─── Collection helpers ────────────────────────────────────────────────
+            new PublicationDto{
+                Id = e.Id,
+                UserId = e.UserId,
+                ResearchAxisId = e.ResearchAxisId,
+                Title = e.Title,
+                Abstract = e.Abstract,
+                Keywords = e.Keywords,
+                Doi = e.Doi,
+                Venue = e.Venue,
+                Type = e.Type,
+                Status = e.Status,
+                Visibility = e.Visibility,
+                Year = e.Year,
+                Authors = e.Authors,
+                JournalArticle = e.JournalArticle?.ToDto(),
+                TechnicalReport = e.TechnicalReport?.ToDto(),
+                BookChapter = e.BookChapter?.ToDto(),
+                NationalConference = e.NationalConference?.ToDto(),
+                InternationalConference = e.InternationalConference?.ToDto() 
+            };
 
         public static IEnumerable<PublicationDto> ToDtos(
             this IEnumerable<PublicationEntity> entities) =>
             entities.Select(e => e.ToDto());
 
-        public static IEnumerable<PublicationSummaryDto> ToSummaryDtos(
-            this IEnumerable<PublicationEntity> entities) =>
-            entities.Select(e => e.ToSummaryDto());
-
-        // ─── Request DTOs → entities ───────────────────────────────────────────
-
-        /// <summary>Maps a CreatePublicationRequest to a new PublicationEntity.
-        /// UserId must be set by the caller (controller / service).</summary>
-        public static PublicationEntity ToEntity(this CreatePublicationRequest r) =>
-            new()
+        public static JournalArticleDto ToDto(this JournalArticleEntity j) =>
+            new JournalArticleDto
             {
-                ResearchAxisId = r.ResearchAxisId,
-                Title = r.Title,
-                Abstract = r.Abstract,
-                Keywords = r.Keywords,
-                Doi = r.Doi,
-                Venue = r.Venue,
-                Type = r.Type,
-                Visibility = r.Visibility,
-                Year = r.Year,
-                Authors = r.Authors,
-                AttachedPdfs = [],
-                JournalArticle = r.JournalArticle is null ? null : new JournalArticleEntity
-                {
-                    JournalName = r.JournalArticle.JournalName,
-                    Volume = r.JournalArticle.Volume,
-                    Number = r.JournalArticle.Number,
-                    Pages = r.JournalArticle.Pages,
-                    Ranking = r.JournalArticle.Ranking
-                },
-                TechnicalReport = r.TechnicalReport is null ? null : new TechnicalReportEntity
-                {
-                    ReportNumber = r.TechnicalReport.ReportNumber,
-                    Institution = r.TechnicalReport.Institution
-                },
-                BookChapter = r.BookChapter is null ? null : new BookChapterEntity
-                {
-                    BookTitle = r.BookChapter.BookTitle,
-                    Publisher = r.BookChapter.Publisher,
-                    Isbn = r.BookChapter.Isbn,
-                    Pages = r.BookChapter.Pages
-                },
-                NationalConference = r.NationalConference is null ? null : new NationalConferenceEntity
-                {
-                    ConferenceName = r.NationalConference.ConferenceName,
-                    Location = r.NationalConference.Location,
-                    Pages = r.NationalConference.Pages
-                },
-                InternationalConference = r.InternationalConference is null ? null : new InternationalConferenceEntity
-                {
-                    ConferenceName = r.InternationalConference.ConferenceName,
-                    Location = r.InternationalConference.Location,
-                    Pages = r.InternationalConference.Pages,
-                    Ranking = r.InternationalConference.Ranking
-                }
+                JournalName = j.JournalName,
+                Volume = j.Volume,
+                Ranking = j.Ranking,
+                Pages = j.Pages,
+                Number = j.Number
             };
 
-        /// <summary>Maps an UpdatePublicationRequest onto an existing PublicationEntity id.</summary>
-        public static PublicationEntity ToEntity(this UpdatePublicationRequest r, Guid id) =>
-            new()
+        public static TechnicalReportDto ToDto(this TechnicalReportEntity t) =>
+            new TechnicalReportDto
             {
-                Id = id,
-                ResearchAxisId = r.ResearchAxisId,
-                Title = r.Title,
-                Abstract = r.Abstract,
-                Keywords = r.Keywords,
-                Doi = r.Doi,
-                Venue = r.Venue,
-                Type = r.Type,
-                Visibility = r.Visibility,
-                Year = r.Year,
-                Authors = r.Authors,
-                AttachedPdfs = [],   
-                JournalArticle = r.JournalArticle is null ? null : new JournalArticleEntity
-                {
-                    JournalName = r.JournalArticle.JournalName,
-                    Volume = r.JournalArticle.Volume,
-                    Number = r.JournalArticle.Number,
-                    Pages = r.JournalArticle.Pages,
-                    Ranking = r.JournalArticle.Ranking
-                },
-                TechnicalReport = r.TechnicalReport is null ? null : new TechnicalReportEntity
-                {
-                    ReportNumber = r.TechnicalReport.ReportNumber,
-                    Institution = r.TechnicalReport.Institution
-                },
-                BookChapter = r.BookChapter is null ? null : new BookChapterEntity
-                {
-                    BookTitle = r.BookChapter.BookTitle,
-                    Publisher = r.BookChapter.Publisher,
-                    Isbn = r.BookChapter.Isbn,
-                    Pages = r.BookChapter.Pages
-                },
-                NationalConference = r.NationalConference is null ? null : new NationalConferenceEntity
-                {
-                    ConferenceName = r.NationalConference.ConferenceName,
-                    Location = r.NationalConference.Location,
-                    Pages = r.NationalConference.Pages
-                },
-                InternationalConference = r.InternationalConference is null ? null : new InternationalConferenceEntity
-                {
-                    ConferenceName = r.InternationalConference.ConferenceName,
-                    Location = r.InternationalConference.Location,
-                    Pages = r.InternationalConference.Pages,
-                    Ranking = r.InternationalConference.Ranking
-                }
+                Institution = t.Institution,
+                ReportNumber = t.ReportNumber
+            };
+
+        public static BookChapterDto ToDto(this BookChapterEntity b) =>
+            new BookChapterDto
+            {
+                BookTitle = b.BookTitle,
+                Publisher = b.Publisher,
+                Isbn = b.Isbn,
+                Pages = b.Pages
+            };
+
+        public static NationalConferenceDto ToDto(this NationalConferenceEntity n) =>
+            new NationalConferenceDto
+            {
+                ConferenceName = n.ConferenceName,
+                Location = n.Location,
+            };
+
+        public static InternationalConferenceDto ToDto(this InternationalConferenceEntity i) =>
+            new InternationalConferenceDto
+            {
+                ConferenceName = i.ConferenceName,
+                Location = i.Location,
+                Ranking = i.Ranking
+            };
+
+        public static PublicationEntity ToEntity(this PublicationDto d) =>
+            new PublicationEntity
+            {
+                UserId = d.UserId,
+                ResearchAxisId = d.ResearchAxisId,
+                Title = d.Title,
+                Abstract = d.Abstract,
+                Keywords = d.Keywords,
+                Doi = d.Doi,
+                Venue = d.Venue,
+                Type = d.Type,
+                Status = d.Status,
+                Visibility = d.Visibility,
+                Year = d.Year,
+                Authors = d.Authors
+            };
+
+        public static JournalArticleEntity ToEntity(this JournalArticleDto j) =>
+            new JournalArticleEntity
+            {
+                JournalName = j.JournalName,
+                Volume = j.Volume,
+                Ranking = j.Ranking,
+                Pages = j.Pages,
+                Number = j.Number
+            };
+
+        public static TechnicalReportEntity ToEntity(this TechnicalReportDto t) =>
+            new TechnicalReportEntity
+            {
+                Institution = t.Institution,
+                ReportNumber = t.ReportNumber
+            };
+
+        public static BookChapterEntity ToEntity(this BookChapterDto b) =>
+            new BookChapterEntity
+            {
+                BookTitle = b.BookTitle,
+                Publisher = b.Publisher,
+                Isbn = b.Isbn,
+                Pages = b.Pages
+            };
+
+        public static NationalConferenceEntity ToEntity(this NationalConferenceDto n) =>
+            new NationalConferenceEntity
+            {
+                ConferenceName = n.ConferenceName,
+                Location = n.Location,
+            };
+
+        public static InternationalConferenceEntity ToEntity(this InternationalConferenceDto i) =>
+            new InternationalConferenceEntity
+            {
+                ConferenceName = i.ConferenceName,
+                Location = i.Location,
+                Ranking = i.Ranking
             };
     }
 }

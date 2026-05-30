@@ -13,9 +13,9 @@ namespace LIMTIC.WebAPI.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public Guid UserId => Guid.TryParse(
+        public Guid? UserId => Guid.TryParse(
             _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var userId)
-                ? userId : Guid.Empty;
+                ? userId : null;
 
         public string? Role => 
             _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.Role)?.Value;

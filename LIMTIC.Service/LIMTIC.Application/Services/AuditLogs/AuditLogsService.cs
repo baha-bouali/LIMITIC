@@ -1,7 +1,8 @@
 using LIMTIC.Application.Abstractions.AuditLogs;
+using LIMTIC.Application.Contracts.Queries.AuditLogs;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.AuditLogs;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
 
 namespace LIMTIC.Application.Services.AuditLogs
 {
@@ -14,16 +15,16 @@ namespace LIMTIC.Application.Services.AuditLogs
             _auditLogsRepository = auditLogsRepository;
         }
 
-        public async Task<Result<List<AuditLogDto>>> GetAuditLogsByPeriodAsync(DateTime fromUtc, DateTime? toUtc)
+        public async Task<Result<List<AuditLogDto>>> GetAuditLogsByPeriodAsync(GetAuditLogsQuery getAuditLogsQuery)
         {
-            if (fromUtc == default)
+            if (getAuditLogsQuery.FromUtc == default)
                 return Result<List<AuditLogDto>>.FailureResult("fromUtc is required");
 
             // Npgsql requires DateTimeKind.Utc for timestamp with time zone columns.
             // Model binding from query string produces DateTimeKind.Unspecified, so we normalize here.
-            var from = DateTime.SpecifyKind(fromUtc, DateTimeKind.Utc);
-            var rightBound = toUtc.HasValue
-                ? DateTime.SpecifyKind(toUtc.Value, DateTimeKind.Utc)
+            var from = DateTime.SpecifyKind(getAuditLogsQuery.FromUtc, DateTimeKind.Utc);
+            var rightBound = getAuditLogsQuery.ToUtc.HasValue
+                ? DateTime.SpecifyKind(getAuditLogsQuery.ToUtc.Value, DateTimeKind.Utc)
                 : DateTime.UtcNow;
 
             if (from > rightBound)

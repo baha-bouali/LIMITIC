@@ -1,10 +1,9 @@
+using LIMTIC.Application.Contracts.Commands.Contacts;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
-using LIMTIC.WebAPI.Models.Contact;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -19,7 +18,7 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task SendContactMessage_ValidRequest_PersistsAndReturnsOk()
         {
-            var request = new SendContactMessageRequest
+            var request = new SendContactMessageCommand
             {
                 FullName = "Ahmed Ben Ali",
                 Email = "ahmed@gmail.com",
@@ -29,7 +28,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.SendContactMessage(request);
 
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.True(response.Success);
 
             using var scope = Factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -47,7 +46,7 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task SendContactMessage_InvalidRequest_ReturnsBadRequest()
         {
-            var request = new SendContactMessageRequest
+            var request = new SendContactMessageCommand
             {
                 FullName = "",
                 Email = "not-an-email",
@@ -57,7 +56,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.SendContactMessage(request);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
     }
 }

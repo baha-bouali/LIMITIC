@@ -1,12 +1,13 @@
+using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Abstractions.Settings;
+using LIMTIC.Application.Contracts.Commands.Settings;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Settings;
-using LIMTIC.Application.Abstractions.Email;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Settings;
 using LIMTIC.Domain.Enums;
-using LIMTIC.Application.Abstractions;
 
 namespace LIMTIC.Application.Services.Settings
 {
@@ -56,44 +57,43 @@ namespace LIMTIC.Application.Services.Settings
             return Result<SettingsResponseDto>.SuccessResult(response);
         }
 
-        public async Task<Result<bool>> UpdateSettingsAsync(UpdateSettingsDto dto)
+        public async Task<Result<bool>> UpdateSettingsAsync(SettingsCommand command)
         {
             var settings = await _settingsRepository.GetAsync();
             if (settings == null)
                 return Result<bool>.FailureResult("Settings not found");
 
             // Identity
-            settings.LabName = dto.Identity.LabName;
-            settings.LabSlogan = dto.Identity.LabSlogan;
-            settings.ContactEmail = dto.Identity.ContactEmail;
-            settings.Address = dto.Identity.Address;
-            settings.Phone = dto.Identity.Phone;
-            settings.LogoUrl = dto.Identity.LogoUrl;
-
-            settings.SmtpHost = dto.Smtp.Host;
-            settings.SmtpPort = dto.Smtp.Port;
-            settings.SmtpUsername = dto.Smtp.Username;
-            if (!string.IsNullOrEmpty(dto.Smtp.Password))
+            settings.LabName = command.Identity.LabName;
+            settings.LabSlogan = command.Identity.LabSlogan;
+            settings.ContactEmail = command.Identity.ContactEmail;
+            settings.Address = command.Identity.Address;
+            settings.Phone = command.Identity.Phone;
+            settings.LogoUrl = command.Identity.LogoUrl;
+            settings.SmtpHost = command.Smtp.Host;
+            settings.SmtpPort = command.Smtp.Port;
+            settings.SmtpUsername = command.Smtp.Username;
+            if (!string.IsNullOrEmpty(command.Smtp.Password))
             {
                 // Protect SMTP password at rest
                 try
                 {
-                    var protectedBytes = _protector.Protect(System.Text.Encoding.UTF8.GetBytes(dto.Smtp.Password));
+                    var protectedBytes = _protector.Protect(System.Text.Encoding.UTF8.GetBytes(command.Smtp.Password));
                     settings.SmtpPasswordHash = Convert.ToBase64String(protectedBytes);
                 }
                 catch
                 {
                     // Fall back to storing plain value if protection fails
-                    settings.SmtpPasswordHash = dto.Smtp.Password;
+                    settings.SmtpPasswordHash = command.Smtp.Password;
                 }
             }
-            settings.SmtpUseTls = dto.Smtp.UseTls;
+            settings.SmtpUseTls = command.Smtp.UseTls;
 
             var updated = await _settingsRepository.UpdateAsync(settings);
             if (!updated)
                 return Result<bool>.FailureResult("Failed to update settings");
 
-            var settingsLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Setting);
+            var settingsLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Setting);
             await _auditLogsRepository.AddLog(settingsLog);
 
             return Result<bool>.SuccessResult(true);

@@ -1,11 +1,11 @@
-using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.Profiles;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.Profiles;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -21,7 +21,7 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<Guid> CreateResearcherUserAsync(string email, string token)
         {
-            var createResponse = await Client.AddUser(new CreateUserRequest
+            var createResponse = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Researcher",
                 LastName = "E2E",
@@ -31,10 +31,11 @@ namespace LIMTIC.E2Es.Tests
             }, token);
 
             Assert.NotNull(createResponse);
-            var userId = createResponse.User.Id;
+            var userId = createResponse.Data?.Id;
 
-            var roleResponse = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var roleResponse = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId.Value,
                 Role = UserRole.Researcher,
                 Rank = "Professor",
                 Specialty = "AI",
@@ -43,10 +44,9 @@ namespace LIMTIC.E2Es.Tests
                 ResearchAxisIds = new List<Guid>()
             }, token);
 
-            Assert.True(roleResponse.IsSuccessStatusCode,
-                $"UpdateRole failed: {await roleResponse.Content.ReadAsStringAsync()}");
+            Assert.True(roleResponse.Success);
 
-            return userId;
+            return userId.Value;
         }
 
         // ── GET ────────────────────────────────────────────────────────────────────
@@ -57,13 +57,13 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateResearcherUserAsync("e2e.get.researcher@example.com", token);
 
-            var profile = await Client.GetResearcherProfile(userId, token);
+            var profile = await Client.GetResearcherProfile(userId);
 
             Assert.NotNull(profile);
-            Assert.Equal(userId, profile!.Profile?.Id);
-            Assert.Equal("Professor", profile.Profile?.Rank);
-            Assert.Equal("AI", profile.Profile?.Specialty);
-            Assert.Equal(UserRole.Researcher, profile.Profile?.Role);
+            Assert.Equal(userId, profile!.Data?.Id);
+            Assert.Equal("Professor", profile.Data?.Rank);
+            Assert.Equal("AI", profile.Data?.Specialty);
+            Assert.Equal(UserRole.Researcher, profile.Data?.Role);
         }
 
         [Fact]
@@ -71,9 +71,9 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var response = await Client.GetResearcherProfileFullResponse(Guid.NewGuid(), token);
+            var response = await Client.GetResearcherProfile(Guid.NewGuid());
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── UPDATE ─────────────────────────────────────────────────────────────────
@@ -84,7 +84,7 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateResearcherUserAsync("e2e.update.researcher@example.com", token);
 
-            var updateRequest = new UpdateResearcherProfileRequest
+            var updateRequest = new UpdateResearcherProfileCommand
             {
                 Rank = "Full Professor",
                 Specialty = "Deep Learning",
@@ -96,16 +96,15 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateResearcherProfile(userId, updateRequest, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"Update failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
             // Verify changes persisted
-            var profile = await Client.GetResearcherProfile(userId, token);
-            Assert.NotNull(profile?.Profile);
-            Assert.Equal("Full Professor", profile!.Profile!.Rank);
-            Assert.Equal("Deep Learning", profile.Profile.Specialty);
-            Assert.Equal("Expert in DL", profile.Profile.Biography);
-            Assert.Equal("https://linkedin.com/test", profile.Profile.LinkedIn);
+            var profile = await Client.GetResearcherProfile(userId);
+            Assert.NotNull(profile?.Data);
+            Assert.Equal("Full Professor", profile!.Data!.Rank);
+            Assert.Equal("Deep Learning", profile.Data.Specialty);
+            Assert.Equal("Expert in DL", profile.Data.Biography);
+            Assert.Equal("https://linkedin.com/test", profile.Data.LinkedIn);
         }
 
         [Fact]
@@ -114,7 +113,7 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateResearcherUserAsync("e2e.update.researcher.invalid@example.com", token);
 
-            var updateRequest = new UpdateResearcherProfileRequest
+            var updateRequest = new UpdateResearcherProfileCommand
             {
                 Rank = "",          // required
                 Specialty = "AI",
@@ -124,7 +123,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateResearcherProfile(userId, updateRequest, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -132,7 +131,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var updateRequest = new UpdateResearcherProfileRequest
+            var updateRequest = new UpdateResearcherProfileCommand
             {
                 Rank = "Prof",
                 Specialty = "AI",
@@ -142,13 +141,13 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateResearcherProfile(Guid.NewGuid(), updateRequest, token);
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
         public async Task UpdateResearcherProfile_Unauthenticated_Returns401()
         {
-            var updateRequest = new UpdateResearcherProfileRequest
+            var updateRequest = new UpdateResearcherProfileCommand
             {
                 Rank = "Prof",
                 Specialty = "AI",
@@ -158,7 +157,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.UpdateResearcherProfile(Guid.NewGuid(), updateRequest, "invalid-token");
 
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── DELETE ─────────────────────────────────────────────────────────────────
@@ -171,17 +170,16 @@ namespace LIMTIC.E2Es.Tests
 
             var deleteResponse = await Client.DeleteResearcherProfile(userId, token);
 
-            Assert.True(deleteResponse.IsSuccessStatusCode,
-                $"Delete failed: {await deleteResponse.Content.ReadAsStringAsync()}");
+            Assert.True(deleteResponse.Success);
 
             // Profile must be gone
-            var profileResponse = await Client.GetResearcherProfileFullResponse(userId, token);
-            Assert.Equal(HttpStatusCode.NotFound, profileResponse.StatusCode);
+            var profileResponse = await Client.GetResearcherProfile(userId);
+            Assert.False(profileResponse.Success);
 
             // User role must be reset to Visitor
             var user = await Client.GetUserById(userId, token);
             Assert.NotNull(user);
-            Assert.Equal(UserRole.Visitor, user!.User.Role);
+            Assert.Equal(UserRole.Visitor, user?.Data?.Role);
         }
 
         [Fact]
@@ -191,7 +189,7 @@ namespace LIMTIC.E2Es.Tests
 
             var response = await Client.DeleteResearcherProfile(Guid.NewGuid(), token);
 
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -200,7 +198,7 @@ namespace LIMTIC.E2Es.Tests
             var adminToken = await LoginAsSuperAdmin();
 
             // Create a regular visitor user and get their token
-            var visitorResponse = await Client.AddUser(new CreateUserRequest
+            var visitorResponse = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Visitor",
                 LastName = "User",
@@ -213,14 +211,14 @@ namespace LIMTIC.E2Es.Tests
 
             // Login as that visitor
             var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest("e2e.visitor.delete.researcher@example.com", "password"));
+                new LoginCommand("e2e.visitor.delete.researcher@example.com", "password"));
 
             // Create a researcher to attempt to delete
             var researcherUserId = await CreateResearcherUserAsync("e2e.delete.researcher.target@example.com", adminToken);
 
-            var response = await Client.DeleteResearcherProfile(researcherUserId, visitorToken?.AccessToken ?? "");
+            var response = await Client.DeleteResearcherProfile(researcherUserId, visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
     }
 }

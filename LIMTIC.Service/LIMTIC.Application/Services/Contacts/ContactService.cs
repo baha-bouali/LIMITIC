@@ -6,11 +6,12 @@ using LIMTIC.Application.Contracts.Commands.Contacts;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.Emails.Models;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Domain.Abstractions;
 using LIMTIC.Domain.Entities.Contacts;
 using Microsoft.Extensions.Options;
 using LIMTIC.Application.Settings;
 using LIMTIC.Domain.Enums;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Contact;
 
 namespace LIMTIC.Application.Services.Contacts
 {
@@ -67,9 +68,6 @@ namespace LIMTIC.Application.Services.Contacts
                 Message = contact.Message,
                 SentAt = sentAtUtc.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")
             });
-
-            var contactLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Contact);
-            await _auditLogsRepository.AddLog(contactLog);
 
             return Result<string>.SuccessResult("Contact message sent successfully.");
         }

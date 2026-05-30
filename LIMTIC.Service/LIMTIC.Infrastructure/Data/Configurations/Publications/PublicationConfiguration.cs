@@ -41,12 +41,14 @@ namespace LIMTIC.Infrastructure.Data.Configurations.Publications
             builder.Property(p => p.Keywords)
                    .HasConversion(
                        v => string.Join(',', v),
-                       v => v.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                       v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .ToList())
                    .Metadata.SetValueComparer(
-                       new ValueComparer<string[]>(
+                       new ValueComparer<List<string>>(
                            (a, b) => a.SequenceEqual(b),
-                           c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                           c => c.ToArray()));
+                           c => c.Aggregate(0, (hash, v) => HashCode.Combine(hash, v.GetHashCode())),
+                           c => c.ToList()
+                       ));
 
             builder.Property(p => p.ResearchAxisId)
                .IsRequired();

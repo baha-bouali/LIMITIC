@@ -6,7 +6,8 @@ using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Profiles;
 using LIMTIC.Application.Helpers;
 using LIMTIC.Application.Mappers.ProfileMapper;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Users;
 using LIMTIC.Domain.Enums;
 
 namespace LIMTIC.Application.Services.Profiles
@@ -55,32 +56,32 @@ namespace LIMTIC.Application.Services.Profiles
             return Result<MasterianProfileDto>.SuccessResult(_profileMapper.MapToMasterianProfileDto(masterian));
         }
 
-        public async Task<Result<MasterianProfileCommandResponse>> UpdateAsync(UpdateMasterianProfileCommand command)
+        public async Task<Result<MasterianProfileDto>> UpdateAsync(UpdateMasterianProfileCommand command)
         {
             var validationResult = _updateValidator.Validate(command);
             if (!validationResult.IsValid)
-                return Result<MasterianProfileCommandResponse>.ValidationFailureResult(
+                return Result<MasterianProfileDto>.ValidationFailureResult(
                     ValidationHelper.ParseValidationErrors(validationResult));
 
             // Authorization: only admin or the masterian themselves
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var currentRole = _currentUserService.Role;
             var isAdmin = Enum.TryParse<UserRole>(currentRole, out var role) &&
                 (role is UserRole.SuperAdmin or UserRole.Admin);
 
             if (!isAdmin && currentUserId != command.UserId)
-                return Result<MasterianProfileCommandResponse>.FailureResult("You are not authorized to update this profile");
+                return Result<MasterianProfileDto>.FailureResult("You are not authorized to update this profile");
 
             var masterian = await _masterianRepository.GetByUserIdAsync(command.UserId);
             if (masterian is null)
-                return Result<MasterianProfileCommandResponse>.FailureResult("Masterian profile not found");
+                return Result<MasterianProfileDto>.FailureResult("Masterian profile not found");
 
             // Validate supervisor if provided
             if (command.SupervisorId.HasValue)
             {
                 var supervisorExists = await _researcherRepository.ExistsAsync(command.SupervisorId.Value);
                 if (!supervisorExists)
-                    return Result<MasterianProfileCommandResponse>.FailureResult("Supervisor not found");
+                    return Result<MasterianProfileDto>.FailureResult("Supervisor not found");
             }
 
             // Update scalar fields
@@ -90,18 +91,15 @@ namespace LIMTIC.Application.Services.Profiles
 
             var saved = await _masterianRepository.UpdateAsync(masterian);
             if (!saved)
-                return Result<MasterianProfileCommandResponse>.FailureResult("Failed to update masterian profile");
+                return Result<MasterianProfileDto>.FailureResult("Failed to update masterian profile");
 
             // Reload to get updated supervisor navigation
             var updated = await _masterianRepository.GetByUserIdAsync(command.UserId);
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
-            return Result<MasterianProfileCommandResponse>.SuccessResult(new MasterianProfileCommandResponse
-            {
-                Profile = _profileMapper.MapToMasterianProfileDto(updated!)
-            });
+            return Result<MasterianProfileDto>.SuccessResult(_profileMapper.MapToMasterianProfileDto(updated!));
         }
 
         public async Task<Result<bool>> DeleteAsync(Guid userId)
@@ -124,7 +122,7 @@ namespace LIMTIC.Application.Services.Profiles
                     return Result<bool>.FailureResult("Failed to reset user role");
             }
 
-            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.User);
+            var profileLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.User);
             await _auditLogsRepository.AddLog(profileLog);
 
             return Result<bool>.SuccessResult(true);

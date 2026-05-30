@@ -1,6 +1,4 @@
-﻿using LIMTIC.Domain.Enums;
-
-namespace LIMTIC.Application.Abstractions
+﻿namespace LIMTIC.Application.Abstractions
 {
     /// <summary>
     /// Abstracts the identity of the authenticated user making the current request.
@@ -10,7 +8,7 @@ namespace LIMTIC.Application.Abstractions
     public interface ICurrentUserService
     {
         /// <summary>The Id of the currently authenticated user (from the 'sub' / NameIdentifier claim).</summary>
-        Guid UserId { get; }
+        Guid? UserId { get; }
 
         /// <summary>The role of the currently authenticated user (from the 'role' claim).</summary>
         string? Role { get; }

@@ -1,7 +1,7 @@
 using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Profiles;
 using LIMTIC.Application.Contracts.Commands.Profiles;
-using LIMTIC.WebAPI.Models.Profiles;
+using LIMTIC.Application.DTOs.Profiles;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -27,7 +27,7 @@ namespace LIMTIC.WebAPI.Controllers.Users
         public async Task<IActionResult> GetAllProfiles()
         {
             var result = await _masterianProfileService.GetAllAsync();
-            return Ok(new MastersListResponse { Success = true, Profiles = result.Data });
+            return Ok(new BaseResponse<List<MasterianProfileDto>> { Success = true, Data = result.Data });
         }
 
         [HttpGet("{userId:guid}")]
@@ -36,9 +36,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _masterianProfileService.GetByUserIdAsync(userId);
             if (result.Success)
-                return Ok(new MasterianProfileResponse { Success = true, Profile = result.Data });
+                return Ok(new BaseResponse<MasterianProfileDto> { Success = true, Data = result.Data });
 
-            return NotFound(new MasterianProfileResponse
+            return NotFound(new BaseResponse<MasterianProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -47,35 +47,27 @@ namespace LIMTIC.WebAPI.Controllers.Users
 
         [HttpPut("{userId:guid}")]
         [Authorize]
-        public async Task<IActionResult> UpdateProfile(Guid userId, UpdateMasterianProfileRequest request)
+        public async Task<IActionResult> UpdateProfile(UpdateMasterianProfileCommand command)
         {
-            var currentUserId = _currentUserService.UserId;
+            var currentUserId = _currentUserService.UserId.Value;
             var isAdmin = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
 
-            if (!isAdmin && currentUserId != userId)
+            if (!isAdmin && currentUserId != command.UserId)
                 return Forbid();
-
-            var command = new UpdateMasterianProfileCommand
-            {
-                UserId = userId,
-                DissertationSubject = request.DissertationSubject,
-                Cohort = request.Cohort,
-                SupervisorId = request.SupervisorId
-            };
 
             var result = await _masterianProfileService.UpdateAsync(command);
             if (result.Success)
-                return Ok(new MasterianProfileResponse { Success = true, Profile = result.Data?.Profile });
+                return Ok(new BaseResponse<MasterianProfileDto> { Success = true, Data = result.Data });
 
             if (result.ValidationErrors != null)
-                return BadRequest(new MasterianProfileResponse
+                return BadRequest(new BaseResponse<MasterianProfileDto>
                 {
                     Success = false,
                     Message = result.Message,
                     ValidationErrors = result.ValidationErrors
                 });
 
-            return NotFound(new MasterianProfileResponse
+            return NotFound(new BaseResponse<MasterianProfileDto>
             {
                 Success = false,
                 Message = result.Message
@@ -88,9 +80,9 @@ namespace LIMTIC.WebAPI.Controllers.Users
         {
             var result = await _masterianProfileService.DeleteAsync(userId);
             if (result.Success)
-                return Ok(new BaseResponse { Success = true });
+                return Ok(new BaseResponse<bool> { Success = true });
 
-            return NotFound(new BaseResponse
+            return NotFound(new BaseResponse<bool>
             {
                 Success = false,
                 Message = result.Message

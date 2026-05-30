@@ -1,17 +1,11 @@
 using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Contracts.Commands.Events;
+using LIMTIC.Application.Contracts.Queries.Events;
 using LIMTIC.Application.DTOs.Events;
-using LIMTIC.Domain.Enums;
+using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.WebAPI.Models;
-using LIMTIC.WebAPI.Models.Events.AddSpeaker;
-using LIMTIC.WebAPI.Models.Events.CreateEvent;
-using LIMTIC.WebAPI.Models.Events.GetEvents;
-using LIMTIC.WebAPI.Models.Events.GetEventById;
-using LIMTIC.WebAPI.Models.Events.UpdateEvent;
-using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IO;
 
 namespace LIMTIC.WebAPI.Controllers.Events
 {
@@ -26,39 +20,45 @@ namespace LIMTIC.WebAPI.Controllers.Events
             _eventsService = eventsService;
         }
 
-        [HttpGet("")]
+        [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetEvents([FromQuery] string? status, [FromQuery] string? type, [FromQuery] int page = 1, [FromQuery] int limit = 20, [FromQuery] string? q = null)
+        public async Task<IActionResult> GetEvents([FromQuery] GetEventsQuery getEventsQuery)
         {
-            if (page < 1)
-                page = 1;
-            if (limit < 1)
-                limit = 20;
+            if (getEventsQuery.Page < 1)
+                getEventsQuery.Page = 1;
+            if (getEventsQuery.Limit < 1)
+                getEventsQuery.Limit = 20;
 
-            var result = await _eventsService.GetEventsAsync(status, type, page, limit, q);
+            var result = await _eventsService.GetEventsAsync(getEventsQuery);
 
             if (result.Success)
             {
                 var (items, total) = result.Data;
-                return Ok(new GetEventsResponse
+                return Ok(new BaseResponse<List<EventDto>>
                 {
                     Success = true,
-                    Items = items,
-                    Total = total,
-                    Page = page,
-                    Limit = limit
+                    Data = items,
+                    Pagination = new PaginationResponse
+                    {
+                        Page = getEventsQuery.Page,
+                        Limit = getEventsQuery.Limit,
+                        Total = total
+                    }
                 });
             }
             else
             {
-                return BadRequest(new GetEventsResponse
+                return BadRequest(new BaseResponse<List<EventDto>>
                 {
                     Success = false,
                     Message = result.Message,
-                    Items = new List<EventDto>(),
-                    Total = 0,
-                    Page = page,
-                    Limit = limit
+                    Data = new List<EventDto>(),
+                    Pagination = new PaginationResponse
+                    {
+                        Page = getEventsQuery.Page,
+                        Limit = getEventsQuery.Limit,
+                        Total = 0
+                    }
                 });
             }
         }
@@ -71,14 +71,14 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
             if (result.Success)
             {
-                return Ok(new GetEventResponse
+                return Ok(new BaseResponse<EventDto>
                 {
                     Success = true,
-                    Event = result.Data
+                    Data = result.Data
                 });
             }
 
-            return NotFound(new GetEventResponse
+            return NotFound(new BaseResponse<EventDto>
             {
                 Success = false,
                 Message = result.Message
@@ -87,49 +87,19 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpPost("")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> CreateEvent([FromBody] CreateEventRequest request)
+        public async Task<IActionResult> CreateEvent([FromBody] CreateEventCommand command)
         {
-            if (!Enum.TryParse<EventType>(request.Type, true, out var eventType))
-            {
-                return BadRequest(new CreateEventResponse
-                {
-                    Success = false,
-                    Message = "Invalid event type"
-                });
-            }
-
-            var command = new CreateEventCommand
-            {
-                Type = eventType,
-                Title = request.Title,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                Location = request.Location,
-                Description = request.Description,
-                Program = request.Program,
-                ResearchAxisId = request.ResearchAxisId,
-                Speakers = request.Speakers?.Select(s => new CreateSpeakerItemCommand
-                {
-                    FirstName = s.FirstName,
-                    LastName = s.LastName,
-                    Email = s.Email,
-                    Institution = s.Institution,
-                    Role = s.Role,
-                    Subject = s.Subject
-                }).ToList()
-            };
-
             var result = await _eventsService.CreateEventAsync(command);
             if (result.Success)
             {
-                return Ok(new CreateEventResponse
+                return Ok(new BaseResponse<EventDto>
                 {
                     Success = true,
-                    Event = result.Data
+                    Data = result.Data
                 });
             }
 
-            return BadRequest(new CreateEventResponse
+            return BadRequest(new BaseResponse<EventDto>
             {
                 Success = false,
                 Message = result.Message,
@@ -139,41 +109,19 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpPut("{id:guid}")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventRequest request)
+        public async Task<IActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventCommand command)
         {
-            if (!Enum.TryParse<EventType>(request.Type, true, out var eventType))
-            {
-                return BadRequest(new UpdateEventResponse
-                {
-                    Success = false,
-                    Message = "Invalid event type"
-                });
-            }
-
-            var command = new UpdateEventCommand
-            {
-                Id = id,
-                Type = eventType,
-                Title = request.Title,
-                StartDate = request.StartDate,
-                EndDate = request.EndDate,
-                Location = request.Location,
-                Description = request.Description,
-                Program = request.Program,
-                ResearchAxisId = request.ResearchAxisId
-            };
-
             var result = await _eventsService.UpdateEventAsync(command);
             if (result.Success)
             {
-                return Ok(new UpdateEventResponse
+                return Ok(new BaseResponse<EventDto>
                 {
                     Success = true,
-                    Event = result.Data
+                    Data = result.Data
                 });
             }
 
-            return BadRequest(new UpdateEventResponse
+            return BadRequest(new BaseResponse<EventDto>
             {
                 Success = false,
                 Message = result.Message,
@@ -188,13 +136,13 @@ namespace LIMTIC.WebAPI.Controllers.Events
             var result = await _eventsService.DeleteEventAsync(id);
             if (result.Success)
             {
-                return Ok(new BaseResponse
+                return Ok(new BaseResponse<bool>
                 {
                     Success = true
                 });
             }
 
-            return BadRequest(new BaseResponse
+            return BadRequest(new BaseResponse<bool>
             {
                 Success = false,
                 Message = result.Message,
@@ -204,30 +152,19 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpPost("{id:guid}/speakers")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> AddSpeaker(Guid id, [FromBody] AddSpeakerRequest request)
+        public async Task<IActionResult> AddSpeaker([FromBody] CreateSpeakerCommand command)
         {
-            var command = new CreateSpeakerCommand
-            {
-                EventId = id,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                Institution = request.Institution,
-                Role = request.Role,
-                Subject = request.Subject
-            };
-
             var result = await _eventsService.AddSpeakerAsync(command);
             if (result.Success)
             {
-                return Ok(new AddSpeakerResponse
+                return Ok(new BaseResponse<SpeakerDto>
                 {
                     Success = true,
-                    Speaker = result.Data
+                    Data = result.Data
                 });
             }
 
-            return BadRequest(new AddSpeakerResponse
+            return BadRequest(new BaseResponse<SpeakerDto>
             {
                 Success = false,
                 Message = result.Message,
@@ -237,31 +174,19 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpPut("{id:guid}/speakers/{speakerId:guid}")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> UpdateSpeaker(Guid id, Guid speakerId, [FromBody] UpdateSpeakerRequest request)
+        public async Task<IActionResult> UpdateSpeaker([FromBody] UpdateSpeakerCommand command)
         {
-            var command = new UpdateSpeakerCommand
-            {
-                EventId = id,
-                SpeakerId = speakerId,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                Email = request.Email,
-                Institution = request.Institution,
-                Role = request.Role,
-                Subject = request.Subject
-            };
-
             var result = await _eventsService.UpdateSpeakerAsync(command);
             if (result.Success)
             {
-                return Ok(new UpdateSpeakerResponse
+                return Ok(new BaseResponse<SpeakerDto>
                 {
                     Success = true,
-                    Speaker = result.Data
+                    Data = result.Data
                 });
             }
 
-            return BadRequest(new UpdateSpeakerResponse
+            return BadRequest(new BaseResponse<SpeakerDto>
             {
                 Success = false,
                 Message = result.Message,
@@ -276,13 +201,13 @@ namespace LIMTIC.WebAPI.Controllers.Events
             var result = await _eventsService.DeleteSpeakerAsync(id, speakerId);
             if (result.Success)
             {
-                return Ok(new BaseResponse
+                return Ok(new BaseResponse<bool>
                 {
                     Success = true
                 });
             }
 
-            return BadRequest(new BaseResponse
+            return BadRequest(new BaseResponse<bool>
             {
                 Success = false,
                 Message = result.Message,
@@ -292,10 +217,10 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpPost("{id:guid}/photos")]
         [Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> UploadEventPhotos(Guid id, List<IFormFile> files)
+        public async Task<IActionResult> UploadEventPhotos(Guid eventId, List<IFormFile> files)
         {
             if (files == null || files.Count == 0)
-                return BadRequest(new BaseResponse { Success = false, Message = "No files provided" });
+                return BadRequest(new BaseResponse<bool> { Success = false, Message = "No files provided" });
 
             var filePayloads = new List<(Stream Stream, string FileName)>();
             foreach (var file in files.Where(f => f != null && f.Length > 0))
@@ -303,11 +228,11 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
             try
             {
-                var result = await _eventsService.UploadEventPhotosAsync(id, filePayloads);
+                var result = await _eventsService.UploadEventPhotosAsync(eventId, filePayloads);
                 if (!result.Success)
-                    return BadRequest(new BaseResponse { Success = false, Message = result.Message });
+                    return BadRequest(new BaseResponse<bool> { Success = false, Message = result.Message });
 
-                return Ok(new BaseResponse { Success = true });
+                return Ok(new BaseResponse<bool> { Success = true });
             }
             finally
             {
@@ -318,13 +243,17 @@ namespace LIMTIC.WebAPI.Controllers.Events
 
         [HttpGet("{id:guid}/photos/{index:int}")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetEventPhoto(Guid id, int index)
+        public async Task<IActionResult> GetEventPhoto(Guid eventId)
         {
-            var result = await _eventsService.GetEventPhotoAsync(id, index);
+            var result = await _eventsService.GetEventPhotosAsync(eventId);
             if (!result.Success || result.Data == null)
-                return NotFound(new BaseResponse { Success = false, Message = result.Message });
+                return NotFound(new BaseResponse<bool> { Success = false, Message = result.Message });
 
-            return File(result.Data.Stream, result.Data.ContentType, result.Data.FileName);
+            return Ok(new BaseResponse<List<FileDownloadDto>>
+            {
+                Success = true,
+                Data = result.Data,
+            });
         }
     }
 }

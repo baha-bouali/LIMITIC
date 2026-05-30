@@ -1,3 +1,4 @@
+using LIMTIC.Application.DTOs.ResearchAxis;
 using LIMTIC.Application.DTOs.UserManagement;
 
 namespace LIMTIC.Application.DTOs.Profiles

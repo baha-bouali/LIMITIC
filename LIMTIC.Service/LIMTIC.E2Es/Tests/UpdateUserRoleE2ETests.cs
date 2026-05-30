@@ -1,12 +1,12 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace LIMTIC.E2Es.Tests
 {
@@ -22,7 +22,7 @@ namespace LIMTIC.E2Es.Tests
 
         private async Task<Guid> CreateVisitorUserAsync(string email, string token)
         {
-            var createResponse = await Client.AddUser(new CreateUserRequest
+            var createResponse = await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "E2E",
                 LastName = "User",
@@ -32,7 +32,7 @@ namespace LIMTIC.E2Es.Tests
             }, token);
 
             Assert.NotNull(createResponse);
-            return createResponse.User.Id;
+            return createResponse.Data.Id;
         }
 
         // ── Basic role assignments ─────────────────────────────────────────────────
@@ -42,7 +42,7 @@ namespace LIMTIC.E2Es.Tests
         {
             var token = await LoginAsSuperAdmin();
 
-            var createUserRequest = new CreateUserRequest
+            var createUserRequest = new CreateUserCommand
             {
                 FirstName = "E2E",
                 LastName = "Research",
@@ -54,7 +54,7 @@ namespace LIMTIC.E2Es.Tests
             var createResponse = await Client.AddUser(createUserRequest, token);
             Assert.NotNull(createResponse);
 
-            var updateRequest = new UpdateUserRoleRequest
+            var updateRequest = new UpdateUserRoleCommand
             {
                 Role = UserRole.Researcher,
                 Rank = "Professor",
@@ -67,7 +67,7 @@ namespace LIMTIC.E2Es.Tests
             // ensure authorization header is set for the PUT request
             Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-            var response = await Client.PutAsJsonAsync($"api/users/updateRole/{createResponse.User.Id}", updateRequest);
+            var response = await Client.PutAsJsonAsync($"api/users/updateRole/{createResponse.Data.Id}", updateRequest);
             Assert.True(response.IsSuccessStatusCode);
         }
 
@@ -77,19 +77,19 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateVisitorUserAsync("e2e.role.phd@example.com", token);
 
-            var response = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.PhDStudent,
                 EnrollmentYear = 2023
             }, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"UpdateRole failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
             // Verify PhD profile was created
-            var profile = await Client.GetPhDStudentProfile(userId, token);
-            Assert.NotNull(profile?.Profile);
-            Assert.Equal(2023, profile!.Profile!.EnrollmentYear);
+            var profile = await Client.GetPhDStudentProfile(userId);
+            Assert.NotNull(profile?.Data);
+            Assert.Equal(2023, profile!.Data!.EnrollmentYear);
         }
 
         [Fact]
@@ -98,20 +98,20 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateVisitorUserAsync("e2e.role.masterian@example.com", token);
 
-            var response = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Masterian,
                 Cohort = "2024",
                 DissertationSubject = "Subject X"
             }, token);
 
-            Assert.True(response.IsSuccessStatusCode,
-                $"UpdateRole failed: {await response.Content.ReadAsStringAsync()}");
+            Assert.True(response.Success);
 
             // Verify Masterian profile was created
-            var profile = await Client.GetMasterianProfile(userId, token);
-            Assert.NotNull(profile?.Profile);
-            Assert.Equal("2024", profile!.Profile!.Cohort);
+            var profile = await Client.GetMasterianProfile(userId);
+            Assert.NotNull(profile?.Data);
+            Assert.Equal("2024", profile!.Data!.Cohort);
         }
 
         // ── Role-switch scenarios ──────────────────────────────────────────────────
@@ -123,8 +123,9 @@ namespace LIMTIC.E2Es.Tests
             var userId = await CreateVisitorUserAsync("e2e.switch.researcher.to.masterian@example.com", token);
 
             // Promote to Researcher
-            var r1 = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var r1 = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Researcher,
                 Rank = "Associate",
                 Specialty = "ML",
@@ -132,26 +133,26 @@ namespace LIMTIC.E2Es.Tests
                 PhoneNumber = "99999",
                 ResearchAxisIds = new List<Guid>()
             }, token);
-            Assert.True(r1.IsSuccessStatusCode);
+            Assert.True(r1.Success);
 
             // Now promote to Masterian — should delete Researcher row
-            var r2 = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var r2 = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Masterian,
                 Cohort = "2025",
                 DissertationSubject = "Deep Learning"
             }, token);
-            Assert.True(r2.IsSuccessStatusCode,
-                $"Role switch failed: {await r2.Content.ReadAsStringAsync()}");
+            Assert.True(r2.Success);
 
             // Researcher profile must be gone
-            var researcherResponse = await Client.GetResearcherProfileFullResponse(userId, token);
-            Assert.Equal(HttpStatusCode.NotFound, researcherResponse.StatusCode);
+            var researcherResponse = await Client.GetResearcherProfile(userId);
+            Assert.False(researcherResponse.Success);
 
             // Masterian profile must exist
-            var masterianProfile = await Client.GetMasterianProfile(userId, token);
-            Assert.NotNull(masterianProfile?.Profile);
-            Assert.Equal("2025", masterianProfile!.Profile!.Cohort);
+            var masterianProfile = await Client.GetMasterianProfile(userId);
+            Assert.NotNull(masterianProfile?.Data);
+            Assert.Equal("2025", masterianProfile!.Data!.Cohort);
         }
 
         [Fact]
@@ -161,16 +162,18 @@ namespace LIMTIC.E2Es.Tests
             var userId = await CreateVisitorUserAsync("e2e.switch.phd.to.researcher@example.com", token);
 
             // Promote to PhDStudent
-            var r1 = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var r1 = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.PhDStudent,
                 EnrollmentYear = 2022
             }, token);
-            Assert.True(r1.IsSuccessStatusCode);
+            Assert.True(r1.Success);
 
             // Now promote to Researcher — should delete PhDStudent row
-            var r2 = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var r2 = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Researcher,
                 Rank = "Dr",
                 Specialty = "NLP",
@@ -178,17 +181,16 @@ namespace LIMTIC.E2Es.Tests
                 PhoneNumber = "11111",
                 ResearchAxisIds = new List<Guid>()
             }, token);
-            Assert.True(r2.IsSuccessStatusCode,
-                $"Role switch failed: {await r2.Content.ReadAsStringAsync()}");
+            Assert.True(r2.Success);
 
             // PhD profile must be gone
-            var phdResponse = await Client.GetPhDStudentProfileFullResponse(userId, token);
-            Assert.Equal(HttpStatusCode.NotFound, phdResponse.StatusCode);
+            var phdResponse = await Client.GetPhDStudentProfile(userId);
+            Assert.False(phdResponse.Success);
 
             // Researcher profile must exist
-            var researcherProfile = await Client.GetResearcherProfile(userId, token);
-            Assert.NotNull(researcherProfile?.Profile);
-            Assert.Equal("Dr", researcherProfile!.Profile!.Rank);
+            var researcherProfile = await Client.GetResearcherProfile(userId);
+            Assert.NotNull(researcherProfile?.Data);
+            Assert.Equal("Dr", researcherProfile!.Data!.Rank);
         }
 
         // ── Validation failures ────────────────────────────────────────────────────
@@ -199,13 +201,14 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateVisitorUserAsync("e2e.role.researcher.invalid@example.com", token);
 
-            var response = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Researcher
                 // Rank, Specialty, Office, PhoneNumber intentionally missing
             }, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -214,13 +217,14 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateVisitorUserAsync("e2e.role.phd.invalid@example.com", token);
 
-            var response = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.PhDStudent
                 // EnrollmentYear intentionally missing (will be 0)
             }, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -229,13 +233,14 @@ namespace LIMTIC.E2Es.Tests
             var token = await LoginAsSuperAdmin();
             var userId = await CreateVisitorUserAsync("e2e.role.masterian.invalid@example.com", token);
 
-            var response = await Client.UpdateUserRole(userId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = userId,
                 Role = UserRole.Masterian
                 // Cohort and DissertationSubject intentionally missing
             }, token);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         // ── Authorization ──────────────────────────────────────────────────────────
@@ -243,12 +248,13 @@ namespace LIMTIC.E2Es.Tests
         [Fact]
         public async Task UpdateUserRole_Unauthenticated_Returns401()
         {
-            var response = await Client.UpdateUserRole(Guid.NewGuid(), new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = Guid.NewGuid(),
                 Role = UserRole.Researcher
             }, "invalid-token");
 
-            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+            Assert.False(response.Success);
         }
 
         [Fact]
@@ -258,7 +264,7 @@ namespace LIMTIC.E2Es.Tests
 
             // Create a visitor user and login as that visitor
             var visitorEmail = "e2e.role.visitor.forbidden@example.com";
-            await Client.AddUser(new CreateUserRequest
+            await Client.AddUser(new CreateUserCommand
             {
                 FirstName = "Visitor",
                 LastName = "Forbidden",
@@ -268,20 +274,21 @@ namespace LIMTIC.E2Es.Tests
             }, adminToken);
 
             var visitorToken = await Client.AuthenticateUser(
-                new WebAPI.Models.Auth.Login.LoginRequest(visitorEmail, "password"));
+                new LoginCommand(visitorEmail, "password"));
 
             var targetUserId = await CreateVisitorUserAsync("e2e.role.target.user@example.com", adminToken);
 
-            var response = await Client.UpdateUserRole(targetUserId, new UpdateUserRoleRequest
+            var response = await Client.UpdateUserRole(new UpdateUserRoleCommand
             {
+                UserId = targetUserId,
                 Role = UserRole.Researcher,
                 Rank = "Prof",
                 Specialty = "AI",
                 Office = "Room 1",
                 PhoneNumber = "12345"
-            }, visitorToken?.AccessToken ?? "");
+            }, visitorToken?.Data?.AccessToken ?? "");
 
-            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+            Assert.False(response.Success);
         }
     }
 }

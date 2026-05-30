@@ -3,14 +3,15 @@ using LIMTIC.Application.Abstractions;
 using LIMTIC.Application.Abstractions.Events;
 using LIMTIC.Application.Abstractions.Storage;
 using LIMTIC.Application.Contracts.Commands.Events;
+using LIMTIC.Application.Contracts.Queries.Events;
 using LIMTIC.Application.DTOs;
 using LIMTIC.Application.DTOs.Events;
 using LIMTIC.Application.DTOs.Storage;
 using LIMTIC.Application.Helpers;
-using LIMTIC.Domain.Abstractions;
+using LIMTIC.Domain.Abstractions.AuditLogs;
+using LIMTIC.Domain.Abstractions.Events;
 using LIMTIC.Domain.Entities.Events;
 using LIMTIC.Domain.Enums;
-using System.IO;
 
 namespace LIMTIC.Application.Services.Events
 {
@@ -45,15 +46,23 @@ namespace LIMTIC.Application.Services.Events
             _blobStorageService = blobStorageService;
         }
 
-        public async Task<Result<(List<EventDto> Items, int Total)>> GetEventsAsync(string? status, string? type, int page, int limit, string? q)
+        public async Task<Result<(List<EventDto> Items, int Total)>> GetEventsAsync(GetEventsQuery getEventsQuery)
         {
             try
             {
-                var events = await _eventsRepository.GetEventsAsync(status, type, page, limit, q);
+                var events = await _eventsRepository.GetEventsAsync(
+                    getEventsQuery.Status, 
+                    getEventsQuery.Type, 
+                    getEventsQuery.Page, 
+                    getEventsQuery.Limit,
+                    getEventsQuery.Q);
 
                 var eventDtos = events.Select(MapEvent).ToList();
 
-                var total = await _eventsRepository.GetTotalEventsCountAsync(status, type, q);
+                var total = await _eventsRepository.GetTotalEventsCountAsync(
+                    getEventsQuery.Status,
+                    getEventsQuery.Type,
+                    getEventsQuery.Q);
 
                 return Result<(List<EventDto>, int)>.SuccessResult((eventDtos, total));
             }
@@ -87,11 +96,13 @@ namespace LIMTIC.Application.Services.Events
             if (!validationResult.IsValid)
                 return Result<EventDto>.ValidationFailureResult(ValidationHelper.ParseValidationErrors(validationResult));
 
+            Enum.TryParse<EventType>(command.Type, out var type);
+
             var eventEntity = new EventEntity
             {
                 Id = Guid.NewGuid(),
                 Title = command.Title,
-                Type = command.Type,
+                Type = type,
                 StartDate = command.StartDate,
                 EndDate = command.EndDate,
                 Location = command.Location,
@@ -114,7 +125,7 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<EventDto>.FailureResult("Failed to create event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<EventDto>.SuccessResult(MapEvent(eventEntity));
@@ -130,8 +141,9 @@ namespace LIMTIC.Application.Services.Events
             if (existingEvent == null)
                 return Result<EventDto>.FailureResult("Event not found");
 
+            Enum.TryParse<EventType>(command.Type, out var type);
             existingEvent.Title = command.Title;
-            existingEvent.Type = command.Type;
+            existingEvent.Type = type;
             existingEvent.StartDate = command.StartDate;
             existingEvent.EndDate = command.EndDate;
             existingEvent.Location = command.Location;
@@ -143,7 +155,7 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<EventDto>.FailureResult("Failed to update event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<EventDto>.SuccessResult(MapEvent(existingEvent));
@@ -159,7 +171,7 @@ namespace LIMTIC.Application.Services.Events
             if (!deleted)
                 return Result<bool>.FailureResult("Failed to delete event");
 
-            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            var eventLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.Event);
             await _auditLogsRepository.AddLog(eventLog);
 
             return Result<bool>.SuccessResult(true);
@@ -191,7 +203,7 @@ namespace LIMTIC.Application.Services.Events
             if (!created)
                 return Result<SpeakerDto>.FailureResult("Failed to create speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.CREATE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.CREATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(speaker));
@@ -218,7 +230,7 @@ namespace LIMTIC.Application.Services.Events
             if (!updated)
                 return Result<SpeakerDto>.FailureResult("Failed to update speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.UPDATE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.UPDATE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<SpeakerDto>.SuccessResult(MapSpeaker(existingSpeaker));
@@ -234,7 +246,7 @@ namespace LIMTIC.Application.Services.Events
             if (!deleted)
                 return Result<bool>.FailureResult("Failed to delete speaker");
 
-            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId, ActionType.DELETE, ResourceType.Event);
+            var speakerLog = AuditLogHelper.CreateAuditLog(_currentUserService.UserId.Value, ActionType.DELETE, ResourceType.Event);
             await _auditLogsRepository.AddLog(speakerLog);
 
             return Result<bool>.SuccessResult(true);
@@ -269,27 +281,31 @@ namespace LIMTIC.Application.Services.Events
                 : Result<bool>.FailureResult("Failed to save event photo references");
         }
 
-        public async Task<Result<FileDownloadDto>> GetEventPhotoAsync(Guid eventId, int index)
+        public async Task<Result<List<FileDownloadDto>>> GetEventPhotosAsync(Guid eventId)
         {
             var eventEntity = await _eventsRepository.GetEventByIdAsync(eventId);
-            if (eventEntity == null || eventEntity.PhotoFileNames == null || index < 0 || index >= eventEntity.PhotoFileNames.Count)
-                return Result<FileDownloadDto>.FailureResult("Photo not found");
+            if (eventEntity == null || eventEntity.PhotoFileNames == null)
+                return Result<List<FileDownloadDto>>.FailureResult("Photo not found");
 
-            var blobName = eventEntity.PhotoFileNames[index];
             try
             {
-                var stream = await _blobStorageService.GetStreamAsync("media", blobName);
-                var fileName = Path.GetFileName(blobName);
-                return Result<FileDownloadDto>.SuccessResult(new FileDownloadDto
+                List<FileDownloadDto> photos = new List<FileDownloadDto>();
+                foreach (var blobName in eventEntity.PhotoFileNames)
                 {
-                    Stream = stream,
-                    FileName = fileName,
-                    ContentType = ResolveContentType(fileName)
-                });
+                    var stream = await _blobStorageService.GetStreamAsync("media", blobName);
+                    var fileName = Path.GetFileName(blobName); 
+                    photos.Add(new FileDownloadDto
+                    {
+                        Stream = stream,
+                        FileName = fileName,
+                        ContentType = ResolveContentType(fileName)
+                    });
+                }
+                return Result<List<FileDownloadDto>>.SuccessResult(photos);
             }
             catch (FileNotFoundException)
             {
-                return Result<FileDownloadDto>.FailureResult("Photo file not found in blob storage");
+                return Result<List<FileDownloadDto>>.FailureResult("Cannot get all photos from blob storage!");
             }
         }
 

@@ -1,12 +1,12 @@
 ﻿using LIMTIC.Application.Abstractions.Security;
 using LIMTIC.Application.Abstractions.Storage;
+using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.Domain.Entities.Users;
 using LIMTIC.Domain.Enums;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.HttpCookie;
 using LIMTIC.E2Es.MailFixture;
 using LIMTIC.Infrastructure.Data;
-using LIMTIC.WebAPI.Models.Auth.Login;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
@@ -19,8 +19,6 @@ namespace LIMTIC.E2Es.Base
         protected readonly CustomWebApplicationFactory Factory;
         protected IPasswordHasher PasswordHasher => Factory.Services
             .GetRequiredService<IPasswordHasher>();
-        protected IBlobStorageService BlobStorageService => Factory.Services
-           .GetRequiredService<IBlobStorageService>();
 
         public BaseE2ETests(PostgresFixture dbfixture, MailHogFixture mailHogFixture, bool useShortTokenExpiry = false)
         {
@@ -30,7 +28,7 @@ namespace LIMTIC.E2Es.Base
                 ["Jwt:ExpireInMinutes"] = "0",
                 ["Jwt:ExpireInSeconds"] = "3",
                 ["RefreshToken:ExpireInDays"] = "0",
-                ["RefreshToken:ExpireInSeconds"] = "10"
+                ["RefreshToken:ExpireInSeconds"] = "120"
             }
             : new Dictionary<string, string?>();
 
@@ -104,10 +102,10 @@ namespace LIMTIC.E2Es.Base
 
         protected async Task<string?> LoginAsSuperAdmin()
         {
-            var loginRequest = new LoginRequest("admin@test.com", "AdminPassword");
+            var loginRequest = new LoginCommand("admin@test.com", "AdminPassword");
             var authResponse = await Client.AuthenticateUser(loginRequest);
 
-            return authResponse?.AccessToken;
+            return authResponse?.Data?.AccessToken;
         }
     }
 }

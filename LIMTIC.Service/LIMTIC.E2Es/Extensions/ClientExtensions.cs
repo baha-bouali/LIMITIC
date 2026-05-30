@@ -1,628 +1,544 @@
-﻿using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using LIMTIC.Application.DTOs.UserManagement.GetUser;
+﻿using LIMTIC.Application.Contracts.Commands.ChangeUserPassword;
+using LIMTIC.Application.Contracts.Commands.Contacts;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Events;
+using LIMTIC.Application.Contracts.Commands.ForgetPassword;
+using LIMTIC.Application.Contracts.Commands.Login;
+using LIMTIC.Application.Contracts.Commands.Profiles;
+using LIMTIC.Application.Contracts.Commands.Publications;
+using LIMTIC.Application.Contracts.Commands.ResearchAxis;
+using LIMTIC.Application.Contracts.Commands.ResetPassword;
+using LIMTIC.Application.Contracts.Commands.Settings;
+using LIMTIC.Application.Contracts.Commands.UpdateUserRole;
+using LIMTIC.Application.Contracts.Commands.VerifyResetCode;
+using LIMTIC.Application.Contracts.Queries.AuditLogs;
+using LIMTIC.Application.Contracts.Queries.Events;
+using LIMTIC.Application.Contracts.Queries.Publications;
+using LIMTIC.Application.DTOs.AuditLogs;
+using LIMTIC.Application.DTOs.Auth;
+using LIMTIC.Application.DTOs.Events;
+using LIMTIC.Application.DTOs.Profiles;
+using LIMTIC.Application.DTOs.Publications;
+using LIMTIC.Application.DTOs.ResearchAxis;
+using LIMTIC.Application.DTOs.Settings;
+using LIMTIC.Application.DTOs.Storage;
+using LIMTIC.Application.DTOs.UserManagement;
 using LIMTIC.Domain.Enums;
 using LIMTIC.WebAPI;
-using LIMTIC.WebAPI.Models.Auth.ForgetPassword;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.Auth.ResetPassword;
-using LIMTIC.WebAPI.Models.Auth.VerifyResetCode;
-using LIMTIC.WebAPI.Models.Events.GetEvents;
-using LIMTIC.WebAPI.Models.Events.CreateEvent;
-using LIMTIC.WebAPI.Models.Events.UpdateEvent;
-using LIMTIC.WebAPI.Models.Events.AddSpeaker;
-using LIMTIC.WebAPI.Models.Events.UpdateSpeaker;
-using LIMTIC.WebAPI.Models.Profiles;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.CreatePublication;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublication;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.GetPublications;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Pdf;
-using LIMTIC.WebAPI.Models.Publications.Dashboard.Reject;
-using LIMTIC.WebAPI.Models.Publications.Public.GetPublication;
-using LIMTIC.WebAPI.Models.Publications.Public.GetPublications;
-using LIMTIC.WebAPI.Models.Publications.Public.GetRecent;
-using LIMTIC.WebAPI.Models.ResearchAxis;
-using LIMTIC.WebAPI.Models.UserManagement.ChangeUserPassword;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
-using LIMTIC.WebAPI.Models.UserManagement.GetUsers;
-using LIMTIC.WebAPI.Models.UserManagement.UpdateUserRole;
-using LIMTIC.WebAPI.Models.Contact;
-using LIMTIC.WebAPI.Models.AuditLogs.GetAuditLogs;
+using LIMTIC.WebAPI.Models;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace LIMTIC.E2Es.Extensions
 {
     public static class ClientExtensions
     {
-        private static HttpRequestMessage CreateRequest(string endpoint, HttpMethod httpMethod, string accessToken)
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
+        private static HttpRequestMessage CreateRequest(string endpoint, HttpMethod httpMethod, string? accessToken = null)
         {
             var request = new HttpRequestMessage(httpMethod, endpoint);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            }
             return request;
         }
 
-        // ── Update Role ────────────────────────────────────────────────────────────
-        public static async Task<HttpResponseMessage> UpdateUserRole(
-            this HttpClient client, Guid userId, UpdateUserRoleRequest request, string accessToken)
+        private static async Task<BaseResponse<T>> SendAndDeserializeAsync<T>(
+            this HttpClient client,
+            HttpRequestMessage request,
+            CancellationToken cancellationToken = default)
         {
-            var req = CreateRequest($"api/users/updateRole/{userId}", HttpMethod.Put, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
+            var response = await client.SendAsync(request, cancellationToken);
+            var content = await response.Content.ReadAsStringAsync(cancellationToken);
 
-        // ── Researcher Profile ─────────────────────────────────────────────────────
-        public static async Task<ResearcherProfileResponse?> GetResearcherProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<ResearcherProfileResponse>()
-                : null;
-        }
-
-        public static async Task<HttpResponseMessage> GetResearcherProfileFullResponse(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> UpdateResearcherProfile(
-            this HttpClient client, Guid userId, UpdateResearcherProfileRequest request, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Put, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> DeleteResearcherProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/researchers/{userId}", HttpMethod.Delete, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        // ── PhD Student Profile ────────────────────────────────────────────────────
-        public static async Task<PhDStudentProfileResponse?> GetPhDStudentProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<PhDStudentProfileResponse>()
-                : null;
-        }
-
-        public static async Task<HttpResponseMessage> GetPhDStudentProfileFullResponse(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> UpdatePhDStudentProfile(
-            this HttpClient client, Guid userId, UpdatePhDStudentProfileRequest request, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Put, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> DeletePhDStudentProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/phd-students/{userId}", HttpMethod.Delete, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        // ── Masterian Profile ──────────────────────────────────────────────────────
-        public static async Task<MasterianProfileResponse?> GetMasterianProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<MasterianProfileResponse>()
-                : null;
-        }
-
-        public static async Task<HttpResponseMessage> GetMasterianProfileFullResponse(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> UpdateMasterianProfile(
-            this HttpClient client, Guid userId, UpdateMasterianProfileRequest request, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Put, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> DeleteMasterianProfile(
-            this HttpClient client, Guid userId, string accessToken)
-        {
-            var req = CreateRequest($"api/profiles/masterians/{userId}", HttpMethod.Delete, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<CreateUserResponse?> AddUser(this HttpClient client, CreateUserRequest createUserRequest, string accessToken)
-        {
-            var request = CreateRequest("api/users/addUser/", HttpMethod.Post, accessToken);
-            request.Content = JsonContent.Create(createUserRequest);
-
-            var response = await client.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
+            try
             {
-                return await response.Content.ReadFromJsonAsync<CreateUserResponse>();
+                var result = JsonSerializer.Deserialize<BaseResponse<T>>(content, _jsonOptions);
+                if (result != null)
+                {
+                    return result;
+                }
+
+                // If deserialization fails, create a fallback response
+                return new BaseResponse<T>
+                {
+                    Success = response.IsSuccessStatusCode,
+                    Message = response.IsSuccessStatusCode ? null : $"Request failed with status {response.StatusCode}",
+                    Data = default
+                };
             }
-
-            var errorBody = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException($"AddUser failed: {response.StatusCode} - {errorBody}");
-        }
-        public static async Task<GetUserResponse?> GetUserById(this HttpClient client, Guid id, string accessToken)
-        {
-            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
-
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
+            catch (JsonException)
             {
-                return await response.Content.ReadFromJsonAsync<GetUserResponse>();
+                return new BaseResponse<T>
+                {
+                    Success = false,
+                    Message = $"Failed to deserialize response: {content}",
+                    Data = default
+                };
             }
-            return null;
         }
 
-        public static async Task<HttpResponseMessage> GetUserByIdFullResponse(this HttpClient client, Guid id, string accessToken)
+        private static async Task<BaseResponse<T>> PostAndDeserializeAsync<T>(
+            this HttpClient client,
+            string endpoint,
+            object? content = null,
+            string? accessToken = null,
+            CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(request);
-        }
-
-        public static async Task<BaseResponse?> ActivateUser(this HttpClient client, Guid userId, string accessToken)
-        {
-            var request = CreateRequest($"api/users/activateUser?userId={userId}", HttpMethod.Post, accessToken);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
+            var request = CreateRequest(endpoint, HttpMethod.Post, accessToken);
+            if (content != null)
             {
-                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+                request.Content = JsonContent.Create(content);
             }
-            return null;
+            return await client.SendAndDeserializeAsync<T>(request, cancellationToken);
         }
 
-        public static async Task<BaseResponse?> DeactivateUser(this HttpClient client, Guid userId, string accessToken)
+        private static async Task<BaseResponse<T>> PutAndDeserializeAsync<T>(
+            this HttpClient client,
+            string endpoint,
+            object? content = null,
+            string? accessToken = null,
+            CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest($"api/users/deactivateUser?userId={userId}", HttpMethod.Post, accessToken);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
+            var request = CreateRequest(endpoint, HttpMethod.Put, accessToken);
+            if (content != null)
             {
-                return await response.Content.ReadFromJsonAsync<BaseResponse>();
+                request.Content = JsonContent.Create(content);
             }
-            return null;
+            return await client.SendAndDeserializeAsync<T>(request, cancellationToken);
         }
 
-        public static async Task<HttpResponseMessage> GetUserByIdFullHttpResponse(this HttpClient client, Guid id, string accessToken)
+        private static async Task<BaseResponse<T>> DeleteAndDeserializeAsync<T>(
+            this HttpClient client,
+            string endpoint,
+            string? accessToken = null,
+            CancellationToken cancellationToken = default)
         {
-            var request = CreateRequest($"api/users/getUser?id={id}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(request);
+            var request = CreateRequest(endpoint, HttpMethod.Delete, accessToken);
+            return await client.SendAndDeserializeAsync<T>(request, cancellationToken);
         }
 
-        public static async Task<LoginResponse?> AuthenticateUser(this HttpClient client, LoginRequest loginRequest)
+        private static async Task<BaseResponse<T>> GetAndDeserializeAsync<T>(
+            this HttpClient client,
+            string endpoint,
+            string? accessToken = null,
+            CancellationToken cancellationToken = default)
         {
-            var response = await client.PostAsJsonAsync("api/auth/login", loginRequest);
-
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<LoginResponse>();
-            return null;
+            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
+            return await client.SendAndDeserializeAsync<T>(request, cancellationToken);
         }
 
-        public static async Task<LoginResponse?> RefreshToken(this HttpClient client)
+        // ── Auth ───────────────────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<LoginDto>> AuthenticateUser(
+            this HttpClient client, LoginCommand command)
         {
-            var response = await client.PostAsync("api/auth/refreshToken", null);
-
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<LoginResponse>();
-            return null;
+            return await client.PostAndDeserializeAsync<LoginDto>("api/auth/login", command);
         }
-        public static async Task<HttpResponseMessage> ChangePassword(this HttpClient client, ChangeUserPasswordRequest request, string accessToken)
+
+        public static async Task<BaseResponse<LoginDto>> RefreshToken(this HttpClient client)
         {
-            client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", accessToken);
-
-            return await client.PostAsJsonAsync("api/users/changePassword", request);
+            return await client.PostAndDeserializeAsync<LoginDto>("api/auth/refreshToken");
         }
-        public static async Task<HttpResponseMessage> ForgotPassword(this HttpClient client, ForgetPasswordRequest request)
+
+        public static async Task<BaseResponse<bool>> Logout(this HttpClient client, string accessToken)
         {
-            return await client.PostAsJsonAsync("api/auth/forgotPassword", request);
+            return await client.PostAndDeserializeAsync<bool>("api/auth/logout", accessToken: accessToken);
         }
 
-        public static async Task<HttpResponseMessage> VerifyOTP(this HttpClient client, VerifyResetCodeRequest request)
+        public static async Task<BaseResponse<bool>> ForgotPassword(
+            this HttpClient client, ForgetPasswordCommand command)
         {
-            return await client.PostAsJsonAsync("api/auth/verifyOTP", request);
+            var result = await client.PostAndDeserializeAsync<bool>("api/auth/forgotPassword", command);
+            return result;
         }
 
-        public static async Task<HttpResponseMessage> ResetPassword(this HttpClient client, ResetPasswordRequest request)
+        public static async Task<BaseResponse<string>> VerifyOTP(
+            this HttpClient client, VerifyResetCodeCommand command)
         {
-            return await client.PostAsJsonAsync("api/auth/resetPassword", request);
+            return await client.PostAndDeserializeAsync<string>("api/auth/verifyOTP", command);
         }
 
-        public static async Task<HttpResponseMessage> SendContactMessage(this HttpClient client, SendContactMessageRequest request)
+        public static async Task<BaseResponse<bool>> ResetPassword(
+            this HttpClient client, ResetPasswordCommand command)
         {
-            return await client.PostAsJsonAsync("api/contact/send", request);
+            return await client.PostAndDeserializeAsync<bool>("api/auth/resetPassword", command);
         }
 
-        public static async Task<HttpResponseMessage> RefreshTokenFullHttpResponse(this HttpClient client)
+        // ── Users Management ───────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<GetUsersResult>> GetUsers(
+            this HttpClient client, string accessToken,
+            UserRole? role = null, string? status = null, string? q = null,
+            int page = 1, int limit = 20)
         {
-            return await client.PostAsync("api/auth/refreshToken", null);
+            var qs = $"api/users?page={page}&limit={limit}";
+            if (role.HasValue) qs += $"&role={(int)role.Value}";
+            if (status != null) qs += $"&status={Uri.EscapeDataString(status)}";
+            if (q != null) qs += $"&q={Uri.EscapeDataString(q)}";
+            return await client.GetAndDeserializeAsync<GetUsersResult>(qs, accessToken);
         }
 
-        // ── Avatar Upload ──────────────────────────────────────────────────────────
-        public static async Task<HttpResponseMessage> UploadAvatar(
+        public static async Task<BaseResponse<UserDto>> AddUser(
+            this HttpClient client, CreateUserCommand command, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<UserDto>("api/users/addUser/", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<UserDto>> GetUserById(
+            this HttpClient client, Guid id, string accessToken)
+        {
+            return await client.GetAndDeserializeAsync<UserDto>($"api/users/getUser?id={id}", accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> UpdateUserRole(
+            this HttpClient client, UpdateUserRoleCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<bool>($"api/users/updateRole", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> ActivateUser(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<bool>($"api/users/activateUser?userId={userId}", accessToken: accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeactivateUser(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<bool>($"api/users/deactivateUser?userId={userId}", accessToken: accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeleteUser(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.DeleteAndDeserializeAsync<bool>($"api/users/{userId}", accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> ChangePassword(
+            this HttpClient client, ChangeUserPasswordCommand command, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<bool>("api/users/changePassword", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> UploadAvatar(
             this HttpClient client, Guid userId, byte[] fileBytes, string fileName, string accessToken)
         {
-            var req = CreateRequest($"api/users/{userId}/avatar", HttpMethod.Post, accessToken);
+            var request = CreateRequest($"api/users/{userId}/avatar", HttpMethod.Post, accessToken);
             var form = new MultipartFormDataContent();
             form.Add(new ByteArrayContent(fileBytes)
             {
                 Headers = { ContentType = new MediaTypeHeaderValue("image/jpeg") }
             }, "avatar", fileName);
-            req.Content = form;
-            return await client.SendAsync(req);
+            request.Content = form;
+            return await client.SendAndDeserializeAsync<bool>(request);
+        }
+
+        public static async Task<BaseResponse<FileDownloadDto>> GetAvatar(
+            this HttpClient client, Guid userId)
+        {
+            return await client.GetAndDeserializeAsync<FileDownloadDto>($"api/users/{userId}/avatar");
+        }
+
+        // ── Researcher Profile ─────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<List<ResearcherProfileDto>>> GetAllResearcherProfiles(
+            this HttpClient client)
+        {
+            return await client.GetAndDeserializeAsync<List<ResearcherProfileDto>>("api/profiles/researchers");
+        }
+
+        public static async Task<BaseResponse<ResearcherProfileDto>> GetResearcherProfile(
+            this HttpClient client, Guid userId)
+        {
+            return await client.GetAndDeserializeAsync<ResearcherProfileDto>($"api/profiles/researchers/{userId}");
+        }
+
+        public static async Task<BaseResponse<ResearcherProfileDto>> UpdateResearcherProfile(
+            this HttpClient client, Guid userId, UpdateResearcherProfileCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<ResearcherProfileDto>($"api/profiles/researchers/{userId}", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeleteResearcherProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.DeleteAndDeserializeAsync<bool>($"api/profiles/researchers/{userId}", accessToken);
+        }
+
+        // ── PhD Student Profile ────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<List<PhDStudentProfileDto>>> GetAllPhDStudentProfiles(
+            this HttpClient client)
+        {
+            return await client.GetAndDeserializeAsync<List<PhDStudentProfileDto>>("api/profiles/phd-students");
+        }
+
+        public static async Task<BaseResponse<PhDStudentProfileDto>> GetPhDStudentProfile(
+            this HttpClient client, Guid userId)
+        {
+            return await client.GetAndDeserializeAsync<PhDStudentProfileDto>($"api/profiles/phd-students/{userId}");
+        }
+
+        public static async Task<BaseResponse<PhDStudentProfileDto>> UpdatePhDStudentProfile(
+            this HttpClient client, Guid userId, UpdatePhDStudentProfileCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<PhDStudentProfileDto>($"api/profiles/phd-students/{userId}", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeletePhDStudentProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.DeleteAndDeserializeAsync<bool>($"api/profiles/phd-students/{userId}", accessToken);
+        }
+
+        // ── Masterian Profile ──────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<List<MasterianProfileDto>>> GetAllMasterianProfiles(
+            this HttpClient client)
+        {
+            return await client.GetAndDeserializeAsync<List<MasterianProfileDto>>("api/profiles/masterians");
+        }
+
+        public static async Task<BaseResponse<MasterianProfileDto>> GetMasterianProfile(
+            this HttpClient client, Guid userId)
+        {
+            return await client.GetAndDeserializeAsync<MasterianProfileDto>($"api/profiles/masterians/{userId}");
+        }
+
+        public static async Task<BaseResponse<MasterianProfileDto>> UpdateMasterianProfile(
+            this HttpClient client, Guid userId, UpdateMasterianProfileCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<MasterianProfileDto>($"api/profiles/masterians/{userId}", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeleteMasterianProfile(
+            this HttpClient client, Guid userId, string accessToken)
+        {
+            return await client.DeleteAndDeserializeAsync<bool>($"api/profiles/masterians/{userId}", accessToken);
         }
 
         // ── Research Axes ──────────────────────────────────────────────────────────
-        public static async Task<ResearchAxesListResponse?> GetAllResearchAxes(
-            this HttpClient client, string accessToken)
+
+        public static async Task<BaseResponse<List<ResearchAxisDto>>> GetAllResearchAxes(this HttpClient client)
         {
-            var req = CreateRequest("api/research-axes", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<ResearchAxesListResponse>()
-                : null;
+            return await client.GetAndDeserializeAsync<List<ResearchAxisDto>>("api/research-axes");
         }
 
-        public static async Task<HttpResponseMessage> GetAllResearchAxesFullResponse(
-            this HttpClient client, string accessToken)
+        public static async Task<BaseResponse<ResearchAxisDto>> GetResearchAxisById(
+            this HttpClient client, Guid id)
         {
-            var req = CreateRequest("api/research-axes", HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
+            return await client.GetAndDeserializeAsync<ResearchAxisDto>($"api/research-axes/{id}");
         }
 
-        public static async Task<ResearchAxisResponse?> GetResearchAxisById(
+        public static async Task<BaseResponse<ResearchAxisDto>> CreateResearchAxis(
+            this HttpClient client, CreateResearchAxisCommand command, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<ResearchAxisDto>("api/research-axes", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<ResearchAxisDto>> UpdateResearchAxis(
+            this HttpClient client, Guid id, UpdateResearchAxisCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<ResearchAxisDto>($"api/research-axes/{id}", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeleteResearchAxis(
             this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<ResearchAxisResponse>()
-                : null;
+            return await client.DeleteAndDeserializeAsync<bool>($"api/research-axes/{id}", accessToken);
         }
 
-        public static async Task<HttpResponseMessage> GetResearchAxisByIdFullResponse(
-            this HttpClient client, Guid id, string accessToken)
-        {
-            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<ResearchAxisResponse?> CreateResearchAxis(
-            this HttpClient client, CreateResearchAxisRequest request, string accessToken)
-        {
-            var req = CreateRequest("api/research-axes", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(request);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<ResearchAxisResponse>()
-                : null;
-        }
-
-        public static async Task<HttpResponseMessage> CreateResearchAxisFullResponse(
-            this HttpClient client, CreateResearchAxisRequest request, string accessToken)
-        {
-            var req = CreateRequest("api/research-axes", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> UpdateResearchAxis(
-            this HttpClient client, Guid id, UpdateResearchAxisRequest request, string accessToken)
-        {
-            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Put, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> DeleteResearchAxis(
-            this HttpClient client, Guid id, string accessToken)
-        {
-            var req = CreateRequest($"api/research-axes/{id}", HttpMethod.Delete, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> AddAxisMember(
-            this HttpClient client, Guid axisId, AddAxisMemberRequest request, string accessToken)
-        {
-            var req = CreateRequest($"api/research-axes/{axisId}/members", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(request);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<HttpResponseMessage> RemoveAxisMember(
+        public static async Task<BaseResponse<bool>> AddAxisMember(
             this HttpClient client, Guid axisId, Guid userId, string accessToken)
         {
-            var req = CreateRequest($"api/research-axes/{axisId}/members/{userId}", HttpMethod.Delete, accessToken);
-            return await client.SendAsync(req);
+            return await client.PostAndDeserializeAsync<bool>($"api/research-axes/{axisId}/members?userId={userId}", accessToken: accessToken);
         }
 
-        // ── Users list ─────────────────────────────────────────────────────────────
-
-        public static async Task<GetUsersResponse?> GetUsers(
-            this HttpClient client, string accessToken,
-            UserRole? role = null, string? status = null, string? q = null,
-            int page = 1, int limit = 20)
+        public static async Task<BaseResponse<bool>> RemoveAxisMember(
+            this HttpClient client, Guid axisId, Guid userId, string accessToken)
         {
-            var qs = $"api/users?page={page}&limit={limit}";
-            if (role.HasValue) qs += $"&role={(int)role.Value}";
-            if (status != null) qs += $"&status={Uri.EscapeDataString(status)}";
-            if (q != null) qs += $"&q={Uri.EscapeDataString(q)}";
-
-            var req = CreateRequest(qs, HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<GetUsersResponse>()
-                : null;
+            return await client.DeleteAndDeserializeAsync<bool>($"api/research-axes/{axisId}/members/{userId}", accessToken);
         }
 
-        public static async Task<HttpResponseMessage> GetUsersFullResponse(
-            this HttpClient client, string accessToken,
-            UserRole? role = null, string? status = null, string? q = null,
-            int page = 1, int limit = 20)
-        {
-            var qs = $"api/users?page={page}&limit={limit}";
-            if (role.HasValue) qs += $"&role={(int)role.Value}";
-            if (status != null) qs += $"&status={Uri.EscapeDataString(status)}";
-            if (q != null) qs += $"&q={Uri.EscapeDataString(q)}";
+        // ── Events ─────────────────────────────────────────────────────────────────
 
-            var req = CreateRequest(qs, HttpMethod.Get, accessToken);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<GetEventsResponse?> GetEvents(this HttpClient client, string? status = null, string? type = null, int page = 1, int limit = 20, string? q = null)
+        public static async Task<BaseResponse<List<EventDto>>> GetEvents(
+            this HttpClient client, GetEventsQuery query)
         {
             var queryParams = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(status))
-                queryParams.Add($"status={Uri.EscapeDataString(status)}");
-            if (!string.IsNullOrWhiteSpace(type))
-                queryParams.Add($"type={Uri.EscapeDataString(type)}");
-            if (page > 0)
-                queryParams.Add($"page={page}");
-            if (limit > 0)
-                queryParams.Add($"limit={limit}");
-            if (!string.IsNullOrWhiteSpace(q))
-                queryParams.Add($"q={Uri.EscapeDataString(q)}");
-
+            if (query.Q != null) queryParams.Add($"q={Uri.EscapeDataString(query.Q)}");
+            if (query.Status != null) queryParams.Add($"status={Uri.EscapeDataString(query.Status)}");
+            if (query.Type != null) queryParams.Add($"type={Uri.EscapeDataString(query.Type)}");
+            if (query.Page > 0) queryParams.Add($"page={query.Page}");
+            if (query.Limit > 0) queryParams.Add($"limit={query.Limit}");
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"api/events/{queryString}");
-
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<GetEventsResponse>();
-            return null;
+            return await client.GetAndDeserializeAsync<List<EventDto>>($"api/events/{queryString}");
         }
 
-        public static async Task<HttpResponseMessage> GetEventsFullHttpResponse(this HttpClient client, string? status = null, string? type = null, int page = 1, int limit = 20, string? q = null)
+        public static async Task<BaseResponse<EventDto>> GetEventById(
+            this HttpClient client, Guid eventId)
         {
-            var queryParams = new List<string>();
-
-            if (!string.IsNullOrWhiteSpace(status))
-                queryParams.Add($"status={Uri.EscapeDataString(status)}");
-            if (!string.IsNullOrWhiteSpace(type))
-                queryParams.Add($"type={Uri.EscapeDataString(type)}");
-            if (page > 0)
-                queryParams.Add($"page={page}");
-            if (limit > 0)
-                queryParams.Add($"limit={limit}");
-            if (!string.IsNullOrWhiteSpace(q))
-                queryParams.Add($"q={Uri.EscapeDataString(q)}");
-
-            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            return await client.GetAsync($"api/events/{queryString}");
+            return await client.GetAndDeserializeAsync<EventDto>($"api/events/{eventId}");
         }
 
-        public static async Task<CreateEventResponse?> CreateEvent(this HttpClient client, CreateEventRequest requestBody, string accessToken)
+        public static async Task<BaseResponse<EventDto>> CreateEvent(
+            this HttpClient client, CreateEventCommand command, string accessToken)
         {
-            var request = CreateRequest("api/events/", HttpMethod.Post, accessToken);
-            request.Content = JsonContent.Create(requestBody);
-            var response = await client.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<CreateEventResponse>();
-            return null;
+            return await client.PostAndDeserializeAsync<EventDto>("api/events/", command, accessToken);
         }
 
-        public static async Task<UpdateEventResponse?> UpdateEvent(this HttpClient client, Guid eventId, UpdateEventRequest requestBody, string accessToken)
+        public static async Task<BaseResponse<EventDto>> UpdateEvent(
+            this HttpClient client, Guid eventId, UpdateEventCommand command, string accessToken)
         {
-            var request = CreateRequest($"api/events/{eventId}", HttpMethod.Put, accessToken);
-            request.Content = JsonContent.Create(requestBody);
-            var response = await client.SendAsync(request);
-
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<UpdateEventResponse>();
-            return null;
+            return await client.PutAndDeserializeAsync<EventDto>($"api/events/{eventId}", command, accessToken);
         }
 
-        public static async Task<BaseResponse?> DeleteEvent(this HttpClient client, Guid eventId, string accessToken)
+        public static async Task<BaseResponse<bool>> DeleteEvent(
+            this HttpClient client, Guid eventId, string accessToken)
         {
-            var request = CreateRequest($"api/events/{eventId}", HttpMethod.Delete, accessToken);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<BaseResponse>();
-            return null;
+            return await client.DeleteAndDeserializeAsync<bool>($"api/events/{eventId}", accessToken);
         }
 
-        public static async Task<AddSpeakerResponse?> AddSpeaker(this HttpClient client, Guid eventId, AddSpeakerRequest requestBody, string accessToken)
+        public static async Task<BaseResponse<SpeakerDto>> AddSpeaker(
+            this HttpClient client, Guid eventId, CreateSpeakerCommand command, string accessToken)
         {
-            var request = CreateRequest($"api/events/{eventId}/speakers", HttpMethod.Post, accessToken);
-            request.Content = JsonContent.Create(requestBody);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<AddSpeakerResponse>();
-            return null;
+            return await client.PostAndDeserializeAsync<SpeakerDto>($"api/events/{eventId}/speakers", command, accessToken);
         }
 
-        public static async Task<UpdateSpeakerResponse?> UpdateSpeaker(this HttpClient client, Guid eventId, Guid speakerId, UpdateSpeakerRequest requestBody, string accessToken)
+        public static async Task<BaseResponse<SpeakerDto>> UpdateSpeaker(
+            this HttpClient client, Guid eventId, Guid speakerId, UpdateSpeakerCommand command, string accessToken)
         {
-            var request = CreateRequest($"api/events/{eventId}/speakers/{speakerId}", HttpMethod.Put, accessToken);
-            request.Content = JsonContent.Create(requestBody);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<UpdateSpeakerResponse>();
-            return null;
+            return await client.PutAndDeserializeAsync<SpeakerDto>($"api/events/{eventId}/speakers/{speakerId}", command, accessToken);
         }
 
-        public static async Task<BaseResponse?> DeleteSpeaker(this HttpClient client, Guid eventId, Guid speakerId, string accessToken)
+        public static async Task<BaseResponse<bool>> DeleteSpeaker(
+            this HttpClient client, Guid eventId, Guid speakerId, string accessToken)
         {
-            var request = CreateRequest($"api/events/{eventId}/speakers/{speakerId}", HttpMethod.Delete, accessToken);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<BaseResponse>();
-            return null;
+            return await client.DeleteAndDeserializeAsync<bool>($"api/events/{eventId}/speakers/{speakerId}", accessToken);
         }
 
-        // ── Publications (Public) ───────────────────────────────────────────────
+        // ── Publications ───────────────────────────────────────────────────────────
 
-        public static async Task<PublicationsListResponse?> GetPublicPublications(
-            this HttpClient client, int page = 1, int limit = 10, string? search = null, string? type = null, int? year = null, Guid? axeId = null)
+        // ── Publications ───────────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<List<PublicationDto>>> GetPublications(
+            this HttpClient client, GetPublicationsQuery query, string accessToken)
         {
-            var queryParams = new List<string> { $"page={page}", $"limit={limit}" };
-            if (!string.IsNullOrWhiteSpace(search))
-                queryParams.Add($"search={Uri.EscapeDataString(search)}");
-            if (!string.IsNullOrWhiteSpace(type))
-                queryParams.Add($"type={Uri.EscapeDataString(type)}");
-            if (year.HasValue)
-                queryParams.Add($"year={year.Value}");
-            if (axeId.HasValue)
-                queryParams.Add($"axeId={axeId.Value}");
-
-            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            var response = await client.GetAsync($"api/v1/public/publications{queryString}");
-
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<PublicationsListResponse>()
-                : null;
+            var queryParams = new List<string> { $"page={query.Page}", $"limit={query.Limit}" };
+            if (!string.IsNullOrEmpty(query.Status))
+                queryParams.Add($"status={Uri.EscapeDataString(query.Status)}");
+            if (query.AxeId.HasValue)
+                queryParams.Add($"researchAxisId={query.AxeId}");
+            var queryString = "?" + string.Join("&", queryParams);
+            return await client.GetAndDeserializeAsync<List<PublicationDto>>($"api/v1/publications{queryString}", accessToken);
         }
 
-        public static Task<HttpResponseMessage> GetPublicPublicationsFullResponse(this HttpClient client) =>
-            client.GetAsync("api/v1/public/publications");
-
-        public static async Task<List<PublicPublicationCardResponse>?> GetPublicRecentPublications(
-            this HttpClient client, int limit = 3)
-        {
-            var response = await client.GetAsync($"api/v1/public/publications/recent?limit={limit}");
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<List<PublicPublicationCardResponse>>()
-                : null;
-        }
-
-        public static async Task<PublicPublicationDetailResponse?> GetPublicPublicationById(this HttpClient client, Guid id)
-        {
-            var response = await client.GetAsync($"api/v1/public/publications/{id}");
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<PublicPublicationDetailResponse>()
-                : null;
-        }
-
-        // ── Publications (Dashboard) ────────────────────────────────────────────
-
-        public static async Task<DashboardPublicationsListResponse?> GetDashboardPublications(
-            this HttpClient client, string accessToken, string scope = "mine", int page = 1, int limit = 10)
-        {
-            var req = CreateRequest($"api/v1/publications?scope={Uri.EscapeDataString(scope)}&page={page}&limit={limit}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<DashboardPublicationsListResponse>()
-                : null;
-        }
-
-        public static async Task<HttpResponseMessage> CreateDashboardPublication(
-            this HttpClient client, CreateDashboardPublicationRequest body, string accessToken)
-        {
-            var req = CreateRequest("api/v1/publications", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(body);
-            return await client.SendAsync(req);
-        }
-
-        public static async Task<DashboardPublicationDetailResponse?> GetDashboardPublicationById(
+        public static async Task<BaseResponse<PublicationDto>> GetPublicationById(
             this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}", HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(req);
-            return response.IsSuccessStatusCode
-                ? await response.Content.ReadFromJsonAsync<DashboardPublicationDetailResponse>()
-                : null;
+            return await client.GetAndDeserializeAsync<PublicationDto>($"api/v1/publications/{id}", accessToken);
         }
 
-        public static async Task<HttpResponseMessage> SubmitDashboardPublication(
+        public static async Task<BaseResponse<PublicationDto>> CreatePublication(
+            this HttpClient client, CreatePublicationCommand command, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<PublicationDto>("api/v1/publications", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> UpdatePublication(
+            this HttpClient client, Guid id, UpdatePublicationCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<bool>($"api/v1/publications/{id}", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> DeletePublication(
             this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}/submit", HttpMethod.Post, accessToken);
-            return await client.SendAsync(req);
+            return await client.DeleteAndDeserializeAsync<bool>($"api/v1/publications/{id}", accessToken);
         }
 
-        public static async Task<HttpResponseMessage> ValidateDashboardPublication(
+        public static async Task<BaseResponse<bool>> SubmitPublication(
             this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}/validate", HttpMethod.Post, accessToken);
-            return await client.SendAsync(req);
+            return await client.PostAndDeserializeAsync<bool>($"api/v1/publications/{id}/submit", accessToken: accessToken);
         }
 
-        public static async Task<HttpResponseMessage> RejectDashboardPublication(
-            this HttpClient client, Guid id, RejectPublicationRequest body, string accessToken)
+        public static async Task<BaseResponse<bool>> ValidatePublication(
+            this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}/reject", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(body);
-            return await client.SendAsync(req);
+            return await client.PostAndDeserializeAsync<bool>($"api/v1/publications/{id}/validate", accessToken: accessToken);
         }
 
-        public static async Task<HttpResponseMessage> AddDashboardPublicationPdf(
-            this HttpClient client, Guid id, PdfRequest body, string accessToken)
+        public static async Task<BaseResponse<bool>> RejectPublication(
+            this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Post, accessToken);
-            req.Content = JsonContent.Create(body);
-            return await client.SendAsync(req);
+            return await client.PostAndDeserializeAsync<bool>($"api/v1/publications/{id}/reject", accessToken: accessToken);
         }
 
-        public static async Task<HttpResponseMessage> RemoveDashboardPublicationPdf(
-            this HttpClient client, Guid id, PdfRequest body, string accessToken)
+        public static async Task<BaseResponse<List<FileDownloadDto>>> GetPublicationPdfs(
+            this HttpClient client, Guid id, string accessToken)
         {
-            var req = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Delete, accessToken);
-            req.Content = JsonContent.Create(body);
-            return await client.SendAsync(req);
-        }
-        public static async Task<GetAuditLogsResponse?> GetAuditLogs(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
-        {
-            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
-            if (toUtc.HasValue)
-                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
-
-            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
-            var response = await client.SendAsync(request);
-            if (response.IsSuccessStatusCode)
-                return await response.Content.ReadFromJsonAsync<GetAuditLogsResponse>();
-            return null;
+            return await client.GetAndDeserializeAsync<List<FileDownloadDto>>($"api/v1/publications/{id}/pdfs", accessToken);
         }
 
-        public static async Task<HttpResponseMessage> GetAuditLogsFullHttpResponse(this HttpClient client, string accessToken, DateTime fromUtc, DateTime? toUtc = null)
+        public static async Task<BaseResponse<bool>> AddPublicationPdf(
+            this HttpClient client, Guid id, AddPublicationPdfsCommand command, string accessToken)
         {
-            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(fromUtc.ToString("O"))}";
-            if (toUtc.HasValue)
-                endpoint += $"&toUtc={Uri.EscapeDataString(toUtc.Value.ToString("O"))}";
+            return await client.PostAndDeserializeAsync<bool>($"api/v1/publications/{id}/pdf", command, accessToken);
+        }
 
-            var request = CreateRequest(endpoint, HttpMethod.Get, accessToken);
-            return await client.SendAsync(request);
+        public static async Task<BaseResponse<bool>> RemovePublicationPdf(
+            this HttpClient client, Guid id, RemovePublicationPdfCommand command, string accessToken)
+        {
+            var request = CreateRequest($"api/v1/publications/{id}/pdf", HttpMethod.Delete, accessToken);
+            request.Content = JsonContent.Create(command);
+            return await client.SendAndDeserializeAsync<bool>(request);
+        }
+
+        // ── Contact ────────────────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<string>> SendContactMessage(
+            this HttpClient client, SendContactMessageCommand command)
+        {
+            return await client.PostAndDeserializeAsync<string>("api/contact/send", command);
+        }
+
+        // ── Audit Logs ─────────────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<List<AuditLogDto>>> GetAuditLogs(
+            this HttpClient client, string accessToken, GetAuditLogsQuery query)
+        {
+            var endpoint = $"api/auditLogs/?fromUtc={Uri.EscapeDataString(query.FromUtc.ToString("O"))}";
+            if (query.ToUtc.HasValue)
+                endpoint += $"&toUtc={Uri.EscapeDataString(query.ToUtc.Value.ToString("O"))}";
+            return await client.GetAndDeserializeAsync<List<AuditLogDto>>(endpoint, accessToken);
+        }
+
+        // ── Settings ───────────────────────────────────────────────────────────────
+
+        public static async Task<BaseResponse<SettingsResponseDto>> GetSettings(
+            this HttpClient client, string accessToken)
+        {
+            return await client.GetAndDeserializeAsync<SettingsResponseDto>("dashboard/superadmin/settings", accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> UpdateSettings(
+            this HttpClient client, SettingsCommand command, string accessToken)
+        {
+            return await client.PutAndDeserializeAsync<bool>("dashboard/superadmin/settings", command, accessToken);
+        }
+
+        public static async Task<BaseResponse<bool>> TestSmtp(
+            this HttpClient client, string testEmail, string accessToken)
+        {
+            return await client.PostAndDeserializeAsync<bool>($"dashboard/superadmin/settings/smtp/test?testEmail={Uri.EscapeDataString(testEmail)}", accessToken: accessToken);
         }
     }
 }

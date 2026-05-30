@@ -1,16 +1,17 @@
 ﻿using System.Net;
+using LIMTIC.Application.Contracts.Commands.CreateUser;
+using LIMTIC.Application.Contracts.Commands.Login;
 using LIMTIC.E2Es.Base;
 using LIMTIC.E2Es.Extensions;
 using LIMTIC.E2Es.MailFixture;
-using LIMTIC.WebAPI.Models.Auth.Login;
-using LIMTIC.WebAPI.Models.UserManagement.CreateUser;
 
 namespace LIMTIC.E2Es.Tests
 {
     [Collection("E2E collection")]
     public class AuthenticationE2ETests : BaseE2ETests
     {
-        public AuthenticationE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
+        public AuthenticationE2ETests(PostgresFixture dbfixture, MailHogFixture mailFixture) 
+            : base(dbfixture: dbfixture, mailHogFixture: mailFixture, useShortTokenExpiry: true)
         {
         }
 
@@ -27,24 +28,25 @@ namespace LIMTIC.E2Es.Tests
 
             string superAdminAccessToken = await LoginAsSuperAdmin();
 
-            var createUserRequest = new CreateUserRequest
+            var createUserCommand = new CreateUserCommand
             {
                 FirstName = "John",
                 LastName = "Doe",
-                Email = "John.Doe@example.com",
+                Email = "john.doe@example.com",
                 Password = "password",
                 IsActive = true
             };
 
-            var addResponse = await Client.AddUser(createUserRequest, superAdminAccessToken);
+            var addResponse = await Client.AddUser(createUserCommand, superAdminAccessToken);
             Assert.NotNull(addResponse);
+            Assert.True(addResponse.Success);
 
-            var loginRequest = new LoginRequest(createUserRequest.Email, createUserRequest.Password);
+            var loginCommand = new LoginCommand(createUserCommand.Email, createUserCommand.Password);
 
-            var authResponse = await Client.AuthenticateUser(loginRequest);
+            var authResponse = await Client.AuthenticateUser(loginCommand);
             Assert.NotNull(authResponse);
-            Assert.NotNull(authResponse.AccessToken);
-            Assert.NotEmpty(authResponse.AccessToken);
+            Assert.NotNull(authResponse.Data.AccessToken);
+            Assert.NotEmpty(authResponse.Data.AccessToken);
         }
 
         [Fact]
@@ -55,7 +57,6 @@ namespace LIMTIC.E2Es.Tests
             // 2. Wait for the access token to expire (simulate this by setting a short expiration time in the test environment)
             // 3. Attempt to access a protected resource with the expired access token and assert that it fails
             // 4. Send a POST request to the API endpoint to refresh the access token using the refresh token
-            // 5. Assert that the response isn't null and contains a new access token
 
             // 1. Authenticate a user and obtain a access token and refresh token
             string superAdminAccessToken = await LoginAsSuperAdmin();
@@ -64,14 +65,14 @@ namespace LIMTIC.E2Es.Tests
             await Task.Delay(TimeSpan.FromSeconds(3));
 
             // 3. Attempt to access a protected resource with the expired access token and assert that it fails
-            var protectedResponse = await Client.GetUserByIdFullHttpResponse(Guid.NewGuid(), superAdminAccessToken);
-            Assert.Equal(HttpStatusCode.Unauthorized, protectedResponse.StatusCode);
+            var protectedResponse = await Client.GetUserById(Guid.NewGuid(), superAdminAccessToken);
+            Assert.False(protectedResponse.Success);
 
             // 4. Send a POST request to the API endpoint to refresh the access token using the refresh token
             var refreshTokenReponse = await Client.RefreshToken();
             Assert.NotNull(refreshTokenReponse);
-            Assert.NotNull(refreshTokenReponse.AccessToken);
-            Assert.NotEmpty(refreshTokenReponse.AccessToken);
+            Assert.NotNull(refreshTokenReponse.Data.AccessToken);
+            Assert.NotEmpty(refreshTokenReponse.Data.AccessToken);
         }
 
         [Fact]
@@ -89,8 +90,8 @@ namespace LIMTIC.E2Es.Tests
             await Task.Delay(TimeSpan.FromSeconds(10));
 
             // 3. Attempt to refresh the access token using the expired refresh token and assert that it fails
-            var refreshTokenReponse = await Client.RefreshTokenFullHttpResponse();
-            Assert.Equal(HttpStatusCode.Unauthorized, refreshTokenReponse.StatusCode);
+            var refreshTokenReponse = await Client.RefreshToken();
+            Assert.False(refreshTokenReponse.Success);
         }
     }
 }
